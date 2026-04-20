@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function Login() {
   const { login } = useAuth();
@@ -23,6 +24,11 @@ export default function Login() {
     }
   };
 
+  const handleGoogleSuccess = ({ status, token }) => {
+    if (status === 'login')   return navigate('/search', { replace: true });
+    if (status === 'onboard') return navigate('/google/onboarding', { replace: true, state: { token } });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
@@ -42,6 +48,17 @@ export default function Login() {
               {loading ? 'Signing in…' : 'Log in'}
             </button>
           </form>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+            <div className="relative flex justify-center"><span className="bg-white px-2 text-xs text-gray-400">or</span></div>
+          </div>
+
+          <GoogleAuthButton
+            label="Continue with Google"
+            onSuccess={handleGoogleSuccess}
+            onError={(msg) => setError(msg)}
+          />
 
           <p className="mt-4 text-center text-sm text-gray-600">
             New here? <Link to="/register" className="text-blue-600">Create an account</Link>

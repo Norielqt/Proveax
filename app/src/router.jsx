@@ -9,6 +9,7 @@ import PropertyDetail from './pages/PropertyDetail';
 import Billing from './pages/Billing';
 import AdminEmployees from './pages/AdminEmployees';
 import AdminActivity from './pages/AdminActivity';
+import GoogleOnboarding from './pages/GoogleOnboarding';
 import AppShell from './components/layout/AppShell';
 import LoadingScreen from './components/layout/LoadingScreen';
 
@@ -31,6 +32,7 @@ export default function Router() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/invite/:token" element={<InviteAccept />} />
+        <Route path="/google/onboarding" element={<GoogleOnboarding />} />
 
         <Route element={<RequireAuth />}>
           <Route element={<AppShell />}>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\InviteController;
 use App\Http\Controllers\Api\PropertyController;
@@ -9,6 +10,9 @@ use App\Http\Controllers\Api\SkipTraceController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AttomController;
 use Illuminate\Support\Facades\Route;
+
+// Google OAuth – complete onboarding (no auth required yet)
+Route::post('/auth/google/complete', [GoogleAuthController::class, 'complete']);
 
 // ---------- Public ----------
 Route::post('/register',       [AuthController::class, 'registerAdmin']);

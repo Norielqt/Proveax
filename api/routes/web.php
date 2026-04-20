@@ -1,18 +1,14 @@
 <?php
 
+use App\Http\Controllers\Api\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+// Google OAuth – must run on web (session) middleware
+Route::prefix('auth/google')->group(function () {
+    Route::get('redirect-url', [GoogleAuthController::class, 'redirectUrl']);
+    Route::get('callback',     [GoogleAuthController::class, 'callback']);
 });

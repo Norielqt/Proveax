@@ -308,31 +308,27 @@ export default function Dashboard() {
           <ResultsMap properties={results.filter((p) => p.estimated_value > 0)} onViewChange={handleViewChange} manualKey={manualSearchKey} panKey={panSearchKey} hoveredId={hoveredId} onSelect={setSelectedProperty} />
         </div>
 
-        {/* Toggle handle at 80% mark */}
-        <div
-          className="absolute z-[1100] top-1/2 -translate-y-1/2 transition-all duration-200"
-          style={{ right: listOpen ? 'calc(20% - 14px)' : 0 }}
-        >
-          <button
-            onClick={() => setListOpen((o) => !o)}
-            title={listOpen ? 'Collapse list' : 'Expand list'}
-            className="flex h-10 w-7 items-center justify-center rounded-l-full border border-gray-200 bg-white shadow-md text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              {listOpen
-                ? <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                : <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              }
-            </svg>
-          </button>
-        </div>
-
-        {/* Properties list — right 20% */}
-        {listOpen && (
-          <div className="absolute right-0 top-0 h-full w-[20%] overflow-y-auto border-l border-gray-200 bg-white shadow-lg z-[1000]">
+        {/* Properties list — right 20%, slides in/out. Toggle handle is attached to its left edge. */}
+        <div className={`absolute right-0 top-0 h-full w-[20%] z-[1000] transition-transform duration-300 ease-in-out ${listOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          {/* Toggle handle — sits on the left edge, always visible */}
+          <div className="absolute -left-7 top-1/2 -translate-y-1/2 z-10">
+            <button
+              onClick={() => setListOpen((o) => !o)}
+              title={listOpen ? 'Collapse list' : 'Expand list'}
+              className="flex h-10 w-7 items-center justify-center rounded-l-full border border-gray-200 bg-white shadow-md text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                {listOpen
+                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                }
+              </svg>
+            </button>
+          </div>
+          <div className="h-full overflow-y-auto border-l border-gray-200 bg-white shadow-lg">
             <ResultsList properties={results.filter((p) => p.estimated_value > 0)} onHover={setHoveredId} onSelect={setSelectedProperty} />
           </div>
-        )}
+        </div>
       </div>
 
       {selectedProperty && (

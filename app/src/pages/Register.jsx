@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function Register() {
   const { refresh } = useAuth();
@@ -28,6 +29,11 @@ export default function Register() {
     }
   };
 
+  const handleGoogleSuccess = ({ status, token }) => {
+    if (status === 'login')   return navigate('/search', { replace: true });
+    if (status === 'onboard') return navigate('/google/onboarding', { replace: true, state: { token } });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
@@ -38,7 +44,18 @@ export default function Register() {
 
           {error && <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800">{error}</div>}
 
-          <form onSubmit={submit} className="mt-4 space-y-3">
+          <GoogleAuthButton
+            label="Sign up with Google"
+            onSuccess={handleGoogleSuccess}
+            onError={(msg) => setError(msg)}
+          />
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+            <div className="relative flex justify-center"><span className="bg-white px-2 text-xs text-gray-400">or continue with email</span></div>
+          </div>
+
+          <form onSubmit={submit} className="space-y-3">
             <input required placeholder="Your name" value={form.name} onChange={set('name')}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             <input required placeholder="Company name" value={form.company_name} onChange={set('company_name')}

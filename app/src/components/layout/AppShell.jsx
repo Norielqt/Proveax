@@ -139,7 +139,7 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
           {/* Log out */}
           <div className="border-t border-gray-100 p-2">
             <button
-              onClick={() => { setOpen(false); logout(); }}
+              onClick={() => { setOpen(false); logout().then(() => navigate('/login')); }}
               className={`${nav} text-red-600 hover:bg-red-50`}
             >
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
