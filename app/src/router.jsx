@@ -10,10 +10,11 @@ import Billing from './pages/Billing';
 import AdminEmployees from './pages/AdminEmployees';
 import AdminActivity from './pages/AdminActivity';
 import AppShell from './components/layout/AppShell';
+import LoadingScreen from './components/layout/LoadingScreen';
 
 function RequireAuth() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="p-10">Loading…</div>;
+  if (loading) return <LoadingScreen />;
   return user ? <Outlet /> : <Navigate to="/login" replace />;
 }
 

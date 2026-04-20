@@ -36,9 +36,8 @@ class AttomService
         $total      = (int) $first->json('status.total', count($page1));
         $allRows    = $page1;
 
-        // Fetch all remaining pages in parallel, capped at 5,000 total.
-        $totalCapped    = min($total, 3000);
-        $remainingPages = (int) ceil($totalCapped / 1000) - 1; // pages 2..N
+        // Fetch all remaining pages in parallel.
+        $remainingPages = (int) ceil($total / 1000) - 1; // pages 2..N
         if ($remainingPages > 0) {
             $apiKey = config('services.attom.key');
             $opts   = ['verify' => app()->isProduction()];
@@ -394,7 +393,7 @@ class AttomService
             'zip'             => $addr['postal1']                    ?? null,
             'lat'             => isset($loc['latitude'])  ? (float) $loc['latitude']  : null,
             'lng'             => isset($loc['longitude']) ? (float) $loc['longitude'] : null,
-            'property_type'   => $sum['propclass']                   ?? null,
+            'property_type'   => ($sum['propclass'] ?? null) ?: ($sum['propertyType'] ?? null) ?: ($sum['proptype'] ?? null) ?: ($sum['propsubtype'] ?? null),
             'bedrooms'        => $bldg['rooms']['beds']              ?? null,
             'bathrooms'       => $bldg['rooms']['bathstotal'] ?? $bldg['rooms']['bathsTotal'] ?? null,
             'square_feet'     => $bldg['size']['universalSize']      ?? null,

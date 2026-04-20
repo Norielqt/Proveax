@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import proviaxxLogo from '../../assets/Proviaxx_logo.png';
 
 function PlanBadge({ tenant, onClose }) {
   const status = tenant?.subscription_status;
@@ -159,10 +160,9 @@ export default function AppShell() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <header className="relative z-[1100] flex h-16 items-center justify-between border-b bg-white px-4">
+      <header className="relative z-[1100] flex h-16 items-center justify-between border-b bg-white pr-4">
         <Link to="/search" className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-md bg-blue-600 text-white grid place-items-center font-bold text-sm">P</div>
-          <span className="font-semibold text-gray-900">{tenant?.name || 'PropIntel'}</span>
+          <img src={proviaxxLogo} alt="Proviaxx" className="h-36 w-auto mt-2" />
         </Link>
         <AccountMenu user={user} tenant={tenant} isAdmin={isAdmin} logout={logout} />
       </header>

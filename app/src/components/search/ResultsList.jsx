@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+
 
 function formatValue(val) {
   if (!val) return null;
@@ -14,7 +14,7 @@ function formatType(raw) {
   return raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export default function ResultsList({ properties, onHover }) {
+export default function ResultsList({ properties, onHover, onSelect }) {
   if (!properties.length) {
     return <div className="p-8 text-center text-gray-500">No properties match your filters.</div>;
   }
@@ -29,10 +29,9 @@ export default function ResultsList({ properties, onHover }) {
 
         return (
           <li key={key} onMouseEnter={() => onHover?.(id)} onMouseLeave={() => onHover?.(null)}>
-            <Link
-              to={`/properties/${p.attom_id ?? p.id}`}
-              state={{ property: p }}
-              className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+            <button
+              onClick={() => onSelect?.(p)}
+              className="w-full flex items-start justify-between gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               {/* Left — address block */}
               <div className="min-w-0 flex-1">
@@ -56,7 +55,7 @@ export default function ResultsList({ properties, onHover }) {
                   : <p className="text-xs text-gray-300">—</p>
                 }
               </div>
-            </Link>
+            </button>
           </li>
         );
       })}
