@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment files — never commit secrets
+.env
+.env.*
+!.env.example
+
+# Build outputs
+app/dist/
+api/public/hot
+api/public/build
+
+# Laravel runtime
+api/storage/logs/*.log
+api/bootstrap/cache/*.php
+api/storage/framework/cache/data/*
+api/storage/framework/sessions/*
+api/storage/framework/views/*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
