@@ -42,4 +42,10 @@ return [
         'base'    => 'https://api.gateway.attomdata.com/propertyapi/v1.0.0',
     ],
 
+    'stripe' => [
+        'key'            => env('STRIPE_KEY'),
+        'secret'         => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
 ];

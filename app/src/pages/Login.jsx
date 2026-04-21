@@ -32,7 +32,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
-        <Link to="/" className="block text-center text-xl font-bold text-blue-600 mb-6">PropIntel</Link>
+        <Link to="/" className="block text-center text-xl font-bold text-blue-600 mb-6">Proveax</Link>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h1 className="text-xl font-semibold text-gray-900">Log in</h1>
 

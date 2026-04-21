@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@maptiler/sdk": "^4.0.1",
+    "@stripe/react-stripe-js": "^6.2.0",
+    "@stripe/stripe-js": "^9.2.0",
     "axios": "^1.15.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import proviaxxLogo from '../../assets/Proviaxx_logo.png';
+import WalletDrawer from '../WalletDrawer';
+import proviaxxLogo from '../../assets/Proveax_logo.png.png';
 
 function PlanBadge({ tenant, onClose }) {
   const status = tenant?.subscription_status;
@@ -68,10 +69,6 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const initials = user?.name
-    ? user.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
-    : '?';
-
   const nav    = 'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium w-full text-left';
   const active = 'bg-blue-50 text-blue-700';
   const idle   = 'text-gray-700 hover:bg-gray-100';
@@ -86,11 +83,13 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
       {/* Avatar button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         aria-haspopup="true"
         aria-expanded={open}
       >
-        {initials}
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-6.5 8c0-3.59 2.91-6.5 6.5-6.5s6.5 2.91 6.5 6.5H5.5Z" />
+        </svg>
       </button>
 
       {open && (
@@ -157,6 +156,7 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
 export default function AppShell() {
   const { user, tenant, logout } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const [walletOpen, setWalletOpen] = useState(false);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -164,12 +164,30 @@ export default function AppShell() {
         <Link to="/search" className="flex items-center gap-2">
           <img src={proviaxxLogo} alt="Proviaxx" className="h-36 w-auto mt-2" />
         </Link>
-        <AccountMenu user={user} tenant={tenant} isAdmin={isAdmin} logout={logout} />
+        <div className="flex items-center gap-3">
+          {/* Wallet */}
+          <button
+            type="button"
+            onClick={() => setWalletOpen(true)}
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-label="Open wallet"
+          >
+            <svg className="h-4 w-4 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-5m0 0h-4a2 2 0 000 4h4" />
+            </svg>
+            <span className="text-sm font-semibold text-gray-800">
+              ${Number(user?.balance ?? 0).toFixed(2)}
+            </span>
+          </button>
+          <AccountMenu user={user} tenant={tenant} isAdmin={isAdmin} logout={logout} />
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
+
+      <WalletDrawer open={walletOpen} onClose={() => setWalletOpen(false)} />
     </div>
   );
 }

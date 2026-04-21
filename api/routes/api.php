@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SkipTraceController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AttomController;
+use App\Http\Controllers\Api\WalletController;
 use Illuminate\Support\Facades\Route;
 
 // Google OAuth – complete onboarding (no auth required yet)
@@ -28,6 +29,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Billing always accessible
     Route::get ('/billing/status',   [SubscriptionController::class, 'status']);
     Route::post('/billing/checkout', [SubscriptionController::class, 'createCheckout']);
+
+    // Wallet
+    Route::get ('/wallet/summary',             [WalletController::class, 'summary']);
+    Route::get ('/wallet/transactions',        [WalletController::class, 'transactions']);
+    Route::post('/wallet/top-up/intent',       [WalletController::class, 'createTopUpIntent']);
+    Route::post('/wallet/top-up/confirm',      [WalletController::class, 'confirmTopUp']);
 
     // Feature-gated: trial OR paid
     Route::middleware('feature.access')->group(function () {
