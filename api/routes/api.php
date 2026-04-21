@@ -8,7 +8,7 @@ use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SkipTraceController;
 use App\Http\Controllers\Api\ActivityLogController;
-use App\Http\Controllers\Api\AttomController;
+use App\Http\Controllers\Api\RentcastController;
 use App\Http\Controllers\Api\WalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,10 +42,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/properties/{id}',   [PropertyController::class, 'show'])->name('properties.show');
 
         // ATTOM national database proxy
-        Route::get('/attom/search',     [AttomController::class, 'search']);
-        Route::get('/attom/detail',     [AttomController::class, 'detail']);
-        Route::get('/attom/avm',        [AttomController::class, 'avm']);
-        Route::get('/attom/fulldetail', [AttomController::class, 'fullDetail']);
+        Route::get('/rentcast/search',     [RentcastController::class, 'search']);
+        Route::get('/rentcast/avm',        [RentcastController::class, 'avm']);
+        Route::get('/rentcast/fulldetail', [RentcastController::class, 'fullDetail']);
     });
 
     // Paid-only

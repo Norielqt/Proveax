@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState, createContext, useContext } from 'react';
+
+const LoadingCtx = createContext(false);
 import { runSkipTrace } from '../../api/properties';
-import { attomFullDetail } from '../../api/attom';
+import { rentcastFullDetail } from '../../api/rentcast';
 import { useSubscription } from '../../hooks/useSubscription';
 
-const isAttomId = (id) => /^\d{5,}$/.test(String(id));
+const isRentcastId = (id) => !!id && String(id).length > 5 && /[a-zA-Z]/.test(String(id));
 const fmt$  = (v) => (v != null && v !== '') ? `$${Number(v).toLocaleString()}` : null;
-const fmtPct= (v) => (v != null && v !== '') ? `${v}%` : null;
 
 export default function PropertyDetailModal({ property, onClose }) {
   const sub = useSubscription();
@@ -17,11 +18,12 @@ export default function PropertyDetailModal({ property, onClose }) {
   const [trace,    setTrace]    = useState(null);
   const [tracing,  setTracing]  = useState(false);
   const [traceErr, setTraceErr] = useState('');
+  const [tab,      setTab]      = useState('property');
 
-  const fetchReport = async ({ attomId, address1, address2 }) => {
+  const fetchReport = async ({ rentcastId, address, zipCode }) => {
     setLoading(true); setError('');
     try {
-      const r = await attomFullDetail({ attomId, address1, address2 });
+      const r = await rentcastFullDetail({ rentcastId, address, zipCode });
       if (r.error || !r.data) throw new Error(r.error ?? 'No data returned');
       setReport(r.data);
     } catch (e) {
@@ -32,11 +34,11 @@ export default function PropertyDetailModal({ property, onClose }) {
   };
 
   useEffect(() => {
-    const aid = property.attom_id;
-    if (aid && isAttomId(String(aid))) {
-      fetchReport({ attomId: aid });
+    const rid = property.attom_id; // attom_id holds Rentcast ID (compat alias)
+    if (rid && isRentcastId(String(rid))) {
+      fetchReport({ rentcastId: rid });
     } else if (property.address && property.city) {
-      fetchReport({ address1: property.address, address2: `${property.city} ${property.state} ${property.zip}` });
+      fetchReport({ address: property.address, zipCode: property.zip });
     }
   }, [property.attom_id]); // eslint-disable-line
 
@@ -72,8 +74,6 @@ export default function PropertyDetailModal({ property, onClose }) {
   const own     = report?.owner           ?? {};
   const val     = report?.valuation       ?? {};
   const txns    = report?.transactions    ?? [];
-  const mortg   = report?.mortgage        ?? {};
-  const permits = report?.permits         ?? [];
 
   const address  = p.address || p.street || loc.line1 || loc.address_full || '';
   const cityLine = [p.city || loc.city, p.state || loc.state, p.zip || loc.zip].filter(Boolean).join(', ');
@@ -82,16 +82,16 @@ export default function PropertyDetailModal({ property, onClose }) {
   return (
     /* Backdrop */
     <div
-      className="fixed inset-0 z-[2000] flex items-start justify-center bg-black/50 p-4 overflow-y-auto"
+      className="fixed inset-0 z-[2000] flex items-start justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Panel */}
-      <div className="relative w-full max-w-5xl my-8 bg-white rounded-xl shadow-2xl">
+      <div className="relative w-full max-w-5xl my-8 bg-gray-50 rounded-2xl shadow-2xl overflow-hidden">
 
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
           aria-label="Close"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -99,282 +99,251 @@ export default function PropertyDetailModal({ property, onClose }) {
           </svg>
         </button>
 
-        <div className="p-6 space-y-4">
-
-          {/* Header */}
+        {/* ── Hero header ─────────────────────────────────────────────────────── */}
+        <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-8 pt-8 pb-6">
           <div className="flex items-start justify-between gap-4 flex-wrap pr-10">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{address}</h1>
-              <div className="text-gray-500">{cityLine}</div>
-              {loc.attom_id && <div className="mt-1 text-xs text-gray-400">ATTOM ID: {loc.attom_id}</div>}
+              <div className="flex items-center gap-2 mb-1">
+                <svg className="h-4 w-4 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="text-xs font-medium text-blue-200 uppercase tracking-wider">Property Detail</span>
+              </div>
+              <h1 className="text-2xl font-bold text-white leading-tight">{address}</h1>
+              <p className="text-blue-200 mt-0.5">{cityLine}</p>
             </div>
             {!hasReport && (
               <button
                 onClick={() => {
-                  const aid = p.attom_id;
-                  aid && isAttomId(String(aid))
-                    ? fetchReport({ attomId: aid })
-                    : fetchReport({ address1: p.address || p.street, address2: `${p.city} ${p.state} ${p.zip}` });
+                  const rid = p.attom_id;
+                  rid && isRentcastId(String(rid))
+                    ? fetchReport({ rentcastId: rid })
+                    : fetchReport({ address: p.address || p.street, zipCode: p.zip });
                 }}
                 disabled={loading}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-50 shrink-0"
+                className="rounded-lg bg-white/15 border border-white/25 px-4 py-2 text-sm font-medium text-white hover:bg-white/25 disabled:opacity-50 shrink-0 transition-colors"
               >
-                {loading ? 'Loading report…' : 'Load full report'}
+                {loading ? 'Loading…' : 'Load full report'}
               </button>
             )}
-            {loading && hasReport && <span className="text-sm text-gray-400 animate-pulse">Refreshing…</span>}
+            {loading && hasReport && (
+              <span className="flex items-center gap-1.5 text-sm text-blue-200 animate-pulse">
+                <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                Refreshing…
+              </span>
+            )}
           </div>
 
-          {error && <p className="rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-600">{error}</p>}
 
-          {/* ── Row 1: Characteristics + Owner/Mortgage ─────────────────────── */}
-          <div className="grid gap-4 md:grid-cols-2">
+        </div>
 
-            {/* Property characteristics */}
-            <Section title="Property characteristics" loading={loading && !hasReport}>
-              <SubHead>Size &amp; rooms</SubHead>
-              <dl className="space-y-1 text-sm">
-                <Row label="Type"          value={char.property_type ?? p.property_type} />
-                <Row label="Sub-type"      value={char.prop_subtype} />
-                <Row label="Bedrooms"      value={char.beds ?? p.bedrooms} />
-                <Row label="Baths (full)"  value={char.baths_full} />
-                <Row label="Baths (half)"  value={char.baths_half} />
-                <Row label="Baths (total)" value={char.baths_total ?? p.bathrooms} />
-                <Row label="Total rooms"   value={char.rooms_total} />
-                <Row label="Sqft (univ.)"  value={char.sqft_universal?.toLocaleString() ?? p.square_feet?.toLocaleString()} />
-                <Row label="Sqft (living)" value={char.sqft_living?.toLocaleString()} />
-                <Row label="Sqft (gross)"  value={char.sqft_gross?.toLocaleString()} />
-                <Row label="Lot (acres)"   value={char.lot_acres} />
-                <Row label="Lot (sqft)"    value={char.lot_sqft?.toLocaleString()} />
-              </dl>
-              <SubHead className="mt-3">Structure</SubHead>
-              <dl className="space-y-1 text-sm">
-                <Row label="Year built"      value={char.year_built ?? p.year_built} />
-                <Row label="Year built eff." value={char.year_built_eff} />
-                <Row label="Stories"         value={char.stories} />
-                <Row label="Arch style"      value={char.arch_style} />
-                <Row label="Quality"         value={char.quality} />
-                <Row label="Construction"    value={char.construction} />
-                <Row label="Frame type"      value={char.frame_type} />
-                <Row label="Roof cover"      value={char.roof_cover} />
-                <Row label="Roof shape"      value={char.roof_shape} />
-                <Row label="Wall type"       value={char.wall_type} />
-              </dl>
-              <SubHead className="mt-3">Interior &amp; amenities</SubHead>
-              <dl className="space-y-1 text-sm">
-                <Row label="Garage type"    value={char.garage_type} />
-                <Row label="Garage spaces"  value={char.garage_spaces} />
-                <Row label="Pool"           value={char.pool} />
-                <Row label="Pool type"      value={char.pool_type} />
-                <Row label="Fireplaces"     value={char.fireplace_count} />
-                <Row label="Fireplace type" value={char.fireplace_type} />
-                <Row label="Heating"        value={char.heating} />
-                <Row label="Cooling"        value={char.cooling} />
-                <Row label="Fuel type"      value={char.fuel_type} />
-                <Row label="Basement"       value={char.basement} />
-                <Row label="Patio"          value={char.patio_type} />
-                <Row label="Deck"           value={char.deck_ind} />
-              </dl>
-            </Section>
+        {error && (
+          <div className="mx-6 mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-600 flex items-center gap-2">
+            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            {error}
+          </div>
+        )}
 
+        {/* ── Tabs ──────────────────────────────────────────────────────────── */}
+        <div className="flex gap-1 px-6 pt-4 border-b border-gray-200 bg-white">
+          {[
+            { id: 'property',     label: 'Property' },
+            { id: 'owner',        label: 'Owner' },
+            { id: 'transactions', label: 'Transaction History' },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors focus:outline-none ${
+                tab === id
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6 space-y-4">
+
+          <LoadingCtx.Provider value={loading && !hasReport}>
+
+          {/* ── Tab: Property ─────────────────────────────────────────────────── */}
+          {tab === 'property' && (
             <div className="space-y-4">
-              {/* Owner info */}
-              <Section title="Owner info" loading={loading && !hasReport}>
-                <dl className="space-y-1 text-sm">
-                  <RowFixed label="Owner 1"         value={own.owner1_name ?? p.owner_name} />
-                  <RowFixed label="Owner 2"         value={own.owner2_name} />
-                  <RowFixed label="Ownership type"  value={own.owner_type} />
-                  <RowFixed label="Corporate"       value={own.corporate} />
-                  <RowFixed label="Absentee status" value={own.absentee} />
-                  <RowFixed label="Mailing address" value={own.mail_addr ?? p.owner_mailing_address} />
-                </dl>
-                <div className="mt-4 border-t pt-3">
-                  <button onClick={doSkipTrace} disabled={tracing}
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white disabled:opacity-50 hover:bg-blue-700">
-                    {tracing ? 'Running…' : 'Run skip trace'}
-                  </button>
-                  {traceErr && <p className="mt-2 text-sm text-red-600">{traceErr}</p>}
-                  {trace && (
-                    <div className="mt-3 rounded-md bg-gray-50 p-3 text-sm space-y-1">
-                      <div>
-                        <b>Phones: </b>
-                        {sub.isActive
-                          ? (trace.phones?.join(', ') || '—')
-                          : <span className="blur-sm select-none pointer-events-none">{trace.phones?.map(() => '●●●-●●●-●●●●').join(', ') || '●●●-●●●-●●●●'}</span>}
-                        {!sub.isActive && <span className="ml-2 text-xs text-indigo-600 font-medium">Upgrade to reveal</span>}
-                      </div>
-                      {trace.emails?.length > 0 && <div><b>Emails: </b>{trace.emails.join(', ')}</div>}
-                    </div>
-                  )}
+              <Card title="Property Characteristics" loading={loading && !hasReport}>
+                <div className="grid gap-8 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <FieldGroup heading="Size &amp; Rooms">
+                      <StatRow label="Type"         value={char.property_type ?? p.property_type} />
+                      <StatRow label="Bedrooms"     value={char.beds ?? p.bedrooms} />
+                      <StatRow label="Bathrooms"    value={char.baths_total ?? p.bathrooms} />
+                      <StatRow label="Sq Ft"        value={char.sqft?.toLocaleString() ?? p.square_feet?.toLocaleString()} />
+                      <StatRow label="Lot (sqft)"   value={char.lot_sqft?.toLocaleString()} />
+                      <StatRow label="Stories"      value={char.stories} />
+                      <StatRow label="Units"        value={char.unit_count} />
+                    </FieldGroup>
+                    <FieldGroup heading="Structure">
+                      <StatRow label="Year built"      value={char.year_built ?? p.year_built} />
+                      <StatRow label="Arch style"      value={char.arch_style} />
+                      <StatRow label="Exterior type"   value={char.exterior_type} />
+                      <StatRow label="Foundation"      value={char.foundation_type} />
+                      <StatRow label="Roof type"       value={char.roof_type} />
+                      <StatRow label="View type"       value={char.view_type} />
+                    </FieldGroup>
+                  </div>
+                  <div className="space-y-4">
+                    <FieldGroup heading="Interior &amp; Amenities">
+                      <StatRow label="Garage type"    value={char.garage_type} />
+                      <StatRow label="Garage spaces"  value={char.garage_spaces} />
+                      <StatRow label="Pool type"      value={char.pool_type} />
+                      <StatRow label="Fireplace type" value={char.fireplace_type} />
+                      <StatRow label="Heating type"   value={char.heating_type} />
+                      <StatRow label="Cooling type"   value={char.cooling_type} />
+                    </FieldGroup>
+                  </div>
                 </div>
-              </Section>
+              </Card>
 
-              {/* Mortgage */}
-              <Section title="Mortgage info" loading={loading && !hasReport}>
-                <dl className="space-y-1 text-sm">
-                  <RowFixed label="Loan amount"   value={fmt$(mortg.amount)} />
-                  <RowFixed label="Lender"        value={mortg.lender} />
-                  <RowFixed label="Loan date"     value={mortg.date} />
-                  <RowFixed label="Loan type"     value={mortg.loan_type} />
-                  <RowFixed label="Deed type"     value={mortg.deed_type} />
-                  <RowFixed label="Interest rate" value={fmtPct(mortg.interest_rate)} />
-                  <RowFixed label="Rate type"     value={mortg.rate_type} />
-                  <RowFixed label="Term"          value={mortg.term_months ? `${mortg.term_months} months` : null} />
-                  <RowFixed label="Due date"      value={mortg.due_date} />
-                  <RowFixed label="Title company" value={mortg.title_company} />
-                </dl>
-              </Section>
-            </div>
-          </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card title="Valuation &amp; Assessment" loading={loading && !hasReport}>
+                  <div className="space-y-4">
+                    <FieldGroup heading="AVM (Automated)">
+                      <StatRow label="Estimate" value={fmt$(val.avm_value)} accent />
+                      <StatRow label="Low"      value={fmt$(val.avm_low)} />
+                      <StatRow label="High"     value={fmt$(val.avm_high)} />
+                    </FieldGroup>
+                    <FieldGroup heading="Assessed Value">
+                      <StatRow label="Land"  value={fmt$(val.assessed_land)} />
+                      <StatRow label="Total" value={fmt$(val.assessed_total)} />
+                    </FieldGroup>
+                    <FieldGroup heading="Taxes">
+                      <StatRow label="Tax year"   value={val.tax_year} />
+                      <StatRow label="Tax amount" value={fmt$(val.tax_amount)} />
+                      {val.hoa_fee && <StatRow label="HOA fee" value={fmt$(val.hoa_fee)} />}
+                    </FieldGroup>
+                  </div>
+                </Card>
 
-          {/* ── Valuation ─────────────────────────────────────────────────────── */}
-          <Section title="Valuation &amp; assessment" loading={loading && !hasReport}>
-            <div className="grid gap-6 md:grid-cols-3">
-              <div>
-                <SubHead>AVM (automated)</SubHead>
-                <dl className="space-y-1 text-sm">
-                  <RowFixed label="Estimate"   value={fmt$(val.avm_value)} />
-                  <RowFixed label="Low"        value={fmt$(val.avm_low)} />
-                  <RowFixed label="High"       value={fmt$(val.avm_high)} />
-                  <RowFixed label="Confidence" value={val.avm_confidence} />
-                  <RowFixed label="As of"      value={val.avm_date} />
-                </dl>
-              </div>
-              <div>
-                <SubHead>Assessed</SubHead>
-                <dl className="space-y-1 text-sm">
-                  <RowFixed label="Land"  value={fmt$(val.assessed_land)} />
-                  <RowFixed label="Total" value={fmt$(val.assessed_total)} />
-                </dl>
-                <SubHead className="mt-3">Market</SubHead>
-                <dl className="space-y-1 text-sm">
-                  <RowFixed label="Land"        value={fmt$(val.market_land)} />
-                  <RowFixed label="Improvement" value={fmt$(val.market_impr)} />
-                  <RowFixed label="Total"       value={fmt$(val.market_total)} />
-                </dl>
-              </div>
-              <div>
-                <SubHead>Appraised</SubHead>
-                <dl className="space-y-1 text-sm">
-                  <RowFixed label="Land"        value={fmt$(val.appraised_land)} />
-                  <RowFixed label="Improvement" value={fmt$(val.appraised_impr)} />
-                  <RowFixed label="Total"       value={fmt$(val.appraised_total)} />
-                </dl>
-                <SubHead className="mt-3">Taxes</SubHead>
-                <dl className="space-y-1 text-sm">
-                  <RowFixed label="Tax year"   value={val.tax_year} />
-                  <RowFixed label="Tax amount" value={fmt$(val.tax_amount)} />
-                </dl>
+                <Card title="Location" loading={loading && !hasReport}>
+                  <div className="space-y-4">
+                    <FieldGroup heading="Address">
+                      <StatRow label="Full address" value={loc.address_full} />
+                      <StatRow label="City"         value={loc.city ?? p.city} />
+                      <StatRow label="State"        value={loc.state ?? p.state} />
+                      <StatRow label="ZIP"          value={loc.zip ?? p.zip} />
+                      <StatRow label="Coordinates"  value={loc.lat && loc.lng ? `${(+loc.lat).toFixed(5)}, ${(+loc.lng).toFixed(5)}` : null} />
+                    </FieldGroup>
+                    <FieldGroup heading="Legal">
+                      <StatRow label="APN"         value={loc.apn} />
+                      <StatRow label="County"      value={loc.county} />
+                      <StatRow label="Subdivision" value={loc.subdivision} />
+                      <StatRow label="Zoning"      value={loc.zoning} />
+                      <StatRow label="Legal desc." value={loc.legal_description} />
+                    </FieldGroup>
+                  </div>
+                </Card>
               </div>
             </div>
-          </Section>
-
-          {/* ── Location data ─────────────────────────────────────────────────── */}
-          <Section title="Location data" loading={loading && !hasReport}>
-            <div className="grid gap-4 md:grid-cols-2">
-              <dl className="space-y-1 text-sm">
-                <RowFixed label="Full address" value={loc.address_full} />
-                <RowFixed label="City"         value={loc.city ?? p.city} />
-                <RowFixed label="State"        value={loc.state ?? p.state} />
-                <RowFixed label="ZIP / ZIP+4"  value={loc.zip && loc.zip4 ? `${loc.zip}–${loc.zip4}` : loc.zip ?? p.zip} />
-                <RowFixed label="Coordinates"  value={loc.lat && loc.lng ? `${(+loc.lat).toFixed(6)}, ${(+loc.lng).toFixed(6)}` : null} />
-                <RowFixed label="Accuracy"     value={loc.accuracy} />
-                <RowFixed label="Elevation"    value={loc.elevation != null ? `${loc.elevation} ft` : null} />
-              </dl>
-              <dl className="space-y-1 text-sm">
-                <RowFixed label="FIPS"         value={loc.fips} />
-                <RowFixed label="APN"          value={loc.apn} />
-                <RowFixed label="County"       value={loc.county} />
-                <RowFixed label="Municipality" value={loc.municipality} />
-                <RowFixed label="Subdivision"  value={loc.subdivision} />
-                <RowFixed label="School dist." value={loc.school_dist} />
-              </dl>
-            </div>
-          </Section>
-
-          {/* ── Transaction history ───────────────────────────────────────────── */}
-          <Section title={`Transaction history${txns.length ? ` (${txns.length})` : ''}`} loading={loading && !hasReport}>
-            {txns.length === 0 && hasReport
-              ? <p className="text-sm text-gray-400">No recorded transactions found.</p>
-              : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-400">
-                        <th className="pb-2 pr-4 font-medium">Date</th>
-                        <th className="pb-2 pr-4 font-medium">Sale price</th>
-                        <th className="pb-2 pr-4 font-medium">Type</th>
-                        <th className="pb-2 pr-4 font-medium">Deed</th>
-                        <th className="pb-2 pr-4 font-medium">Seller</th>
-                        <th className="pb-2 font-medium">Doc #</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {txns.map((t, i) => (
-                        <tr key={i}>
-                          <td className="py-2 pr-4 text-gray-700">{t.sale_date}</td>
-                          <td className="py-2 pr-4 font-medium text-gray-900">{fmt$(t.sale_price) ?? '—'}</td>
-                          <td className="py-2 pr-4 text-gray-600">{t.trans_type ?? '—'}</td>
-                          <td className="py-2 pr-4 text-gray-600">{t.deed_type ?? '—'}</td>
-                          <td className="py-2 pr-4 text-gray-600">{t.seller ?? '—'}</td>
-                          <td className="py-2 text-gray-400 font-mono text-xs">{t.doc_num ?? '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )
-            }
-          </Section>
-
-          {/* ── Building permits ──────────────────────────────────────────────── */}
-          <Section title={`Building permits${permits.length ? ` (${permits.length})` : ''}`} loading={loading && !hasReport}>
-            {permits.length === 0 && hasReport
-              ? <p className="text-sm text-gray-400">No recorded permits found.</p>
-              : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-400">
-                        <th className="pb-2 pr-3 font-medium">Date</th>
-                        <th className="pb-2 pr-3 font-medium">Type</th>
-                        <th className="pb-2 pr-3 font-medium">Description</th>
-                        <th className="pb-2 pr-3 font-medium">Value</th>
-                        <th className="pb-2 pr-3 font-medium">Contractor</th>
-                        <th className="pb-2 font-medium">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {permits.map((pm, i) => (
-                        <tr key={i}>
-                          <td className="py-2 pr-3 text-gray-700 whitespace-nowrap">{pm.date}</td>
-                          <td className="py-2 pr-3 text-gray-700 whitespace-nowrap">{pm.type}</td>
-                          <td className="py-2 pr-3 text-gray-500 max-w-xs">{pm.description}</td>
-                          <td className="py-2 pr-3 text-gray-700">{pm.value ? fmt$(pm.value) : '—'}</td>
-                          <td className="py-2 pr-3 text-gray-700">{pm.contractor ?? '—'}</td>
-                          <td className="py-2"><StatusBadge status={pm.status} /></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )
-            }
-          </Section>
-
-          {/* ── Legacy ownership history from local DB ────────────────────────── */}
-          {p.ownership_history?.length > 0 && (
-            <Section title="Ownership history (local)">
-              <ul className="space-y-2 text-sm">
-                {p.ownership_history.map((h, i) => (
-                  <li key={i} className="flex justify-between border-b pb-2 last:border-0">
-                    <span>{h.owner}</span>
-                    <span className="text-gray-500">{h.from} — {h.to || 'present'}</span>
-                  </li>
-                ))}
-              </ul>
-            </Section>
           )}
+
+          {/* ── Tab: Owner ────────────────────────────────────────────────────── */}
+          {tab === 'owner' && (
+            <div className="space-y-4">
+              <Card title="Owner Info" loading={loading && !hasReport}>
+                <div className="grid gap-8 md:grid-cols-2">
+                  <div>
+                    <FieldGroup heading="Ownership">
+                      <StatRow label="Owner 1"         value={own.owner1_name ?? p.owner_name} />
+                      <StatRow label="Owner 2"         value={own.owner2_name} />
+                      <StatRow label="Ownership type"  value={own.owner_type} />
+                      <StatRow label="Absentee status" value={own.absentee} />
+                      <StatRow label="Mailing address" value={own.mail_addr ?? p.owner_mailing_address} />
+                    </FieldGroup>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Skip Trace</p>
+                    <button
+                      onClick={doSkipTrace}
+                      disabled={tracing}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                      {tracing
+                        ? <><svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Running…</>
+                        : <><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg> Run skip trace</>
+                      }
+                    </button>
+                    {traceErr && <p className="mt-2 text-sm text-red-600">{traceErr}</p>}
+                    {trace && (
+                      <div className="mt-4 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 p-4 space-y-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1">Phones</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {sub.isActive
+                              ? (trace.phones?.join(', ') || '—')
+                              : <><span className="blur-sm select-none pointer-events-none">{trace.phones?.map(() => '●●●-●●●-●●●●').join(', ') || '●●●-●●●-●●●●'}</span><span className="ml-2 text-xs text-indigo-600 font-semibold">Upgrade to reveal</span></>
+                            }
+                          </p>
+                        </div>
+                        {trace.emails?.length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1">Emails</p>
+                            <p className="text-sm font-medium text-gray-900">{trace.emails.join(', ')}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* ── Tab: Transaction History ──────────────────────────────────────── */}
+          {tab === 'transactions' && (
+            <div className="space-y-4">
+              <Card title={`Transaction History${txns.length ? ` · ${txns.length} records` : ''}`} loading={loading && !hasReport}>
+                {txns.length === 0 && hasReport ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                    <svg className="h-10 w-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-sm">No recorded transactions found</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs uppercase tracking-wider text-gray-400 border-b-2 border-gray-100">
+                          <th className="pb-3 pr-6 font-semibold">Date</th>
+                          <th className="pb-3 pr-6 font-semibold">Sale Price</th>
+                          <th className="pb-3 font-semibold">Event</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {txns.map((t, i) => (
+                          <tr key={i} className="border-b border-gray-50 hover:bg-blue-50/40 transition-colors">
+                            <td className="py-3 pr-6 text-gray-600 font-mono text-xs">{t.sale_date}</td>
+                            <td className="py-3 pr-6 font-semibold text-gray-900">{fmt$(t.sale_price) ?? <span className="text-gray-300">—</span>}</td>
+                            <td className="py-3">
+                              {t.event
+                                ? <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">{t.event}</span>
+                                : <span className="text-gray-300">—</span>
+                              }
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+
+          </LoadingCtx.Provider>
 
         </div>
       </div>
@@ -384,54 +353,74 @@ export default function PropertyDetailModal({ property, onClose }) {
 
 // ─── UI Primitives ────────────────────────────────────────────────────────────
 
-function Section({ title, loading, children }) {
+
+function Card({ title, loading, children }) {
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-gray-900" dangerouslySetInnerHTML={{ __html: title }} />
-        {loading && <span className="text-xs text-gray-400 animate-pulse">Loading…</span>}
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
+        <h2 className="text-sm font-semibold text-gray-800" dangerouslySetInnerHTML={{ __html: title }} />
+        {loading && (
+          <span className="flex items-center gap-1 text-xs text-gray-400 animate-pulse">
+            <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+            Loading…
+          </span>
+        )}
       </div>
-      {children}
+      <div className="p-5">{children}</div>
     </div>
   );
 }
 
+function FieldGroup({ heading, children }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2"
+        dangerouslySetInnerHTML={{ __html: heading }} />
+      <dl className="space-y-2">{children}</dl>
+    </div>
+  );
+}
+
+function StatRow({ label, value, accent }) {
+  const isLoading = useContext(LoadingCtx);
+  const empty = value === null || value === undefined || value === '';
+  if (!isLoading && empty) return null;
+  return (
+    <div className="flex items-center justify-between gap-4 py-1">
+      <dt className="text-sm text-gray-500 shrink-0">{label}</dt>
+      <dd className={`text-sm font-semibold text-right ${accent ? 'text-blue-600' : 'text-gray-900'}`}>
+        {isLoading && empty
+          ? <span className="inline-block h-3 w-24 rounded-md bg-gray-200 animate-pulse" />
+          : value
+        }
+      </dd>
+    </div>
+  );
+}
+
+// Legacy aliases kept for compatibility
+function Section({ title, loading, children }) {
+  return <Card title={title} loading={loading}>{children}</Card>;
+}
 function SubHead({ children, className = '' }) {
   return (
-    <h3 className={`text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1 ${className}`}>
+    <p className={`text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 ${className}`}>
       {children}
-    </h3>
+    </p>
   );
 }
-
 function Row({ label, value }) {
-  if (value === null || value === undefined || value === '') return null;
-  return (
-    <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-gray-500">{label}</dt>
-      <dd className="text-right font-medium text-gray-900">{value}</dd>
-    </div>
-  );
+  return <StatRow label={label} value={value} />;
 }
-
 function RowFixed({ label, value }) {
   const empty = value === null || value === undefined || value === '';
   return (
-    <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-gray-500">{label}</dt>
-      <dd className={`text-right font-medium ${empty ? 'text-gray-300' : 'text-gray-900'}`}>
+    <div className="flex items-center justify-between gap-4 py-0.5">
+      <dt className="text-sm text-gray-500 shrink-0">{label}</dt>
+      <dd className={`text-sm font-semibold text-right ${empty ? 'text-gray-300' : 'text-gray-900'}`}>
         {empty ? '—' : value}
       </dd>
     </div>
   );
 }
 
-function StatusBadge({ status }) {
-  if (!status) return <span className="text-gray-400">—</span>;
-  const s = status.toLowerCase();
-  const cls = s === 'final'   ? 'bg-green-100 text-green-700'
-            : s === 'issued'  ? 'bg-blue-100 text-blue-700'
-            : s === 'expired' ? 'bg-red-100 text-red-700'
-            : 'bg-gray-100 text-gray-600';
-  return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{status}</span>;
-}

@@ -1,32 +1,33 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class AttomProperty extends Model
+class RentcastProperty extends Model
 {
-    public $primaryKey  = 'attom_id';
+    public $primaryKey   = 'rentcast_id';
     public $incrementing = false;
-    public $timestamps  = false;
+    protected $keyType   = 'string';
+    public $timestamps   = false;
 
     protected $fillable = [
-        'attom_id', 'street', 'address', 'city', 'state', 'zip',
+        'rentcast_id', 'street', 'address', 'city', 'state', 'zip',
         'lat', 'lng', 'property_type', 'bedrooms', 'bathrooms',
         'square_feet', 'lot_size', 'year_built', 'estimated_value',
-        'owner_name', 'fetched_at',
+        'owner_name', 'owner_occupied', 'fetched_at', 'raw_json',
     ];
 
     protected $casts = [
-        'attom_id'        => 'integer',
         'lat'             => 'float',
         'lng'             => 'float',
         'estimated_value' => 'float',
+        'owner_occupied'  => 'boolean',
         'fetched_at'      => 'datetime',
     ];
 
     /**
      * Upsert a batch of normalised snapshot rows.
-     * Rows with the same attom_id are updated; new ones are inserted.
      */
     public static function upsertBatch(array $rows): void
     {
@@ -36,7 +37,7 @@ class AttomProperty extends Model
 
         $records = array_values(array_filter(
             array_map(fn ($r) => empty($r['attom_id']) ? null : [
-                'attom_id'        => $r['attom_id'],
+                'rentcast_id'     => (string) $r['attom_id'],
                 'street'          => $r['street']          ?? '',
                 'address'         => $r['address']         ?? '',
                 'city'            => $r['city']             ?? '',
@@ -52,6 +53,8 @@ class AttomProperty extends Model
                 'year_built'      => $r['year_built']      ?? null,
                 'estimated_value' => $r['estimated_value'] ?? null,
                 'owner_name'      => $r['owner_name']      ?? null,
+                'owner_occupied'  => $r['owner_occupied']  ?? null,
+                'raw_json'        => $r['raw_json']        ?? null,
                 'fetched_at'      => $now,
             ], $rows)
         ));
@@ -61,24 +64,19 @@ class AttomProperty extends Model
         $updateCols = [
             'street', 'address', 'city', 'state', 'zip', 'lat', 'lng',
             'property_type', 'bedrooms', 'bathrooms', 'square_feet',
-            'lot_size', 'year_built', 'estimated_value', 'owner_name', 'fetched_at',
+            'lot_size', 'year_built', 'estimated_value', 'owner_name',
+            'owner_occupied', 'raw_json', 'fetched_at',
         ];
 
-        // MySQL allows max 65,535 placeholders per statement.
-        // 16 columns × 400 rows = 6,400 — well within the limit.
         foreach (array_chunk($records, 400) as $chunk) {
-            static::upsert($chunk, ['attom_id'], $updateCols);
+            static::upsert($chunk, ['rentcast_id'], $updateCols);
         }
     }
 
-    /**
-     * Return rows as the same shape as normaliseSnapshot() so the controller
-     * can use either source transparently.
-     */
     public function toSearchRow(): array
     {
         return [
-            'attom_id'        => $this->attom_id,
+            'attom_id'        => $this->rentcast_id, // compat alias for frontend
             'street'          => $this->street ?: $this->address,
             'address'         => $this->address,
             'city'            => $this->city,
@@ -94,6 +92,7 @@ class AttomProperty extends Model
             'year_built'      => $this->year_built,
             'estimated_value' => $this->estimated_value,
             'owner_name'      => $this->owner_name,
+            'owner_occupied'  => $this->owner_occupied,
         ];
     }
 }

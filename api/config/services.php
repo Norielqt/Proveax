@@ -37,9 +37,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'attom' => [
-        'key'     => env('ATTOM_API_KEY'),
-        'base'    => 'https://api.gateway.attomdata.com/propertyapi/v1.0.0',
+    'rentcast' => [
+        'key'  => env('RENTCAST_API_KEY'),
+        'base' => 'https://api.rentcast.io/v1',
     ],
 
     'stripe' => [

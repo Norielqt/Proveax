@@ -1,10 +1,11 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { getProperty, runSkipTrace } from '../api/properties';
-import { attomFullDetail } from '../api/attom';
+import { rentcastFullDetail } from '../api/rentcast';
 import { useSubscription } from '../hooks/useSubscription';
 
-const isAttomId = (id) => /^\d{5,}$/.test(String(id));
+// Rentcast IDs are non-numeric strings (e.g. '123-Main-St-Miami-FL-33139')
+const isRentcastId = (id) => id && String(id).length > 5 && /[a-zA-Z]/.test(String(id));
 const fmt$  = (v) => (v != null && v !== '') ? `$${Number(v).toLocaleString()}` : null;
 const fmtPct= (v) => (v != null && v !== '') ? `${v}%` : null;
 
@@ -24,10 +25,10 @@ export default function PropertyDetail() {
 
   // ─── Load property + auto-fetch full report ──────────────────────────────
 
-  const fetchReport = async ({ attomId, address1, address2 }) => {
+  const fetchReport = async ({ rentcastId, address, zipCode }) => {
     setLoading(true); setError('');
     try {
-      const r = await attomFullDetail({ attomId, address1, address2 });
+      const r = await rentcastFullDetail({ rentcastId, address, zipCode });
       if (r.error || !r.data) throw new Error(r.error ?? 'No data returned');
       setReport(r.data);
     } catch (e) {
@@ -40,20 +41,20 @@ export default function PropertyDetail() {
   useEffect(() => {
     if (state?.property) {
       setP(state.property);
-      const aid = state.property.attom_id;
-      if (aid && isAttomId(aid)) fetchReport({ attomId: aid });
+      const rid = state.property.attom_id; // attom_id now holds rentcast ID
+      if (rid && isRentcastId(rid)) fetchReport({ rentcastId: rid });
       return;
     }
 
-    if (isAttomId(id)) {
-      fetchReport({ attomId: id });
+    if (isRentcastId(id)) {
+      fetchReport({ rentcastId: id });
       setP((prev) => prev ?? { address: '', city: '', state: '', zip: '' });
     } else {
       getProperty(id)
         .then((data) => {
           setP(data);
           if (data?.address && data?.city) {
-            fetchReport({ address1: data.address, address2: `${data.city} ${data.state} ${data.zip}` });
+            fetchReport({ address: data.address, zipCode: data.zip });
           }
         })
         .catch(() => setLoadErr('Property not found.'));
@@ -64,7 +65,7 @@ export default function PropertyDetail() {
   useEffect(() => {
     if (report && (!p?.address || !p?.city)) {
       const loc = report.location ?? {};
-      setP({ attom_id: loc.attom_id, address: loc.line1 ?? loc.address_full ?? '', city: loc.city ?? '', state: loc.state ?? '', zip: loc.zip ?? '' });
+      setP({ attom_id: loc.rentcast_id ?? loc.attom_id, address: loc.line1 ?? loc.address_full ?? '', city: loc.city ?? '', state: loc.state ?? '', zip: loc.zip ?? '' });
     }
   }, [report]); // eslint-disable-line
 
@@ -99,18 +100,18 @@ export default function PropertyDetail() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{address}</h1>
           <div className="text-gray-500">{cityLine}</div>
-          {loc.attom_id && <div className="mt-1 text-xs text-gray-400">ATTOM ID: {loc.attom_id}</div>}
+          {(loc.rentcast_id ?? loc.attom_id) && <div className="mt-1 text-xs text-gray-400">Rentcast ID: {loc.rentcast_id ?? loc.attom_id}</div>}
         </div>
         {!hasReport && (
           <button
             onClick={() => {
-              const aid = p.attom_id;
-              aid && isAttomId(String(aid))
-                ? fetchReport({ attomId: aid })
-                : fetchReport({ address1: p.address, address2: `${p.city} ${p.state} ${p.zip}` });
+              const rid = p.attom_id;
+              rid && isRentcastId(String(rid))
+                ? fetchReport({ rentcastId: rid })
+                : fetchReport({ address: p.address, zipCode: p.zip });
             }}
             disabled={loading}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-50 shrink-0"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50 shrink-0"
           >
             {loading ? 'Loading report…' : 'Load full report'}
           </button>
