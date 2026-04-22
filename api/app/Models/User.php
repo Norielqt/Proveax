@@ -12,13 +12,15 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    protected $fillable = ['tenant_id', 'name', 'email', 'password', 'role', 'google_id', 'balance'];
+    protected $fillable = ['tenant_id', 'invited_by_user_id', 'name', 'email', 'password', 'role', 'google_id', 'balance', 'is_paused', 'monitoring_consent_at'];
     protected $hidden   = ['password', 'remember_token'];
     protected $casts    = [
-        'email_verified_at' => 'datetime',
-        'password'          => 'hashed',
-        'role'              => Role::class,
-        'balance'           => 'decimal:2',
+        'email_verified_at'     => 'datetime',
+        'password'              => 'hashed',
+        'role'                  => Role::class,
+        'balance'               => 'decimal:2',
+        'is_paused'             => 'boolean',
+        'monitoring_consent_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -27,6 +29,9 @@ class User extends Authenticatable
     }
 
     public function tenant() { return $this->belongsTo(Tenant::class); }
+
+    public function invitedBy() { return $this->belongsTo(User::class, 'invited_by_user_id'); }
+    public function invitees()  { return $this->hasMany(User::class, 'invited_by_user_id'); }
 
     public function walletTransactions()
     {

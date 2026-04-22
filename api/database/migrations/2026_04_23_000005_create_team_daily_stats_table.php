@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('team_daily_stats', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->date('day');
+            $table->unsignedInteger('active_seconds')->default(0);
+            $table->unsignedInteger('idle_seconds')->default(0);
+            $table->unsignedInteger('sessions_count')->default(0);
+            $table->unsignedInteger('screenshots_count')->default(0);
+            $table->unsignedInteger('rentcast_requests_count')->default(0);
+            $table->unsignedInteger('activity_events_count')->default(0);
+            $table->timestamps();
+
+            $table->unique(['tenant_id', 'user_id', 'day']);
+            $table->index(['tenant_id', 'day']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('team_daily_stats');
+    }
+};

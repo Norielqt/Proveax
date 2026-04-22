@@ -208,12 +208,13 @@ export default function Dashboard() {
   };
 
   const handleApplyAdv = useCallback(() => {
+    if (loading) return;
     const locationFilters = {};
     if (filters.postalcode) locationFilters.postalcode = filters.postalcode;
     if (filters.city)       locationFilters.city = filters.city;
     if (filters.state)      locationFilters.state = filters.state;
     applyFilters(locationFilters, filters.propertytype);
-  }, [filters, applyFilters]);
+  }, [loading, filters, applyFilters]);
 
   const handleClearAdv = useCallback(() => {
     const empty = {
@@ -423,6 +424,7 @@ export default function Dashboard() {
             return (
               <button
                 onClick={() => setShowAdvFilters(o => !o)}
+                onDoubleClick={(e) => e.stopPropagation()}
                 className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
                   showAdvFilters || advOnlyCount > 0
                     ? 'border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100'
@@ -552,14 +554,18 @@ export default function Dashboard() {
             <div className="mt-4 flex items-center gap-2">
               <button
                 onClick={handleApplyAdv}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                onDoubleClick={(e) => e.preventDefault()}
+                disabled={loading}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Apply filters
               </button>
               {Object.entries(advFilters).some(([k, v]) => k !== 'ownerOccupied' && v !== '') && (
                 <button
                   onClick={handleClearAdv}
-                  className="inline-flex h-8 items-center rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 focus:outline-none"
+                  onDoubleClick={(e) => e.preventDefault()}
+                  disabled={loading}
+                  className="inline-flex h-8 items-center rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Clear
                 </button>

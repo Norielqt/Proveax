@@ -16,6 +16,16 @@ class Kernel extends ConsoleKernel
             ->hourly()
             ->name('expire-trials')
             ->withoutOverlapping();
+
+        $schedule->command('team:aggregate-daily')
+            ->dailyAt('00:15')
+            ->name('aggregate-daily-stats')
+            ->withoutOverlapping();
+
+        $schedule->command('team:purge-screenshots')
+            ->dailyAt('02:00')
+            ->name('purge-old-screenshots')
+            ->withoutOverlapping();
     }
 
     /**

@@ -67,6 +67,12 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials.'], 422);
         }
 
+        if ($request->user()->is_paused) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            return response()->json(['message' => 'Your account is paused. Contact your administrator.'], 403);
+        }
+
         $request->session()->regenerate();
         $user = $request->user()->load('tenant');
 
@@ -90,5 +96,14 @@ class AuthController extends Controller
             'user'   => $request->user(),
             'tenant' => $request->user()->tenant,
         ]);
+    }
+
+    public function consent(Request $request)
+    {
+        $user = $request->user();
+        $user->update(['monitoring_consent_at' => now()]);
+        $this->logger->log($user, 'monitoring.consent_given');
+
+        return response()->json(['user' => $user->fresh()]);
     }
 }

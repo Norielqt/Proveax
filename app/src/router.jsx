@@ -7,16 +7,32 @@ import InviteAccept from './pages/InviteAccept';
 import Dashboard from './pages/Dashboard';
 import PropertyDetail from './pages/PropertyDetail';
 import Billing from './pages/Billing';
-import AdminEmployees from './pages/AdminEmployees';
 import AdminActivity from './pages/AdminActivity';
 import GoogleOnboarding from './pages/GoogleOnboarding';
+import CRM from './pages/CRM';
+import MySession from './pages/MySession';
 import AppShell from './components/layout/AppShell';
 import LoadingScreen from './components/layout/LoadingScreen';
+import ConsentGate from './components/team/ConsentGate';
+
+import TeamLayout from './pages/team/TeamLayout';
+import TeamOverview from './pages/team/Overview';
+import TeamMembers from './pages/team/Members';
+import TeamTimesheets from './pages/team/Timesheets';
+import TeamActivity from './pages/team/Activity';
+import TeamScreenshots from './pages/team/Screenshots';
+import TeamApiUsage from './pages/team/ApiUsage';
+import TeamSettings from './pages/team/Settings';
 
 function RequireAuth() {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
-  return user ? <Outlet /> : <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  return (
+    <ConsentGate>
+      <Outlet />
+    </ConsentGate>
+  );
 }
 
 function RequireAdmin() {
@@ -40,10 +56,20 @@ export default function Router() {
             <Route path="/dashboard" element={<Navigate to="/search" replace />} />
             <Route path="/properties/:id" element={<PropertyDetail />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/crm" element={<CRM />} />
+            <Route path="/me/session" element={<MySession />} />
 
             <Route element={<RequireAdmin />}>
-              <Route path="/admin/employees" element={<AdminEmployees />} />
-              <Route path="/admin/activity" element={<AdminActivity />} />
+              <Route path="/admin/team" element={<TeamLayout />}>
+                <Route index element={<TeamOverview />} />
+                <Route path="members" element={<TeamMembers />} />
+                <Route path="timesheets" element={<TeamTimesheets />} />
+                <Route path="activity" element={<TeamActivity />} />
+                <Route path="screenshots" element={<TeamScreenshots />} />
+                <Route path="api-usage" element={<TeamApiUsage />} />
+                <Route path="settings" element={<TeamSettings />} />
+              </Route>
+              <Route path="/admin/activity" element={<Navigate to="/admin/team/activity" replace />} />
             </Route>
           </Route>
         </Route>

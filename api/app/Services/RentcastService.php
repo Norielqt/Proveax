@@ -17,6 +17,24 @@ class RentcastService
         ])->withoutVerifying()->baseUrl(self::BASE)->timeout(120);
     }
 
+    /**
+     * Wrap a GET call with usage logging (billable = API hit).
+     */
+    private function apiGet(string $endpoint, array $query = [])
+    {
+        $start = microtime(true);
+        $resp  = $this->client()->get($endpoint, $query);
+        $ms    = (int) round((microtime(true) - $start) * 1000);
+        RentcastUsageLogger::log(
+            endpoint:   $endpoint,
+            statusCode: $resp->status(),
+            billable:   true,
+            durationMs: $ms,
+            error:      $resp->failed() ? ($resp->json('error') ?? 'HTTP ' . $resp->status()) : null,
+        );
+        return $resp;
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Search / snapshot
     // ─────────────────────────────────────────────────────────────────────────
@@ -52,7 +70,7 @@ class RentcastService
             $offset = $startOffset + ($i * 500);
             if ($offset > 0) $query['offset'] = $offset;
 
-            $resp = $this->client()->get('/properties', $query);
+            $resp = $this->apiGet('/properties', $query);
 
             if ($resp->failed()) {
                 if ($i === 0) {
@@ -116,7 +134,7 @@ class RentcastService
             $avmQuery = ['address' => $address, 'zipCode' => $zipCode]; // needs address for AVM
         } else {
             // Search by address to find the property ID first
-            $searchResp = $this->client()->get('/properties', array_filter([
+            $searchResp = $this->apiGet('/properties', array_filter([
                 'address' => $address,
                 'zipCode' => $zipCode,
                 'limit'   => 1,
@@ -133,11 +151,16 @@ class RentcastService
         }
 
         // Fetch property detail + AVM + rental estimate concurrently
+        $poolStart = microtime(true);
         [$propResp, $avmResp, $rentResp] = Http::pool(fn ($pool) => [
             $pool->withHeaders($hdrs)->withoutVerifying()->timeout(15)->get($propUrl),
             $pool->withHeaders($hdrs)->withoutVerifying()->timeout(15)->get(self::BASE . '/avm/value',          $avmQuery),
             $pool->withHeaders($hdrs)->withoutVerifying()->timeout(15)->get(self::BASE . '/avm/rent/long-term',  $avmQuery),
         ]);
+        $poolMs = (int) round((microtime(true) - $poolStart) * 1000);
+        RentcastUsageLogger::log('/properties/{id}',    $propResp->status(), true, $poolMs, $propResp->failed() ? 'HTTP ' . $propResp->status() : null);
+        RentcastUsageLogger::log('/avm/value',          $avmResp->status(),  true, $poolMs, $avmResp->failed()  ? 'HTTP ' . $avmResp->status()  : null);
+        RentcastUsageLogger::log('/avm/rent/long-term', $rentResp->status(), true, $poolMs, $rentResp->failed() ? 'HTTP ' . $rentResp->status() : null);
 
         if ($propResp->failed()) {
             return ['data' => null, 'error' => $propResp->json('error') ?? 'Rentcast API error'];
@@ -164,7 +187,7 @@ class RentcastService
 
     public function avm(string $address, string $zipCode): array
     {
-        $resp = $this->client()->get('/avm/value', ['address' => $address, 'zipCode' => $zipCode]);
+        $resp = $this->apiGet('/avm/value', ['address' => $address, 'zipCode' => $zipCode]);
 
         if ($resp->failed()) {
             return ['data' => null, 'error' => $resp->json('error') ?? 'Rentcast API error'];
