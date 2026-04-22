@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { StatCardsSkeleton, ChartSkeleton, TableSkeleton } from '../../components/Skeleton';
 import { getTeamOverview } from '../../api/reports';
 
 function fmtHours(seconds) {
@@ -23,7 +24,16 @@ export default function Overview() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
-  if (!data) return <div className="p-6 text-sm text-gray-500">Loading…</div>;
+  if (!data) return (
+    <div className="space-y-6">
+      <StatCardsSkeleton cols={4} />
+      <ChartSkeleton />
+      <div className="grid gap-6 md:grid-cols-2">
+        <TableSkeleton rows={4} cols={3} />
+        <TableSkeleton rows={4} cols={2} />
+      </div>
+    </div>
+  );
 
   const { members, live, today_active_seconds, series, top_users } = data;
   const maxActive = Math.max(1, ...series.map((s) => Number(s.active)));
@@ -31,8 +41,8 @@ export default function Overview() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Overview</h1>
-        <p className="text-sm text-gray-500">Live activity and 14-day rollups.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Overview</h1>
+        <p className="mt-1 text-sm text-gray-500">Live activity and 14-day rollups.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

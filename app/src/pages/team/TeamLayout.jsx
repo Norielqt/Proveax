@@ -23,51 +23,53 @@ const items = [
 
 export default function TeamLayout() {
   return (
-    <div className="mx-auto flex max-w-7xl gap-6 p-4 md:p-8">
-      <aside className="sticky top-20 hidden h-fit w-56 shrink-0 md:block">
-        <div className="rounded-xl border border-gray-200 bg-white p-3">
-          <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-            My Team
-          </p>
-          <nav className="flex flex-col gap-0.5">
-            {items.map((it) => (
-              <NavLink
-                key={it.to}
-                to={it.to}
-                end={it.end}
-                className={({ isActive }) => `${nav} ${isActive ? active : idle}`}
-              >
-                <Icon d={it.icon} />
-                {it.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      </aside>
+    <div className="mx-auto max-w-7xl p-4 md:p-8">
 
-      {/* Mobile: horizontal scrollable tabs */}
-      <div className="md:hidden">
-        <div className="mb-3 -mx-4 flex gap-1 overflow-x-auto px-4 pb-2">
-          {items.map((it) => (
-            <NavLink
-              key={it.to}
-              to={it.to}
-              end={it.end}
-              className={({ isActive }) =>
-                `whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium ${
-                  isActive ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 border border-gray-200'
-                }`
-              }
-            >
-              {it.label}
-            </NavLink>
-          ))}
-        </div>
+      {/* Mobile: horizontal scrollable tabs — sits ABOVE content, not inside the flex row */}
+      <div className="mb-4 -mx-4 flex gap-1 overflow-x-auto px-4 pb-1 md:hidden">
+        {items.map((it) => (
+          <NavLink
+            key={it.to}
+            to={it.to}
+            end={it.end}
+            className={({ isActive }) =>
+              `shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium ${
+                isActive ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-600'
+              }`
+            }
+          >
+            {it.label}
+          </NavLink>
+        ))}
       </div>
 
-      <section className="min-w-0 flex-1">
-        <Outlet />
-      </section>
+      {/* Desktop: sidebar + content side by side */}
+      <div className="flex items-start gap-6">
+        <aside className="sticky top-4 hidden w-56 shrink-0 md:block">
+          <div className="rounded-xl border border-gray-200 bg-white p-3">
+            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+              My Team
+            </p>
+            <nav className="flex flex-col gap-0.5">
+              {items.map((it) => (
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  end={it.end}
+                  className={({ isActive }) => `${nav} ${isActive ? active : idle}`}
+                >
+                  <Icon d={it.icon} />
+                  {it.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        </aside>
+
+        <section className="min-w-0 flex-1">
+          <Outlet />
+        </section>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { TableSkeleton } from '../../components/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import {
   listTimesheets, generateTimesheet, submitTimesheet,
@@ -81,8 +82,8 @@ export default function Timesheets() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Timesheets</h1>
-          <p className="text-sm text-gray-500">Weekly rollup of tracked time. Submit for approval.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Timesheets</h1>
+          <p className="mt-1 text-sm text-gray-500">Weekly rollup of tracked time. Submit for approval.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => generate(0)} disabled={busy}
@@ -124,6 +125,9 @@ export default function Timesheets() {
         )}
       </div>
 
+      {loading ? (
+        <TableSkeleton rows={5} cols={isAdmin ? 7 : 6} />
+      ) : (
       <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
@@ -138,9 +142,7 @@ export default function Timesheets() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {loading ? (
-              <tr><td colSpan={isAdmin ? 7 : 6} className="px-4 py-6 text-center text-gray-500">Loading…</td></tr>
-            ) : rows.length === 0 ? (
+            {rows.length === 0 ? (
               <tr><td colSpan={isAdmin ? 7 : 6} className="px-4 py-6 text-center text-gray-500">No timesheets yet. Click Generate to create one.</td></tr>
             ) : rows.map((r) => {
               const isOwner = r.user_id === user?.id;
@@ -176,6 +178,7 @@ export default function Timesheets() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

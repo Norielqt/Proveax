@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\ScreenshotController;
 use App\Http\Controllers\Api\TimesheetController;
 use App\Http\Controllers\Api\ApiUsageController;
 use App\Http\Controllers\Api\TeamOverviewController;
+use App\Http\Controllers\Api\LeadController;
 use Illuminate\Support\Facades\Route;
 
 // Google OAuth – complete onboarding (no auth required yet)
@@ -36,6 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get ('/me',     [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/me/consent', [AuthController::class, 'consent']);
+
+    // CRM leads — shared workspace spreadsheet; any team member can read/write
+    Route::get   ('/leads',        [LeadController::class, 'index']);
+    Route::post  ('/leads',        [LeadController::class, 'store']);
+    Route::patch ('/leads/{id}',   [LeadController::class, 'update']);
+    Route::delete('/leads/{id}',   [LeadController::class, 'destroy']);
 
     // Work sessions — every authed user may manage their own session
     Route::get ('/work-sessions/current',        [WorkSessionController::class, 'current']);

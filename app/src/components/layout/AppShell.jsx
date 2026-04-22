@@ -9,33 +9,26 @@ function PlanBadge({ tenant, onClose }) {
 
   if (status === 'active') {
     return (
-      <div className="mt-2 flex items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-          Active plan
-        </span>
+      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+        <span className="text-[11px] font-medium text-green-700">Pro · Active</span>
       </div>
     );
   }
 
   if (status === 'trialing' && tenant?.trial_ends_at) {
-    const msLeft   = new Date(tenant.trial_ends_at) - Date.now();
-    const daysLeft = Math.floor(msLeft / (1000 * 60 * 60 * 24));
+    const daysLeft = Math.floor((new Date(tenant.trial_ends_at) - Date.now()) / 86400000);
     const urgent   = daysLeft <= 2;
-
     return (
-      <div className={`mt-2 rounded-lg px-3 py-2 text-xs ${urgent ? 'bg-amber-50 text-amber-900' : 'bg-blue-50 text-blue-900'}`}>
-        <p className="font-medium">
-          {daysLeft > 0
-            ? `Free trial — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining.`
-            : 'Free trial — expires today.'}
-        </p>
-        <Link
-          to="/billing"
-          onClick={onClose}
-          className="mt-1 inline-block font-semibold underline"
-        >
-          Upgrade →
+      <div className="mt-2 flex items-center justify-between">
+        <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 ${urgent ? 'border-amber-200 bg-amber-50' : 'border-blue-200 bg-blue-50'}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${urgent ? 'bg-amber-400' : 'bg-blue-400'}`} />
+          <span className={`text-[11px] font-medium ${urgent ? 'text-amber-700' : 'text-blue-700'}`}>
+            Trial · {daysLeft > 0 ? `${daysLeft}d left` : 'expires today'}
+          </span>
+        </div>
+        <Link to="/billing" onClick={onClose} className={`text-[11px] font-semibold ${urgent ? 'text-amber-600' : 'text-blue-600'} hover:underline`}>
+          Upgrade
         </Link>
       </div>
     );
@@ -43,10 +36,13 @@ function PlanBadge({ tenant, onClose }) {
 
   if (status === 'expired') {
     return (
-      <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-900">
-        <p className="font-medium">Your trial has expired.</p>
-        <Link to="/billing" onClick={onClose} className="mt-1 inline-block font-semibold underline">
-          Upgrade →
+      <div className="mt-2 flex items-center justify-between">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+          <span className="text-[11px] font-medium text-red-700">Trial expired</span>
+        </div>
+        <Link to="/billing" onClick={onClose} className="text-[11px] font-semibold text-red-600 hover:underline">
+          Upgrade
         </Link>
       </div>
     );
@@ -93,35 +89,28 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-[1200] mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-xl ring-1 ring-black/5">
+        <div className="absolute right-0 z-[1200] mt-2 w-72 rounded-xl border border-gray-200 bg-white shadow-xl ring-1 ring-black/5">
 
           {/* Identity */}
-          <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-bold">
-              {user?.name?.[0]?.toUpperCase() ?? '?'}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
-              <p className="truncate text-xs text-gray-500">{user?.email}</p>
-              <p className="truncate text-xs text-gray-400">{tenant?.name}</p>
+          <div className="border-b border-gray-100 px-4 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold text-gray-900">{user?.name}</p>
+                <p className="mt-0.5 truncate text-xs text-gray-500">{user?.email}</p>
+              </div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                {user?.name?.[0]?.toUpperCase() ?? '?'}
+              </div>
             </div>
           </div>
 
-          {/* Plan badge — only render section if there's something to show */}
-          {(['active','trialing','expired'].includes(tenant?.subscription_status)) && (
-            <div className="border-b border-gray-100 px-4 py-2">
-              <PlanBadge tenant={tenant} onClose={() => setOpen(false)} />
-            </div>
-          )}
-
-          {/* Main nav */}
+          {/* Nav */}
           <div className="p-2 space-y-0.5">
-            <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Workspace</p>
             <button onClick={() => go('/search')} className={`${nav} ${idle}`}>
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
-              Properties
+              Map
             </button>
             <button onClick={() => go('/crm')} className={`${nav} ${idle}`}>
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -129,41 +118,29 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
               </svg>
               CRM
             </button>
-            <button onClick={() => go('/me/session')} className={`${nav} ${idle}`}>
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <circle cx="12" cy="12" r="9" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
-              </svg>
-              My session
-            </button>
-            <button onClick={() => go('/billing')} className={`${nav} ${idle}`}>
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              Billing
-            </button>
-          </div>
-
-          {/* Admin section */}
-          {isAdmin && (
-            <div className="border-t border-gray-100 p-2 space-y-0.5">
-              <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Admin</p>
+            {isAdmin && (
               <button onClick={() => go('/admin/team')} className={`${nav} ${idle}`}>
                 <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 My Team
               </button>
-              <button onClick={() => go('/admin/team/activity')} className={`${nav} ${idle}`}>
-                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                Activity
-              </button>
-            </div>
-          )}
+            )}
+            <button onClick={() => go('/billing')} className={`${nav} ${idle}`}>
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Subscription
+            </button>
+            <button onClick={() => go(isAdmin ? '/admin/team/settings' : '/billing')} className={`${nav} ${idle}`}>
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Settings
+            </button>
+          </div>
 
-          {/* Log out */}
+          {/* Logout */}
           <div className="border-t border-gray-100 p-2">
             <button
               onClick={() => { setOpen(false); logout().then(() => navigate('/login')); }}
@@ -172,7 +149,7 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h5a2 2 0 012 2v1" />
               </svg>
-              Log out
+              Logout
             </button>
           </div>
         </div>
@@ -211,7 +188,7 @@ export default function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-scroll">
         <Outlet />
       </main>
 

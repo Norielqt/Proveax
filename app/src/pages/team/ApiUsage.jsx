@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { StatCardsSkeleton, ChartSkeleton, TableSkeleton } from '../../components/Skeleton';
 import { getApiUsage } from '../../api/reports';
 
 function daysAgo(n) {
@@ -17,9 +18,16 @@ export default function ApiUsage() {
     getApiUsage(range).then(setData).finally(() => setLoading(false));
   }, [range.from, range.to]);
 
-  if (loading || !data) {
-    return <div className="p-6 text-sm text-gray-500">Loading…</div>;
-  }
+  if (loading || !data) return (
+    <div className="space-y-6">
+      <StatCardsSkeleton cols={4} />
+      <ChartSkeleton />
+      <div className="grid gap-6 md:grid-cols-2">
+        <TableSkeleton rows={5} cols={3} />
+        <TableSkeleton rows={5} cols={2} />
+      </div>
+    </div>
+  );
 
   const { summary, daily, per_user, recent_errors } = data;
   const maxDaily = Math.max(1, ...daily.map((d) => Number(d.total)));
@@ -28,8 +36,8 @@ export default function ApiUsage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">API Usage</h1>
-          <p className="text-sm text-gray-500">Rentcast API requests logged by your workspace.</p>
+          <h1 className="text-2xl font-bold text-gray-900">API Usage</h1>
+          <p className="mt-1 text-sm text-gray-500">Rentcast API requests logged by your workspace.</p>
         </div>
         <div className="flex gap-2">
           <input type="date" value={range.from}

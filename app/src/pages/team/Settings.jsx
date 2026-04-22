@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SettingsSkeleton } from '../../components/Skeleton';
 import { getTeamSettings, updateTeamSettings } from '../../api/team';
 
 export default function Settings() {
@@ -6,10 +7,10 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState(null);
 
-  useEffect(() => { getTeamSettings().then(setSettings); }, []);
+  useEffect(() => { getTeamSettings().then(setSettings).catch(() => setSettings({})); }, []);
 
   if (!settings) {
-    return <div className="text-sm text-gray-500">Loading…</div>;
+    return <SettingsSkeleton />;
   }
 
   const change = (k, v) => setSettings((s) => ({ ...s, [k]: v }));
