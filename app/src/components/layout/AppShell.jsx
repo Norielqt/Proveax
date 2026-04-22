@@ -24,10 +24,10 @@ function PlanBadge({ tenant, onClose }) {
         <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 ${urgent ? 'border-amber-200 bg-amber-50' : 'border-blue-200 bg-blue-50'}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${urgent ? 'bg-amber-400' : 'bg-blue-400'}`} />
           <span className={`text-[11px] font-medium ${urgent ? 'text-amber-700' : 'text-blue-700'}`}>
-            Trial · {daysLeft > 0 ? `${daysLeft}d left` : 'expires today'}
+            Free Trial · {daysLeft > 0 ? `${daysLeft}d left` : 'expires today'}
           </span>
         </div>
-        <Link to="/billing" onClick={onClose} className={`text-[11px] font-semibold ${urgent ? 'text-amber-600' : 'text-blue-600'} hover:underline`}>
+        <Link to="/subscription" onClick={onClose} className={`text-[11px] font-semibold ${urgent ? 'text-amber-600' : 'text-blue-600'} hover:underline`}>
           Upgrade
         </Link>
       </div>
@@ -41,7 +41,7 @@ function PlanBadge({ tenant, onClose }) {
           <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
           <span className="text-[11px] font-medium text-red-700">Trial expired</span>
         </div>
-        <Link to="/billing" onClick={onClose} className="text-[11px] font-semibold text-red-600 hover:underline">
+        <Link to="/subscription" onClick={onClose} className="text-[11px] font-semibold text-red-600 hover:underline">
           Upgrade
         </Link>
       </div>
@@ -126,13 +126,13 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
                 My Team
               </button>
             )}
-            <button onClick={() => go('/billing')} className={`${nav} ${idle}`}>
+            <button onClick={() => go('/subscription')} className={`${nav} ${idle}`}>
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
               Subscription
             </button>
-            <button onClick={() => go(isAdmin ? '/admin/team/settings' : '/billing')} className={`${nav} ${idle}`}>
+            <button onClick={() => go(isAdmin ? '/admin/team/settings' : '/subscription')} className={`${nav} ${idle}`}>
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>

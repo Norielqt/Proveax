@@ -6,7 +6,7 @@ import Register from './pages/Register';
 import InviteAccept from './pages/InviteAccept';
 import Dashboard from './pages/Dashboard';
 import PropertyDetail from './pages/PropertyDetail';
-import Billing from './pages/Billing';
+import Subscription from './pages/Subscription';
 import AdminActivity from './pages/AdminActivity';
 import GoogleOnboarding from './pages/GoogleOnboarding';
 import CRM from './pages/CRM';
@@ -55,7 +55,7 @@ export default function Router() {
             <Route path="/search" element={<Dashboard />} />
             <Route path="/dashboard" element={<Navigate to="/search" replace />} />
             <Route path="/properties/:id" element={<PropertyDetail />} />
-            <Route path="/billing" element={<Billing />} />
+            <Route path="/subscription" element={<Subscription />} />
             <Route path="/crm" element={<CRM />} />
             <Route path="/me/session" element={<MySession />} />
 

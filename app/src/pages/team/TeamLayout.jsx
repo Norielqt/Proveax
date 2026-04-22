@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 const nav =
   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition';
 const idle = 'text-gray-600 hover:bg-gray-100 hover:text-gray-900';
-const active = 'bg-gray-900 text-white hover:bg-gray-900 hover:text-white';
+const active = 'bg-blue-600 text-white hover:bg-blue-600 hover:text-white';
 
 const Icon = ({ d }) => (
   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -34,7 +34,7 @@ export default function TeamLayout() {
             end={it.end}
             className={({ isActive }) =>
               `shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium ${
-                isActive ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-600'
+                isActive ? 'bg-blue-600 text-white' : 'border border-gray-200 bg-white text-gray-600'
               }`
             }
           >

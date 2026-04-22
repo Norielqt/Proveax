@@ -1,4 +1,4 @@
-import proviaxxLogo from '../../assets/Proviaxx_logo.png';
+import proviaxxLogo from '../../assets/Proveax_loading.png';
 
 export default function LoadingScreen() {
   return (
@@ -6,11 +6,11 @@ export default function LoadingScreen() {
       <img
         src={proviaxxLogo}
         alt="Proviaxx"
-        className="h-40 w-auto"
+        className="h-10 w-auto"
       />
 
       {/* Fill-up progress bar */}
-      <div className="relative h-0.5 w-48 overflow-hidden bg-gray-100">
+      <div className="relative mt-4 h-0.5 w-48 overflow-hidden bg-gray-100">
         <div className="h-full bg-blue-600 animate-fill-bar" />
       </div>
 

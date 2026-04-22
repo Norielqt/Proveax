@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { listInvites, createInvite, resendInvite, revokeInvite } from '../api/invites';
+import { getSubscriptionStatus } from '../api/subscription';
 
-const STATUS_STYLES = {
+import { Link } from 'react-router-dom';
+
+const PLAN_LABELS = { starter: 'Starter', team: 'Team', business: 'Business' };
+
+
   pending:  'bg-amber-50 text-amber-700 border-amber-200',
   accepted: 'bg-green-50 text-green-700 border-green-200',
   expired:  'bg-gray-100 text-gray-500 border-gray-200',
@@ -10,13 +15,17 @@ const STATUS_STYLES = {
 
 export default function AdminEmployees() {
   const [invites, setInvites]     = useState([]);
+  const [seats, setSeats]         = useState(null);
   const [email, setEmail]         = useState('');
   const [role, setRole]           = useState('employee');
   const [notice, setNotice]       = useState(null); // { type, text }
   const [loading, setLoading]     = useState(false);
   const [actionId, setActionId]   = useState(null); // row-level pending id
 
-  const refresh = () => listInvites().then(setInvites);
+  const refresh = () => Promise.all([
+    listInvites().then(setInvites),
+    getSubscriptionStatus().then(setSeats).catch(() => {}),
+  ]);
 
   useEffect(() => { refresh(); }, []);
 
@@ -76,6 +85,55 @@ export default function AdminEmployees() {
       <h1 className="text-2xl font-bold text-gray-900">Employees</h1>
       <p className="mt-1 text-sm text-gray-500">Invite team members to join your workspace.</p>
 
+      {seats && (
+        <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-800">
+                {seats.plan ? PLAN_LABELS[seats.plan] ?? seats.plan : seats.is_on_trial ? 'Free Trial' : 'Plan'} · Seat usage
+              </span>
+              <span className="text-sm text-gray-500">
+                {seats.seats_used}
+                {seats.seat_limit !== null ? ` / ${seats.seat_limit}` : ' (unlimited)'}
+              </span>
+            </div>
+            {seats.seat_limit !== null && seats.seats_remaining === 0 ? (
+              <Link
+                to="/subscription"
+                className="rounded-md bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+              >
+                Upgrade plan
+              </Link>
+            ) : seats.seat_limit !== null && seats.seats_remaining <= 2 ? (
+              <span className="text-xs text-amber-600 font-medium">
+                {seats.seats_remaining} seat{seats.seats_remaining === 1 ? '' : 's'} remaining
+              </span>
+            ) : null}
+          </div>
+
+          {seats.seat_limit !== null && (
+            <div className="mt-3">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    seats.seats_remaining === 0
+                      ? 'bg-red-500'
+                      : seats.seats_remaining <= 2
+                      ? 'bg-amber-400'
+                      : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${Math.min(100, (seats.seats_used / seats.seat_limit) * 100)}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex justify-between text-[11px] text-gray-400">
+                <span>{seats.seats_used} used</span>
+                <span>{seats.seats_remaining} remaining</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Invite form */}
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
         <h2 className="font-semibold text-gray-900">Send an invitation</h2>
@@ -108,7 +166,7 @@ export default function AdminEmployees() {
             <option value="admin">Admin</option>
           </select>
           <button
-            disabled={loading}
+            disabled={loading || (seats?.seat_limit !== null && seats?.seats_remaining === 0)}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? 'Sending…' : 'Send invite'}

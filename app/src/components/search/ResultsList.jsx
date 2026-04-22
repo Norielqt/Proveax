@@ -1,5 +1,7 @@
 
 
+import emptyImg from '../../assets/Proveax_loading.png';
+
 function formatValue(val) {
   if (!val) return null;
   const n = Number(val);
@@ -16,7 +18,12 @@ function formatType(raw) {
 
 export default function ResultsList({ properties, onHover, onSelect }) {
   if (!properties.length) {
-    return <div className="p-8 text-center text-gray-500">No properties match your filters.</div>;
+    return (
+      <div className="flex flex-1 w-full flex-col items-center justify-center p-12 text-center">
+        <img src={emptyImg} alt="" className="mb-3 w-[55%] opacity-40" />
+        <p className="text-gray-500">No properties match your filters.</p>
+      </div>
+    );
   }
   return (
     <ul className="divide-y divide-gray-100">

@@ -65,8 +65,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/timesheets/{id}/submit',    [TimesheetController::class, 'submit']);
 
     // Billing always accessible
-    Route::get ('/billing/status',   [SubscriptionController::class, 'status']);
-    Route::post('/billing/checkout', [SubscriptionController::class, 'createCheckout']);
+    Route::get ('/billing/status',                [SubscriptionController::class, 'status']);
+    Route::post('/billing/checkout',              [SubscriptionController::class, 'createCheckout']);
+    Route::post('/billing/subscription/intent',   [SubscriptionController::class, 'createSubscriptionIntent']);
+    Route::post('/billing/subscription/confirm',  [SubscriptionController::class, 'confirmSubscription']);
+    Route::post('/billing/subscription/cancel',   [SubscriptionController::class, 'cancel']);
 
     // Wallet
     Route::get ('/wallet/summary',             [WalletController::class, 'summary']);

@@ -10,7 +10,7 @@ export default function TrialBanner({ daysLeft }) {
             ? `You're on a free trial — ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining.`
             : `Your trial ends today.`}
         </span>
-        <Link to="/billing" className="font-semibold underline">Upgrade →</Link>
+        <Link to="/subscription" className="font-semibold underline">Upgrade →</Link>
       </div>
     </div>
   );

@@ -305,7 +305,7 @@ export default function Dashboard() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
           <h2 className="text-lg font-semibold text-amber-900">Your trial has expired</h2>
           <p className="mt-1 text-sm text-amber-800">Subscribe to keep searching properties and using skip-trace.</p>
-          <a href="/billing" className="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm text-white">View plans</a>
+          <a href="/subscription" className="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm text-white">View plans</a>
         </div>
       </div>
     );

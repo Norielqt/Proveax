@@ -28,6 +28,16 @@ class InviteController extends Controller
         ]);
 
         $tenantId = $request->user()->tenant_id;
+        $tenant   = $request->user()->tenant;
+
+        // Seat limit enforcement based on subscription plan
+        if (!$tenant->isSeatAvailable()) {
+            return response()->json([
+                'message' => 'Seat limit reached for your current plan. Upgrade to invite more team members.',
+                'seats_used'  => $tenant->seatsUsed(),
+                'seat_limit'  => $tenant->seatLimit(),
+            ], 422);
+        }
 
         // Reject if an active user with this email already exists in ANY tenant
         if (User::withoutGlobalScope(\App\Scopes\TenantScope::class)
@@ -137,6 +147,19 @@ class InviteController extends Controller
                 ->firstOrFail();
 
             abort_unless($invite->isValid(), 410, 'Invite has expired or already been used.');
+
+            // Seat limit check (plan may have downgraded since invite was sent).
+            // Exclude this pending invite from the count since it will be consumed.
+            $tenant = \App\Models\Tenant::find($invite->tenant_id);
+            if ($tenant) {
+                $limit = $tenant->seatLimit();
+                if ($limit !== null) {
+                    $users = $tenant->users()->count();
+                    if ($users >= $limit) {
+                        abort(422, 'This workspace has reached its seat limit. Please contact the admin.');
+                    }
+                }
+            }
 
             // Final safety: email must not already exist
             $exists = User::withoutGlobalScope(\App\Scopes\TenantScope::class)

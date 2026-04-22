@@ -17,6 +17,11 @@ class Kernel extends ConsoleKernel
             ->name('expire-trials')
             ->withoutOverlapping();
 
+        $schedule->call(fn () => app(\App\Services\SubscriptionService::class)->expireEndedCancellations())
+            ->hourly()
+            ->name('expire-cancellations')
+            ->withoutOverlapping();
+
         $schedule->command('team:aggregate-daily')
             ->dailyAt('00:15')
             ->name('aggregate-daily-stats')
