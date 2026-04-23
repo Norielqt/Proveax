@@ -5,6 +5,9 @@ NIXPACKS_PHP_VERSION = "8.2"
 [phases.install]
 cmds = ["composer install --no-dev --optimize-autoloader --no-interaction"]
 
+[phases.build]
+cmds = []
+
 [start]
 # Config/route/view caches run here so Railway env vars are available when they execute.
 # Migrations run before the server starts.
