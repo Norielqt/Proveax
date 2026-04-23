@@ -9,9 +9,9 @@ function PlanBadge({ tenant, onClose }) {
 
   if (status === 'active') {
     return (
-      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5">
-        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-        <span className="text-[11px] font-medium text-green-700">Pro · Active</span>
+      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+        <span className="text-[11px] font-medium text-blue-700">Pro · Active</span>
       </div>
     );
   }
@@ -118,14 +118,18 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
               </svg>
               CRM
             </button>
-            {isAdmin && (
-              <button onClick={() => go('/admin/team')} className={`${nav} ${idle}`}>
-                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                My Team
-              </button>
-            )}
+            <button onClick={() => go('/me/session')} className={`${nav} ${idle}`}>
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              My Session
+            </button>
+            <button onClick={() => go(isAdmin ? '/admin/team' : '/team/members')} className={`${nav} ${idle}`}>
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              My Team
+            </button>
             <button onClick={() => go('/subscription')} className={`${nav} ${idle}`}>
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />

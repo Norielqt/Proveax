@@ -47,8 +47,20 @@ class WorkSessionController extends Controller
             ->latest('started_at')
             ->first();
 
+        // Total active seconds across all of today's sessions (including live session).
+        $todayActiveSeconds = (int) WorkSession::where('user_id', $user->id)
+            ->where('started_at', '>=', now()->startOfDay())
+            ->sum('active_seconds');
+
+        $dayEnded = WorkSession::where('user_id', $user->id)
+            ->where('started_at', '>=', now()->startOfDay())
+            ->where('end_reason', 'manual')
+            ->exists();
+
         return response()->json([
-            'session'  => $session,
+            'session'              => $session,
+            'today_active_seconds' => $todayActiveSeconds,
+            'day_ended'            => $dayEnded,
             'settings' => [
                 'screenshot_interval_minutes' => (int) $settings->screenshot_interval_minutes,
                 'idle_timeout_minutes'        => $idleMinutes,
@@ -80,6 +92,17 @@ class WorkSessionController extends Controller
         $existing = WorkSession::where('user_id', $user->id)->whereNull('ended_at')->first();
         if ($existing) {
             return response()->json(['session' => $existing], 200);
+        }
+
+        // Refuse if the user already ended their day manually today
+        $dayEnded = WorkSession::where('user_id', $user->id)
+            ->where('started_at', '>=', now()->startOfDay())
+            ->where('end_reason', 'manual')
+            ->exists();
+        if ($dayEnded) {
+            throw ValidationException::withMessages([
+                'day_ended' => 'You have already ended your work day. You can start a new session tomorrow.',
+            ]);
         }
 
         $settings = TeamSetting::firstOrCreate(['tenant_id' => $user->tenant_id], []);
@@ -143,7 +166,7 @@ class WorkSessionController extends Controller
         $data = $request->validate([
             'active_seconds' => ['nullable', 'integer', 'min:0'],
             'idle_seconds'   => ['nullable', 'integer', 'min:0'],
-            'reason'         => ['nullable', 'in:manual,idle_timeout,share_stopped'],
+            'reason'         => ['nullable', 'in:manual,paused,idle_timeout,share_stopped,stream_black,stale,unload'],
         ]);
 
         $user    = $request->user();

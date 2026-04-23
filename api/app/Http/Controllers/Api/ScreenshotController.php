@@ -154,11 +154,39 @@ class ScreenshotController extends Controller
             abort(403);
         }
 
+        // Rate limit self-deletions (anti-abuse): max 3 per hour per user
+        if ($isOwner && !$isAdmin) {
+            $key = "screenshot-self-delete:{$user->id}";
+            if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 3)) {
+                $retry = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+                abort(429, "Too many deletions. Try again in {$retry} seconds.");
+            }
+            \Illuminate\Support\Facades\RateLimiter::hit($key, 3600);
+        }
+
         Storage::disk($shot->disk)->delete($shot->path);
-        $this->logger->log($user, 'screenshot.deleted', $shot);
+
+        $penaltyApplied = false;
+
+        // Non-admin deleting own screenshot: deduct 10-minute penalty from the session
+        if ($isOwner && !$isAdmin && $shot->work_session_id) {
+            $affected = \App\Models\WorkSession::where('id', $shot->work_session_id)
+                ->where('active_seconds', '>=', 600)
+                ->decrement('active_seconds', 600);
+            $penaltyApplied = $affected > 0;
+
+            $this->logger->log($user, 'screenshot.self_deleted_with_penalty', $shot, [
+                'penalty_seconds'  => $penaltyApplied ? 600 : 0,
+                'work_session_id'  => $shot->work_session_id,
+                'penalty_applied'  => $penaltyApplied,
+            ]);
+        } else {
+            $this->logger->log($user, 'screenshot.deleted', $shot);
+        }
+
         $shot->delete();
 
-        return response()->json(['ok' => true]);
+        return response()->json(['ok' => true, 'penalty_applied' => $penaltyApplied]);
     }
 
     private function mimeFor(string $path): string

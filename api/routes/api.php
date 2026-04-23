@@ -58,6 +58,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/screenshots/{id}',         [ScreenshotController::class, 'destroy']);
     // Team settings: readable by all members (for consent modal), admin-only write
     Route::get ('/team/settings', [TeamSettingsController::class, 'show']);
+    // Team members list: readable by all members
+    Route::get ('/team/members', [MemberController::class, 'index']);
 
     // Timesheets — index/generate/submit are accessible to owners; admin reviews
     Route::get ('/timesheets',                [TimesheetController::class, 'index']);
@@ -103,8 +105,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post ('/invites/{id}/revoke',  [InviteController::class, 'revoke']);
         Route::get  ('/activity-logs',    [ActivityLogController::class, 'index']);
 
-        // Team management
-        Route::get   ('/team/members',                [MemberController::class, 'index']);
+        // Team management (write operations — admin only)
         Route::patch ('/team/members/{id}/role',      [MemberController::class, 'updateRole']);
         Route::post  ('/team/members/{id}/pause',     [MemberController::class, 'pause']);
 

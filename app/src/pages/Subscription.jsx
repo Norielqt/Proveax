@@ -96,7 +96,8 @@ function CancelModal({ onConfirm, onClose, canceling }) {
 }
 
 export default function Subscription() {
-  const { refresh } = useAuth();
+  const { user, refresh } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [status, setStatus]       = useState(null);
   const [loading, setLoading]     = useState(true);
   const [selected, setSelected]   = useState(null); // { plan, clientSecret }
@@ -166,8 +167,8 @@ export default function Subscription() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
                   Active
                 </span>
                 {currentPlan && <span className="text-xs text-gray-500">{currentPlan.seats}</span>}
@@ -187,12 +188,14 @@ export default function Subscription() {
                 </p>
               )}
             </div>
-            <button
-              onClick={handleCancel}
-              className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-            >
-              Cancel subscription
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleCancel}
+                className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+              >
+                Cancel subscription
+              </button>
+            )}
           </div>
           {currentPlan && (
             <div className="mt-5 border-t border-gray-100 pt-5">
@@ -200,7 +203,7 @@ export default function Subscription() {
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {currentPlan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm text-gray-700">
-                    <svg className="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <svg className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                     {f}
@@ -265,14 +268,14 @@ export default function Subscription() {
                   key={plan.id}
                   className={`relative flex flex-col rounded-xl border p-6 ${
                     isCurrentPlan
-                      ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
+                      ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
                       : highlighted
                       ? 'border-blue-600 bg-white shadow-lg ring-1 ring-blue-600'
                       : 'border-gray-200 bg-white'
                   }`}
                 >
                   {isCurrentPlan && (
-                    <span className="absolute -top-3 left-6 rounded-full bg-green-600 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                    <span className="absolute -top-3 left-6 rounded-full bg-blue-600 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
                       Current plan
                     </span>
                   )}
@@ -297,10 +300,10 @@ export default function Subscription() {
                   </ul>
                   <button
                     onClick={() => handleSelect(plan)}
-                    disabled={!!preparing || isCurrentPlan}
+                    disabled={!!preparing || isCurrentPlan || !isAdmin}
                     className={`mt-6 w-full rounded-md px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
                       isCurrentPlan
-                        ? 'border border-green-500 bg-green-100 text-green-700 cursor-default'
+                        ? 'border border-blue-500 bg-blue-100 text-blue-700 cursor-default'
                         : highlighted
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -315,7 +318,7 @@ export default function Subscription() {
         </div>
       )}
 
-      {selected && (
+      {selected && isAdmin && (
         <PaymentPanel
           plan={selected.plan}
           clientSecret={selected.clientSecret}

@@ -22,7 +22,7 @@ function fmtHours(seconds) {
 const STATUS_STYLE = {
   draft:     'bg-gray-100 text-gray-700',
   submitted: 'bg-amber-100 text-amber-800',
-  approved:  'bg-emerald-100 text-emerald-800',
+  approved:  'bg-blue-100 text-blue-800',
   rejected:  'bg-rose-100 text-rose-800',
 };
 
@@ -164,7 +164,7 @@ export default function Timesheets() {
                     )}
                     {isAdmin && r.status === 'submitted' && !isOwner && (
                       <div className="flex justify-end gap-3">
-                        <button onClick={() => doReview(r.id, 'approve')} className="text-emerald-600 hover:underline">Approve</button>
+                        <button onClick={() => doReview(r.id, 'approve')} className="text-blue-600 hover:underline">Approve</button>
                         <button onClick={() => doReview(r.id, 'reject')} className="text-rose-600 hover:underline">Reject</button>
                       </div>
                     )}
