@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import * as authApi from '../api/auth';
-import { saveToken } from '../api/client';
+import { saveToken, getToken } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -13,6 +13,10 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
+    if (!getToken()) {
+      setLoading(false);
+      return;
+    }
     try {
       const data = await authApi.me();
       setUser(data.user);
