@@ -199,6 +199,9 @@ class RentcastController extends Controller
 
         if ($typeFilter) $q->where('property_type', $typeFilter);
 
+        // Only return properties that have coordinates — ensures list count matches map pins
+        $q->whereNotNull('lat')->whereNotNull('lng');
+
         if (!empty($v['bedroomsMin']))  $q->where('bedrooms',    '>=', (int)   $v['bedroomsMin']);
         if (!empty($v['bedroomsMax']))  $q->where('bedrooms',    '<=', (int)   $v['bedroomsMax']);
         if (!empty($v['bathroomsMin'])) $q->where('bathrooms',   '>=', (float) $v['bathroomsMin']);
