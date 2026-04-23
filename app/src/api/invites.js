@@ -1,4 +1,4 @@
-import api from './client';
+import api, { saveToken } from './client';
 
 export const createInvite = async (email, role = 'employee') =>
   (await api.post('/api/invites', { email, role })).data;
@@ -12,5 +12,8 @@ export const resendInvite = async (id) =>
 export const revokeInvite = async (id) =>
   (await api.post(`/api/invites/${id}/revoke`)).data;
 
-export const acceptInvite = async (payload) =>
-  (await api.post('/api/invites/accept', payload)).data;
+export const acceptInvite = async (payload) => {
+  const data = (await api.post('/api/invites/accept', payload)).data;
+  saveToken(data.token);
+  return data;
+};

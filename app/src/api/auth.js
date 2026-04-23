@@ -1,19 +1,27 @@
-import api, { ensureCsrf } from './client';
+import api from './client';
+import { saveToken, clearToken } from './client';
 
 export const login = async (email, password) => {
-  await ensureCsrf();
   const { data } = await api.post('/api/login', { email, password });
+  saveToken(data.token);
   return data;
 };
 
 export const register = async (payload) => {
-  await ensureCsrf();
   const { data } = await api.post('/api/register', payload);
+  saveToken(data.token);
   return data;
 };
 
-export const logout = async () => (await api.post('/api/logout')).data;
-export const me     = async () => (await api.get('/api/me')).data;
+export const logout = async () => {
+  try {
+    return (await api.post('/api/logout')).data;
+  } finally {
+    clearToken();
+  }
+};
+
+export const me = async () => (await api.get('/api/me')).data;
 
 /** Returns the Google OAuth URL to open in a popup */
 export const getGoogleRedirectUrl = async () => {
@@ -23,7 +31,7 @@ export const getGoogleRedirectUrl = async () => {
 
 /** Complete Google onboarding for brand-new users */
 export const googleComplete = async (staging_token, company_name) => {
-  await ensureCsrf();
   const { data } = await api.post('/api/auth/google/complete', { staging_token, company_name });
+  saveToken(data.token);
   return data;
 };
