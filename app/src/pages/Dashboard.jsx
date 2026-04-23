@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { rentcastSearch, rentcastLoadMore } from '../api/rentcast';
 import { useSubscription } from '../hooks/useSubscription';
@@ -18,6 +18,24 @@ const TYPES = [
   { value: 'Manufactured',  label: 'Manufactured' },
   { value: 'Land',          label: 'Land' },
 ];
+
+// Range filter chip definitions
+const fmtNum = (n) => Number(n).toLocaleString();
+const RANGE_DEFS = [
+  { key: 'beds',  label: 'Beds',  minKey: 'bedroomsMin',  maxKey: 'bedroomsMax',  step: 1,   min: 0,    max: 20,   fmt: (n) => n,    unit: ''           },
+  { key: 'baths', label: 'Baths', minKey: 'bathroomsMin', maxKey: 'bathroomsMax', step: 0.5, min: 0,    max: 20,   fmt: (n) => n,    unit: ''           },
+  { key: 'sqft',  label: 'Size',  minKey: 'sqftMin',      maxKey: 'sqftMax',      step: 100, min: 0,               fmt: fmtNum,      unit: 'sqft'       },
+  { key: 'year',  label: 'Year',  minKey: 'yearBuiltMin', maxKey: 'yearBuiltMax', step: 1,   min: 1800, max: 2030, fmt: (n) => n,    unit: ''           },
+  { key: 'lot',   label: 'Lot',   minKey: 'lotSizeMin',   maxKey: 'lotSizeMax',   step: 500, min: 0,               fmt: fmtNum,      unit: 'sqft'       },
+];
+const summarizeRange = (minVal, maxVal, fmt) => {
+  const hasMin = minVal !== '' && minVal !== null && minVal !== undefined;
+  const hasMax = maxVal !== '' && maxVal !== null && maxVal !== undefined;
+  if (!hasMin && !hasMax) return null;
+  if (hasMin && hasMax)   return `${fmt(minVal)}–${fmt(maxVal)}`;
+  if (hasMin)             return `${fmt(minVal)}+`;
+  return `≤${fmt(maxVal)}`;
+};
 
 /**
  * Parse a free-text query into ATTOM search params.
@@ -76,8 +94,23 @@ export default function Dashboard() {
   // Ref so callbacks always see latest advFilters without needing it in dep arrays
   const advFiltersRef = useRef(advFilters);
   useEffect(() => { advFiltersRef.current = advFilters; }, [advFilters]);
-  const [showAdvFilters, setShowAdvFilters] = useState(false);
-  const activeAdvCount = Object.values(advFilters).filter(v => v !== '').length;
+
+  // Popover state for filter chips
+  const [openFilter, setOpenFilter] = useState(null); // 'type' | 'lead' | 'beds' | 'baths' | 'sqft' | 'year' | 'lot' | null
+  const filtersHostRef = useRef(null);
+  useEffect(() => {
+    if (!openFilter) return;
+    const onDown = (e) => {
+      if (filtersHostRef.current && !filtersHostRef.current.contains(e.target)) setOpenFilter(null);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setOpenFilter(null); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [openFilter]);
 
   // Reconstruct query text from filters for the input
   const filtersToQuery = (f) => {
@@ -174,18 +207,7 @@ export default function Dashboard() {
     setParseError('');
     fetchSuggestions(text);
     clearTimeout(autoSearchTimerRef.current);
-    // Only auto-search for complete 5-digit ZIPs (instant gratification);
-    // cities require picking a suggestion or pressing Enter.
-    const isCompleteZip = /^\d{5}$/.test(text.trim());
-    if (isCompleteZip) {
-      autoSearchTimerRef.current = setTimeout(() => {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        const parsed = parseQuery(text);
-        if (parsed) applyFilters(parsed, filters.propertytype);
-      }, 600);
-    }
-  }, [filters.propertytype, applyFilters, fetchSuggestions]);
+  }, [fetchSuggestions]);
 
   // Pick a suggestion
   const pickSuggestion = useCallback((item) => {
@@ -315,16 +337,23 @@ export default function Dashboard() {
     <div className="flex flex-col h-full overflow-hidden">
 
       {/* ── Search toolbar ───────────────────────────────────── */}
-      <div className="relative z-[1050] border-b border-gray-200 bg-white shadow-sm">
+      <div className="relative z-[1050] border-b border-[#E8F0FB] bg-white">
 
         {/* Main bar */}
-        <div className="flex h-14 items-center gap-3 px-5">
+        <div className="flex items-center gap-3 px-6 py-3" ref={filtersHostRef}>
 
           {/* Search input */}
-          <div className="relative min-w-0 flex-1">
-            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
+          <div className="relative min-w-0 w-[480px] shrink-0">
+            <button
+              type="button"
+              onClick={() => { clearTimeout(autoSearchTimerRef.current); submitSearch(); }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-[#888] transition-colors hover:text-[#185FA5] focus:outline-none"
+              aria-label="Search"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+              </svg>
+            </button>
             <input
               ref={inputRef}
               value={queryText}
@@ -332,14 +361,15 @@ export default function Dashboard() {
               onKeyDown={(e) => { if (e.key === 'Enter') { clearTimeout(autoSearchTimerRef.current); submitSearch(); } }}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-              placeholder="Search by ZIP code, city, or address…"
+              placeholder="Search by ZIP, city, or address…"
               autoComplete="off"
-              className="h-9 w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-8 text-sm text-gray-900 placeholder-gray-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="h-10 w-full rounded-xl border border-[#E8F0FB] bg-[#F7FAFF] pl-10 pr-9 text-sm text-[#111] placeholder-[#888] transition focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
             />
             {queryText && (
               <button
                 onClick={() => { setQueryText(''); setParseError(''); setSuggestions([]); setShowSuggestions(false); setFilters({}); setSearchParams({}, { replace: true }); setResults([]); clearTimeout(autoSearchTimerRef.current); clearTimeout(suggestTimerRef.current); }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded text-gray-400 transition-colors hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-[#888] transition-colors hover:bg-[#E6F1FB] hover:text-[#185FA5]"
+                aria-label="Clear search"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -348,14 +378,14 @@ export default function Dashboard() {
             )}
             {/* Suggestions dropdown */}
             {showSuggestions && suggestions.length > 0 && (
-              <ul className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl z-[2000]">
+              <ul className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-xl border border-[#E8F0FB] bg-white py-1 shadow-xl z-[2000]">
                 {suggestions.map((s, i) => (
                   <li
                     key={i}
                     onMouseDown={() => pickSuggestion(s)}
-                    className="flex cursor-pointer items-center gap-2.5 px-3.5 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                    className="flex cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-[#444] transition-colors hover:bg-[#E6F1FB] hover:text-[#0C447C]"
                   >
-                    <svg className="h-3.5 w-3.5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-3.5 w-3.5 shrink-0 text-[#888]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -367,219 +397,261 @@ export default function Dashboard() {
           </div>
 
           {/* Divider */}
-          <div className="h-5 w-px shrink-0 bg-gray-200" />
+          <div className="h-6 w-px shrink-0 bg-[#E8F0FB]" />
 
-          {/* Property type */}
-          <div className="relative shrink-0">
-            <select
-              value={filters.propertytype ?? ''}
-              onChange={(e) => handleTypeChange(e.target.value)}
-              className={`h-9 appearance-none rounded-lg border pl-3 pr-7 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                filters.propertytype
-                  ? 'border-blue-400 bg-blue-50 text-blue-700 hover:border-blue-500'
-                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 focus:border-blue-500'
-              }`}
-            >
-              {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
-            <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+          {/* Filter chips cluster */}
+          <div className="flex flex-1 items-center gap-1.5 min-w-0">
 
-          {/* Lead type — quick filter in the main bar */}
-          <div className="relative shrink-0">
-            <select
-              value={advFilters.ownerOccupied}
-              onChange={e => {
-                const val = e.target.value;
-                const next = { ...advFiltersRef.current, ownerOccupied: val };
-                setAdvFilters(next);
-                advFiltersRef.current = next;
-                const loc = {};
-                if (filters.postalcode) loc.postalcode = filters.postalcode;
-                if (filters.city)       loc.city = filters.city;
-                if (filters.state)      loc.state = filters.state;
-                applyFilters(loc, filters.propertytype, val);
-              }}
-              className={`h-9 appearance-none rounded-lg border pl-3 pr-7 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                advFilters.ownerOccupied
-                  ? 'border-blue-400 bg-blue-50 text-blue-700 hover:border-blue-500'
-                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 focus:border-blue-500'
-              }`}
-            >
-              <option value="">All Leads</option>
-              <option value="absentee">Absentee Owner</option>
-              <option value="owner">Owner Occupied</option>
-            </select>
-            <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+            {/* Property type chip */}
+            {(() => {
+              const selected = TYPES.find(t => t.value === (filters.propertytype ?? '')) ?? TYPES[0];
+              const active = !!filters.propertytype;
+              const open = openFilter === 'type';
+              return (
+                <div className="relative flex-1 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFilter(open ? null : 'type')}
+                    className={`flex w-full h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
+                      active
+                        ? 'border-[#185FA5] bg-[#E6F1FB] text-[#0C447C]'
+                        : open
+                          ? 'border-[#185FA5] bg-white text-[#0C447C]'
+                          : 'border-[#E8F0FB] bg-white text-[#444] hover:border-[#B5D4F4] hover:bg-[#F7FAFF]'
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-1 truncate">
+                      <span className={`truncate ${active ? '' : 'text-[#555]'}`}>Type</span>
+                      {active && <span className="truncate text-[#0C447C]">· {selected.label}</span>}
+                    </span>
+                    <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {open && (
+                    <div className="absolute left-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[#E8F0FB] bg-white py-1 shadow-xl z-[2000]">
+                      {TYPES.map((t) => (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => { handleTypeChange(t.value); setOpenFilter(null); }}
+                          className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors ${
+                            (filters.propertytype ?? '') === t.value
+                              ? 'bg-[#E6F1FB] text-[#0C447C] font-medium'
+                              : 'text-[#444] hover:bg-[#F7FAFF]'
+                          }`}
+                        >
+                          {t.label}
+                          {(filters.propertytype ?? '') === t.value && (
+                            <svg className="h-3.5 w-3.5 text-[#185FA5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
-          {/* More Filters toggle */}
-          {(() => {
-            const advOnlyCount = Object.entries(advFilters)
-              .filter(([k, v]) => k !== 'ownerOccupied' && v !== '').length;
-            return (
+            {/* Lead type chip */}
+            {(() => {
+              const LEAD_OPTS = [
+                { value: '',         label: 'All Leads'       },
+                { value: 'absentee', label: 'Absentee Owner'  },
+                { value: 'owner',    label: 'Owner Occupied'  },
+              ];
+              const selected = LEAD_OPTS.find(o => o.value === advFilters.ownerOccupied) ?? LEAD_OPTS[0];
+              const active = !!advFilters.ownerOccupied;
+              const open = openFilter === 'lead';
+              return (
+                <div className="relative flex-1 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFilter(open ? null : 'lead')}
+                    className={`flex w-full h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
+                      active
+                        ? 'border-[#185FA5] bg-[#E6F1FB] text-[#0C447C]'
+                        : open
+                          ? 'border-[#185FA5] bg-white text-[#0C447C]'
+                          : 'border-[#E8F0FB] bg-white text-[#444] hover:border-[#B5D4F4] hover:bg-[#F7FAFF]'
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-1 truncate">
+                      <span className={`truncate ${active ? '' : 'text-[#555]'}`}>Lead</span>
+                      {active && <span className="truncate text-[#0C447C]">· {selected.label}</span>}
+                    </span>
+                    <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {open && (
+                    <div className="absolute left-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-[#E8F0FB] bg-white py-1 shadow-xl z-[2000]">
+                      {LEAD_OPTS.map((o) => (
+                        <button
+                          key={o.value}
+                          type="button"
+                          onClick={() => {
+                            const val = o.value;
+                            const next = { ...advFiltersRef.current, ownerOccupied: val };
+                            setAdvFilters(next);
+                            advFiltersRef.current = next;
+                            const loc = {};
+                            if (filters.postalcode) loc.postalcode = filters.postalcode;
+                            if (filters.city)       loc.city = filters.city;
+                            if (filters.state)      loc.state = filters.state;
+                            applyFilters(loc, filters.propertytype, val);
+                            setOpenFilter(null);
+                          }}
+                          className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors ${
+                            advFilters.ownerOccupied === o.value
+                              ? 'bg-[#E6F1FB] text-[#0C447C] font-medium'
+                              : 'text-[#444] hover:bg-[#F7FAFF]'
+                          }`}
+                        >
+                          {o.label}
+                          {advFilters.ownerOccupied === o.value && (
+                            <svg className="h-3.5 w-3.5 text-[#185FA5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Range chips */}
+            {RANGE_DEFS.map(({ key, label, minKey, maxKey, step, min, max, fmt, unit }) => {
+              const minVal = advFilters[minKey];
+              const maxVal = advFilters[maxKey];
+              const summary = summarizeRange(minVal, maxVal, fmt);
+              const active = summary !== null;
+              const open = openFilter === key;
+              return (
+                <div key={key} className="relative flex-1 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFilter(open ? null : key)}
+                    className={`flex w-full h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
+                      active
+                        ? 'border-[#185FA5] bg-[#E6F1FB] text-[#0C447C]'
+                        : open
+                          ? 'border-[#185FA5] bg-white text-[#0C447C]'
+                          : 'border-[#E8F0FB] bg-white text-[#444] hover:border-[#B5D4F4] hover:bg-[#F7FAFF]'
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-1 truncate">
+                      <span className={`truncate ${active ? '' : 'text-[#555]'}`}>{label}</span>
+                      {active && <span className="truncate text-[#0C447C]">· {summary}{unit ? ` ${unit}` : ''}</span>}
+                    </span>
+                    <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {open && (
+                    <div className="absolute left-0 top-full mt-2 w-64 rounded-xl border border-[#E8F0FB] bg-white p-3.5 shadow-xl z-[2000]">
+                      <div className="mb-2.5 text-[10px] font-semibold uppercase tracking-widest text-[#888]">{label}{unit ? ` (${unit})` : ''}</div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number" min={min} max={max} step={step} placeholder="Min" autoFocus
+                          value={minVal}
+                          onChange={(e) => setAdvFilters((p) => ({ ...p, [minKey]: e.target.value }))}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { handleApplyAdv(); setOpenFilter(null); } }}
+                          className="h-9 w-full rounded-lg border border-[#E8F0FB] bg-[#F7FAFF] px-3 text-sm text-[#111] placeholder-[#888] focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
+                        />
+                        <span className="text-xs text-[#888]">to</span>
+                        <input
+                          type="number" min={min} max={max} step={step} placeholder="Max"
+                          value={maxVal}
+                          onChange={(e) => setAdvFilters((p) => ({ ...p, [maxKey]: e.target.value }))}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { handleApplyAdv(); setOpenFilter(null); } }}
+                          className="h-9 w-full rounded-lg border border-[#E8F0FB] bg-[#F7FAFF] px-3 text-sm text-[#111] placeholder-[#888] focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
+                        />
+                      </div>
+                      <div className="mt-3 flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = { ...advFiltersRef.current, [minKey]: '', [maxKey]: '' };
+                            setAdvFilters(updated);
+                            advFiltersRef.current = updated;
+                            const loc = {};
+                            if (filters.postalcode) loc.postalcode = filters.postalcode;
+                            if (filters.city)       loc.city = filters.city;
+                            if (filters.state)      loc.state = filters.state;
+                            applyFilters(loc, filters.propertytype);
+                            setOpenFilter(null);
+                          }}
+                          disabled={!active}
+                          className="text-xs font-medium text-[#888] transition hover:text-[#185FA5] disabled:opacity-40 disabled:hover:text-[#888]"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Clear all */}
+            {Object.entries(advFilters).some(([k, v]) => k !== 'ownerOccupied' && v !== '') && (
               <button
-                onClick={() => setShowAdvFilters(o => !o)}
-                onDoubleClick={(e) => e.stopPropagation()}
-                className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                  showAdvFilters || advOnlyCount > 0
-                    ? 'border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                }`}
+                type="button"
+                onClick={() => { handleClearAdv(); setOpenFilter(null); }}
+                disabled={loading}
+                className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-xs font-medium text-[#888] transition hover:bg-[#F7FAFF] hover:text-[#185FA5] focus:outline-none disabled:opacity-50"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M7 12h10M11 18h2" />
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                More Filters
-                {advOnlyCount > 0 && (
-                  <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white">
-                    {advOnlyCount}
-                  </span>
-                )}
+                Clear
               </button>
-            );
-          })()}
+            )}
 
-          {/* Result count */}
-          <div className="shrink-0 min-w-[100px] text-right">
+            {/* Search button */}
+            <button
+              type="button"
+              onClick={() => { handleApplyAdv(); setOpenFilter(null); }}
+              disabled={loading}
+              className="flex flex-1 h-9 items-center justify-center gap-1.5 rounded-full bg-[#185FA5] px-4 text-xs font-semibold text-white transition hover:bg-[#0C447C] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/30 disabled:opacity-50"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+              </svg>
+              Search
+            </button>
+
+            {/* Result count — inline after Search, no dead space */}
             {loading ? (
-              <span className="inline-flex items-center gap-1.5 text-xs text-gray-400">
-                <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+              <span className="inline-flex shrink-0 items-center gap-1.5 pl-2 text-xs text-[#888]">
+                <svg className="h-3 w-3 animate-spin text-[#185FA5]" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
                 Searching…
               </span>
             ) : results.length > 0 ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#E6F1FB] px-3 py-1 text-xs font-semibold text-[#0C447C]">
                 {results.length.toLocaleString()}
-                <span className="text-gray-400">props</span>
+                <span className="font-normal text-[#185FA5]/70">results</span>
               </span>
             ) : (filters.postalcode || filters.city) ? (
-              <span className="text-xs text-gray-400">No results</span>
+              <span className="shrink-0 text-xs text-[#888]">No results</span>
             ) : null}
           </div>
         </div>
-
-        {/* Advanced filter panel */}
-        {showAdvFilters && (
-          <div className="border-t border-gray-100 bg-gray-50/80 px-5 py-4">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
-
-              {/* Bedrooms */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400">Bedrooms</label>
-                <div className="flex items-center gap-1.5">
-                  <input type="number" min="0" max="20" step="1" placeholder="Min"
-                    value={advFilters.bedroomsMin}
-                    onChange={e => setAdvFilters(p => ({...p, bedroomsMin: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                  <span className="shrink-0 text-xs text-gray-300">–</span>
-                  <input type="number" min="0" max="20" step="1" placeholder="Max"
-                    value={advFilters.bedroomsMax}
-                    onChange={e => setAdvFilters(p => ({...p, bedroomsMax: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                </div>
-              </div>
-
-              {/* Bathrooms */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400">Bathrooms</label>
-                <div className="flex items-center gap-1.5">
-                  <input type="number" min="0" max="20" step="0.5" placeholder="Min"
-                    value={advFilters.bathroomsMin}
-                    onChange={e => setAdvFilters(p => ({...p, bathroomsMin: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                  <span className="shrink-0 text-xs text-gray-300">–</span>
-                  <input type="number" min="0" max="20" step="0.5" placeholder="Max"
-                    value={advFilters.bathroomsMax}
-                    onChange={e => setAdvFilters(p => ({...p, bathroomsMax: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                </div>
-              </div>
-
-              {/* Sq Ft */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400">Sq Ft</label>
-                <div className="flex items-center gap-1.5">
-                  <input type="number" min="0" step="100" placeholder="Min"
-                    value={advFilters.sqftMin}
-                    onChange={e => setAdvFilters(p => ({...p, sqftMin: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                  <span className="shrink-0 text-xs text-gray-300">–</span>
-                  <input type="number" min="0" step="100" placeholder="Max"
-                    value={advFilters.sqftMax}
-                    onChange={e => setAdvFilters(p => ({...p, sqftMax: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                </div>
-              </div>
-
-              {/* Year Built */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400">Year Built</label>
-                <div className="flex items-center gap-1.5">
-                  <input type="number" min="1800" max="2030" step="1" placeholder="From"
-                    value={advFilters.yearBuiltMin}
-                    onChange={e => setAdvFilters(p => ({...p, yearBuiltMin: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                  <span className="shrink-0 text-xs text-gray-300">–</span>
-                  <input type="number" min="1800" max="2030" step="1" placeholder="To"
-                    value={advFilters.yearBuiltMax}
-                    onChange={e => setAdvFilters(p => ({...p, yearBuiltMax: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                </div>
-              </div>
-
-              {/* Lot Size */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400">Lot Size (sq ft)</label>
-                <div className="flex items-center gap-1.5">
-                  <input type="number" min="0" step="500" placeholder="Min"
-                    value={advFilters.lotSizeMin}
-                    onChange={e => setAdvFilters(p => ({...p, lotSizeMin: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                  <span className="shrink-0 text-xs text-gray-300">–</span>
-                  <input type="number" min="0" step="500" placeholder="Max"
-                    value={advFilters.lotSizeMax}
-                    onChange={e => setAdvFilters(p => ({...p, lotSizeMax: e.target.value}))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20" />
-                </div>
-              </div>
-
-            </div>
-            <div className="mt-4 flex items-center gap-2">
-              <button
-                onClick={handleApplyAdv}
-                onDoubleClick={(e) => e.preventDefault()}
-                disabled={loading}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Apply filters
-              </button>
-              {Object.entries(advFilters).some(([k, v]) => k !== 'ownerOccupied' && v !== '') && (
-                <button
-                  onClick={handleClearAdv}
-                  onDoubleClick={(e) => e.preventDefault()}
-                  disabled={loading}
-                  className="inline-flex h-8 items-center rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </div>
       {/* Content area — map 70 / list 30, list toggleable */}
       <div className="relative flex flex-1 overflow-hidden">
 
         {/* Map — full background */}
         <div className="absolute inset-0 isolate">
-          <ResultsMap properties={results.filter((p) => p.estimated_value > 0)} onViewChange={handleViewChange} manualKey={manualSearchKey} panKey={panSearchKey} hoveredId={hoveredId} onSelect={setSelectedProperty} />
+          <ResultsMap properties={results} onViewChange={handleViewChange} manualKey={manualSearchKey} panKey={panSearchKey} hoveredId={hoveredId} onSelect={setSelectedProperty} />
         </div>
 
         {/* Properties list — right 20%, slides in/out. Toggle handle is attached to its left edge. */}
@@ -600,7 +672,7 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="h-full overflow-y-auto border-l border-gray-200 bg-white shadow-lg flex flex-col">
-            <ResultsList properties={results.filter((p) => p.estimated_value > 0)} onHover={setHoveredId} onSelect={setSelectedProperty} />
+            <ResultsList properties={results} onHover={setHoveredId} onSelect={setSelectedProperty} />
             {hasMore && (
               <div className="shrink-0 p-3 border-t border-gray-100">
                 <button
