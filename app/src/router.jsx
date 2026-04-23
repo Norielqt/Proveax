@@ -59,8 +59,9 @@ export default function Router() {
             <Route path="/crm" element={<CRM />} />
             <Route path="/me/session" element={<MySession />} />
 
+            {/* Admin team routes */}
             <Route element={<RequireAdmin />}>
-              <Route path="/admin/team" element={<TeamLayout />}>
+              <Route path="/admin/team" element={<TeamLayout base="/admin/team" />}>
                 <Route index element={<TeamOverview />} />
                 <Route path="members" element={<TeamMembers />} />
                 <Route path="timesheets" element={<TeamTimesheets />} />
@@ -70,6 +71,15 @@ export default function Router() {
                 <Route path="settings" element={<TeamSettings />} />
               </Route>
               <Route path="/admin/activity" element={<Navigate to="/admin/team/activity" replace />} />
+            </Route>
+
+            {/* Employee team routes */}
+            <Route path="/team" element={<TeamLayout base="/team" />}>
+              <Route index element={<Navigate to="members" replace />} />
+              <Route path="members" element={<TeamMembers />} />
+              <Route path="timesheets" element={<TeamTimesheets />} />
+              <Route path="screenshots" element={<TeamScreenshots />} />
+              <Route path="*" element={<Navigate to="/team/members" replace />} />
             </Route>
           </Route>
         </Route>

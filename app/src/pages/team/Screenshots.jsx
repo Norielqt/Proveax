@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { listMembers } from '../../api/team';
 import { listScreenshots, deleteScreenshot } from '../../api/sessions';
 import { ScreenshotGridSkeleton } from '../../components/Skeleton';
+import { useAuth } from '../../context/AuthContext';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export default function Screenshots() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [members, setMembers] = useState([]);
   const [userId,  setUserId]  = useState('');
   const [from,    setFrom]    = useState(todayISO());
@@ -14,7 +17,9 @@ export default function Screenshots() {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
 
-  useEffect(() => { listMembers().then(setMembers).catch(() => {}); }, []);
+  useEffect(() => {
+    if (isAdmin) listMembers().then(setMembers).catch(() => {});
+  }, [isAdmin]);
 
   const run = async () => {
     setLoading(true);
@@ -31,10 +36,20 @@ export default function Screenshots() {
   useEffect(() => { run(); /* initial load */ /* eslint-disable-next-line */ }, []);
 
   const remove = async (id) => {
-    if (!confirm('Delete this screenshot? This cannot be undone.')) return;
-    await deleteScreenshot(id);
-    setShots((s) => s.filter((x) => x.id !== id));
-    if (preview?.id === id) setPreview(null);
+    const warning = isAdmin
+      ? 'Delete this screenshot? This cannot be undone.'
+      : 'Delete this screenshot? You will lose 10 minutes of tracked time. This cannot be undone.';
+    if (!confirm(warning)) return;
+    try {
+      await deleteScreenshot(id);
+      setShots((s) => s.filter((x) => x.id !== id));
+      if (preview?.id === id) setPreview(null);
+    } catch (err) {
+      const msg = err.response?.status === 429
+        ? (err.response.data?.message || 'Too many deletions. Please try again later.')
+        : (err.response?.data?.message || 'Failed to delete screenshot.');
+      alert(msg);
+    }
   };
 
   return (
@@ -43,15 +58,17 @@ export default function Screenshots() {
       <p className="mt-1 text-sm text-gray-500">Screen captures from members' active work sessions.</p>
 
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-white p-4">
-        <Field label="Member">
-          <select
-            value={userId} onChange={(e) => setUserId(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
-          >
-            <option value="">All members</option>
-            {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
-        </Field>
+        {isAdmin && (
+          <Field label="Member">
+            <select
+              value={userId} onChange={(e) => setUserId(e.target.value)}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+            >
+              <option value="">All members</option>
+              {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </Field>
+        )}
         <Field label="From">
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             className="rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
@@ -114,7 +131,7 @@ export default function Screenshots() {
               <div className="flex items-center gap-2">
                 <button onClick={() => remove(preview.id)}
                   className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
-                  Delete
+                  Delete{!isAdmin && ' (−10 min)'}
                 </button>
                 <button onClick={() => setPreview(null)}
                   className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50">

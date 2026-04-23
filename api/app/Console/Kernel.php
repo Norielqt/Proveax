@@ -31,6 +31,11 @@ class Kernel extends ConsoleKernel
             ->dailyAt('02:00')
             ->name('purge-old-screenshots')
             ->withoutOverlapping();
+
+        $schedule->command('sessions:close-stale')
+            ->everyMinute()
+            ->name('close-stale-sessions')
+            ->withoutOverlapping();
     }
 
     /**

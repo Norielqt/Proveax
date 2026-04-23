@@ -8,7 +8,7 @@ const TYPE_STYLE = {
   warm:      'bg-amber-100 text-amber-800',
   hot:       'bg-rose-100 text-rose-800',
   qualified: 'bg-blue-100 text-blue-800',
-  closed:    'bg-emerald-100 text-emerald-800',
+  closed:    'bg-blue-100 text-blue-800',
 };
 
 function fmtPrice(v) {

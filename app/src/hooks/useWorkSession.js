@@ -2,9 +2,52 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getCurrentSession, startSession, heartbeat, endSession, uploadScreenshot,
 } from '../api/sessions';
+import { getToken } from '../api/client';
 
-const HEARTBEAT_MS  = 30_000; // server heartbeat every 30s
-const TICK_MS       = 1_000;  // timer tick every 1s
+const HEARTBEAT_MS        = 30_000; // server heartbeat every 30s
+const TICK_MS             = 1_000;  // timer tick every 1s
+const BLACK_CHECK_MS      = 30_000; // sample the share stream every 30s
+const BLACK_TOLERANCE_MS  = 120_000; // auto-end after 2 min of continuous black
+
+// Fire a keepalive request during tab unload so the final counters and the
+// end marker survive the page going away. sendBeacon can't set Authorization
+// headers, so we use fetch(..., keepalive: true) which supports them and is
+// permitted by the browser to outlive the document.
+function flushOnUnload(sessionId, activeSeconds, idleSeconds, { endSession: shouldEnd = true, reason = 'unload' } = {}) {
+  try {
+    const base  = import.meta.env.VITE_API_URL || '';
+    const token = getToken();
+    if (!token || !sessionId) return;
+
+    const headers = {
+      'Content-Type':  'application/json',
+      Accept:          'application/json',
+      Authorization:   `Bearer ${token}`,
+    };
+    const active = Math.round(activeSeconds);
+    const idle   = Math.round(idleSeconds);
+
+    // Always flush the latest counters.
+    fetch(`${base}/api/work-sessions/${sessionId}/heartbeat`, {
+      method: 'POST',
+      keepalive: true,
+      headers,
+      body: JSON.stringify({ active_seconds: active, idle_seconds: idle }),
+    }).catch(() => {});
+
+    // And (optionally) end the session so it doesn't hang open.
+    if (shouldEnd) {
+      fetch(`${base}/api/work-sessions/${sessionId}/end`, {
+        method: 'POST',
+        keepalive: true,
+        headers,
+        body: JSON.stringify({ active_seconds: active, idle_seconds: idle, reason }),
+      }).catch(() => {});
+    }
+  } catch {
+    // best-effort; swallow
+  }
+}
 
 /**
  * Custom hook for managing a work session.
@@ -23,24 +66,37 @@ export function useWorkSession() {
   const [ending,   setEnding]   = useState(false);
   const [error,    setError]    = useState(null);
   const [isIdle,   setIsIdle]   = useState(false);
+  const [dayEnded, setDayEnded] = useState(false);
   // Tick counter forces re-renders so UI can show live counters from refs.
   const [, setTick] = useState(0);
 
-  // local cumulative counters (cumulative since session start)
+  // local cumulative counters — current session only (sent to server via heartbeat)
   const activeSecondsRef = useRef(0);
   const idleSecondsRef   = useRef(0);
 
+  // sum of all ENDED sessions today (computed on bootstrap + updated on end)
+  const pastSecondsRef   = useRef(0);
+
   // last activity timestamp (ms)
   const lastActivityRef = useRef(Date.now());
+
+  // wall-clock anchor for drift-free accumulation (survives bg-tab throttling)
+  const lastTickAtRef = useRef(Date.now());
 
   // capture infra
   const streamRef   = useRef(null);
   const videoRef    = useRef(null);
   const captureRef  = useRef(null); // interval id
+  const firstCaptureRef = useRef(null); // timeout id for the first capture
+  const blackCheckRef   = useRef(null); // interval id for stream-black watchdog
+  const blackSinceRef   = useRef(null); // ms timestamp when stream first went black
   const tickRef     = useRef(null);
   const heartbeatRef= useRef(null);
 
   const cleanupCapture = () => {
+    if (firstCaptureRef.current) { clearTimeout(firstCaptureRef.current); firstCaptureRef.current = null; }
+    if (blackCheckRef.current)   { clearInterval(blackCheckRef.current); blackCheckRef.current = null; }
+    blackSinceRef.current = null;
     if (captureRef.current) { clearInterval(captureRef.current); captureRef.current = null; }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
@@ -64,12 +120,22 @@ export function useWorkSession() {
         const data = await getCurrentSession();
         setSession(data.session);
         setSettings(data.settings);
-        if (data.session) {
-          // Resume counters from server values
+        setDayEnded(!!data.day_ended);
+
+        // Restore current-session counters from the last heartbeat the server
+        // received (covers browser crash / forced close scenarios).
+        if (data.session && !data.session.ended_at) {
           activeSecondsRef.current = data.session.active_seconds ?? 0;
-          idleSecondsRef.current   = data.session.idle_seconds ?? 0;
-          // NB: screen capture stream cannot be resumed after reload — user
-          // would need to restart session. For v1 we leave that to the UI.
+          idleSecondsRef.current   = data.session.idle_seconds   ?? 0;
+          // past = today total minus what the live session already has
+          pastSecondsRef.current   = Math.max(0,
+            (data.today_active_seconds ?? 0) - (data.session.active_seconds ?? 0)
+          );
+        } else {
+          // No live session — entire today total is in past sessions
+          pastSecondsRef.current   = data.today_active_seconds ?? 0;
+          activeSecondsRef.current = 0;
+          idleSecondsRef.current   = 0;
         }
       } catch (e) {
         setError(e.response?.data?.message || 'Could not load session.');
@@ -95,24 +161,78 @@ export function useWorkSession() {
 
     const idleTimeoutMs = (settings?.idle_timeout_minutes ?? 5) * 60_000;
 
-    tickRef.current = setInterval(() => {
-      const elapsedSinceActivity = Date.now() - lastActivityRef.current;
-      const idle = elapsedSinceActivity >= idleTimeoutMs;
+    // Accumulate by wall-clock delta (not tick count) so backgrounded tabs
+    // — where setInterval is throttled to ≥1s and often to 1/min — still
+    // record the true elapsed time. On each wake-up (throttled tick or
+    // visibilitychange) we add (now - lastTickAt) to the correct bucket.
+    const accumulate = () => {
+      const now    = Date.now();
+      const deltaS = Math.max(0, (now - lastTickAtRef.current) / 1000);
+      lastTickAtRef.current = now;
+      if (deltaS <= 0) return;
+
+      const hidden    = typeof document !== 'undefined' && document.hidden;
+      const idleByAct = (now - lastActivityRef.current) >= idleTimeoutMs;
+      // Hidden tabs receive no mouse/keyboard events, so DON'T treat
+      // inactivity-while-hidden as idle — only flip to idle if the user
+      // was still interacting but has now paused for > idleTimeout.
+      const idle = !hidden && idleByAct;
+
       setIsIdle(idle);
+      if (idle) idleSecondsRef.current   += deltaS;
+      else      activeSecondsRef.current += deltaS;
       setTick((t) => t + 1);
-      if (idle) idleSecondsRef.current += 1;
-      else      activeSecondsRef.current += 1;
-    }, TICK_MS);
+    };
+
+    lastTickAtRef.current = Date.now();
+    tickRef.current = setInterval(accumulate, TICK_MS);
+
+    // When the tab becomes visible again, reconcile any missed time.
+    const onVisibility = () => {
+      accumulate();
+      // Also force a heartbeat so admins see fresh numbers promptly.
+      heartbeat(session.id, Math.round(activeSecondsRef.current), Math.round(idleSecondsRef.current))
+        .catch(() => {});
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    // Fire a best-effort final flush when the tab is actually going away.
+    // 'pagehide' is the most reliable signal (fires for BFCache + real close),
+    // 'beforeunload' is a belt-and-suspenders backup for older browsers.
+    const onPageHide = (e) => {
+      accumulate();
+      // If the page is going into BFCache (can be restored), keep the session
+      // open — just flush counters. Otherwise end it.
+      const goingAway = !(e && e.persisted);
+      flushOnUnload(
+        session.id,
+        activeSecondsRef.current,
+        idleSecondsRef.current,
+        { endSession: goingAway, reason: 'unload' },
+      );
+    };
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('beforeunload', onPageHide);
 
     heartbeatRef.current = setInterval(async () => {
+      accumulate(); // ensure latest delta is captured before sending
       try {
-        await heartbeat(session.id, activeSecondsRef.current, idleSecondsRef.current);
+        await heartbeat(
+          session.id,
+          Math.round(activeSecondsRef.current),
+          Math.round(idleSecondsRef.current),
+        );
       } catch {
         // swallow — network blips are fine, next tick will retry
       }
     }, HEARTBEAT_MS);
 
-    return cleanupLoops;
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('beforeunload', onPageHide);
+      cleanupLoops();
+    };
   }, [session, settings]);
 
   // ---------- start ----------
@@ -133,6 +253,7 @@ export function useWorkSession() {
 
       const data = await startSession(!!withScreenshots);
       setSession(data.session);
+      // Do NOT reset pastSecondsRef — it carries today's accumulated total
       activeSecondsRef.current = 0;
       idleSecondsRef.current   = 0;
       lastActivityRef.current  = Date.now();
@@ -155,18 +276,36 @@ export function useWorkSession() {
         const intervalMs = (settings?.screenshot_interval_minutes ?? 10) * 60_000;
 
         // First capture after ~15s to confirm pipeline works, then on schedule
-        const scheduleFirst = setTimeout(() => captureScreenshot(data.session.id), 15_000);
+        firstCaptureRef.current = setTimeout(() => captureScreenshot(data.session.id), 15_000);
 
         captureRef.current = setInterval(() => captureScreenshot(data.session.id), intervalMs);
 
-        // Cleanup: also cancel scheduled first capture if session ends early
-        captureRef.current.__first = scheduleFirst;
+        // Stream-black watchdog: if the laptop sleeps / monitor disconnects /
+        // OS blanks the share, the video usually turns into a black frame but
+        // the 'ended' event never fires. Sample a few pixels every 30s; if
+        // they're all near-black for > BLACK_TOLERANCE_MS, end the session.
+        blackCheckRef.current = setInterval(() => {
+          const black = isStreamBlack();
+          if (black === null) return; // not ready yet
+          if (black) {
+            if (!blackSinceRef.current) blackSinceRef.current = Date.now();
+            if (Date.now() - blackSinceRef.current >= BLACK_TOLERANCE_MS) {
+              _endInternal('stream_black').catch(() => {});
+            }
+          } else {
+            blackSinceRef.current = null;
+          }
+        }, BLACK_CHECK_MS);
       }
 
       return data.session;
     } catch (e) {
       if (stream) stream.getTracks().forEach((t) => t.stop());
-      const msg = e.response?.data?.message || e.message || 'Could not start session.';
+      const errors = e.response?.data?.errors;
+      const msg = (errors && Object.values(errors)[0]?.[0])
+        || e.response?.data?.message
+        || e.message
+        || 'Could not start session.';
       setError(msg);
       throw e;
     } finally {
@@ -203,6 +342,33 @@ export function useWorkSession() {
     }
   };
 
+  // Returns true when the share stream is effectively black, false when it
+  // has content, or null when the stream is not yet decodable.
+  const isStreamBlack = () => {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2) return null;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) return null;
+    try {
+      const canvas = document.createElement('canvas');
+      const SAMPLE = 32;
+      canvas.width = SAMPLE; canvas.height = SAMPLE;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(video, 0, 0, SAMPLE, SAMPLE);
+      const { data } = ctx.getImageData(0, 0, SAMPLE, SAMPLE);
+      let sum = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        sum += data[i] + data[i + 1] + data[i + 2];
+      }
+      const avg = sum / (data.length / 4) / 3; // 0..255
+      return avg < 6; // essentially black
+    } catch {
+      // Cross-origin or drawing error — assume not-black to avoid false ends.
+      return false;
+    }
+  };
+
   // ---------- end ----------
   const _endInternal = async (reason) => {
     const current = session;
@@ -210,16 +376,23 @@ export function useWorkSession() {
 
     setEnding(true);
     cleanupLoops();
-    if (captureRef.current?.__first) clearTimeout(captureRef.current.__first);
     cleanupCapture();
 
     try {
       const data = await endSession(current.id, {
-        activeSeconds: activeSecondsRef.current,
-        idleSeconds:   idleSecondsRef.current,
+        activeSeconds: Math.round(activeSecondsRef.current),
+        idleSeconds:   Math.round(idleSecondsRef.current),
         reason,
       });
+      // Move this session's active time into the past-sessions bucket so the
+      // daily total stays intact when the user views the idle screen or
+      // starts a new session.
+      pastSecondsRef.current  += Math.round(activeSecondsRef.current);
+      activeSecondsRef.current = 0;
+      idleSecondsRef.current   = 0;
       setSession(data.session);
+      if (reason === 'manual') setDayEnded(true);
+      setTick((t) => t + 1); // force re-render so UI shows updated total
     } catch (e) {
       setError(e.response?.data?.message || 'Could not end session.');
     } finally {
@@ -227,14 +400,19 @@ export function useWorkSession() {
     }
   };
 
-  const end = useCallback(() => _endInternal('manual'),
+  const end   = useCallback(() => _endInternal('manual'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session]);
+
+  const pause = useCallback(() => _endInternal('paused'),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [session]);
 
   return {
-    session, settings, loading, starting, ending, error, isIdle,
-    activeSeconds: activeSecondsRef.current,
-    idleSeconds:   idleSecondsRef.current,
-    start, end,
+    session, settings, loading, starting, ending, error, isIdle, dayEnded,
+    activeSeconds:     Math.round(activeSecondsRef.current),
+    idleSeconds:       Math.round(idleSecondsRef.current),
+    totalTodaySeconds: Math.round(pastSecondsRef.current + activeSecondsRef.current),
+    start, end, pause,
   };
 }

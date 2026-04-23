@@ -25,17 +25,27 @@ function Notice({ notice }) {
 
 export default function Members() {
   const { user: me } = useAuth();
+  const isAdmin = me?.role === 'admin';
   const [members, setMembers] = useState([]);
   const [invites, setInvites] = useState([]);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('employee');
   const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fetchingMembers, setFetchingMembers] = useState(true);
   const [actionId, setActionId] = useState(null);
 
   const refresh = async () => {
-    const [m, i] = await Promise.all([listMembers(), listInvites()]);
-    setMembers(m); setInvites(i);
+    const [m, i] = await Promise.all([
+      listMembers(),
+      isAdmin ? listInvites() : Promise.resolve([]),
+    ]);
+    const sorted = [...m].sort((a, b) => {
+      if (a.role === b.role) return a.name.localeCompare(b.name);
+      return a.role === 'admin' ? -1 : 1;
+    });
+    setMembers(sorted); setInvites(i);
+    setFetchingMembers(false);
   };
 
   useEffect(() => { refresh(); }, []);
@@ -115,7 +125,8 @@ export default function Members() {
       <h1 className="text-2xl font-bold text-gray-900">Members</h1>
       <p className="mt-1 text-sm text-gray-500">Manage who has access to your workspace.</p>
 
-      {/* Invite form */}
+      {/* Invite form — admin only */}
+      {isAdmin && (
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
         <h2 className="font-semibold text-gray-900">Invite a new member</h2>
         <Notice notice={notice} />
@@ -142,9 +153,12 @@ export default function Members() {
         </form>
         <p className="mt-2 text-xs text-gray-400">Invitation links are valid for 7 days.</p>
       </div>
+      )}
 
       {/* Members list */}
-      <h2 className="mt-8 mb-3 font-semibold text-gray-900">Team members ({members.length})</h2>
+      <h2 className="mt-8 mb-3 font-semibold text-gray-900">
+        Team members {!fetchingMembers && `(${members.length})`}
+      </h2>
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
@@ -157,7 +171,25 @@ export default function Members() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {members.map((m) => {
+            {fetchingMembers
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-3">
+                      <div className="h-3.5 w-32 rounded bg-gray-200" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-3.5 w-44 rounded bg-gray-200" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-3.5 w-16 rounded bg-gray-200" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-5 w-14 rounded-full bg-gray-200" />
+                    </td>
+                    <td className="px-4 py-3" />
+                  </tr>
+                ))
+              : members.map((m) => {
               const isMe = m.id === me?.id;
               const busy = actionId === `m-${m.id}`;
               return (
@@ -167,15 +199,19 @@ export default function Members() {
                   </td>
                   <td className="px-4 py-2.5 text-gray-600">{m.email}</td>
                   <td className="px-4 py-2.5">
-                    <select
-                      value={m.role}
-                      onChange={(e) => doRoleChange(m.id, e.target.value)}
-                      disabled={isMe || busy}
-                      className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs disabled:bg-gray-50 disabled:text-gray-400"
-                    >
-                      <option value="employee">Employee</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={m.role}
+                        onChange={(e) => doRoleChange(m.id, e.target.value)}
+                        disabled={isMe || busy}
+                        className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs disabled:bg-gray-50 disabled:text-gray-400"
+                      >
+                        <option value="employee">Employee</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    ) : (
+                      <span className="capitalize text-xs text-gray-600">{m.role}</span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5">
                     {m.is_paused ? (
@@ -185,7 +221,7 @@ export default function Members() {
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    {!isMe && (
+                    {isAdmin && !isMe && (
                       <div className="inline-flex gap-2">
                         <button
                           onClick={() => doPause(m.id, m.is_paused)}
@@ -246,7 +282,7 @@ export default function Members() {
                         {inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        {canAct && (
+                        {isAdmin && canAct && (
                           <div className="inline-flex gap-2">
                             <button
                               onClick={() => doResend(inv.id)}
