@@ -1,22 +1,29 @@
 import { Link } from 'react-router-dom';
+import logo from '../../assets/Proveax_loading.png';
 
 export default function TopBar() {
   return (
-    <div className="w-full border-b border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-8">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-md bg-blue-600 flex items-center justify-center text-white font-bold">P</div>
-          <span className="text-lg font-semibold text-gray-900">Proveax</span>
+    <nav className="sticky top-0 z-50 border-b border-[#E8F0FB] bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5 md:px-10">
+        <Link to="/">
+          <img src={logo} alt="Proveax" className="h-8 w-auto" />
         </Link>
+
         <div className="flex items-center gap-2">
-          <Link to="/login" className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100">
-            Log in
+          <Link
+            to="/login"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-[#185FA5] transition-colors hover:bg-[#E6F1FB]"
+          >
+            Sign in
           </Link>
-          <Link to="/register" className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-            Sign up
+          <Link
+            to="/register"
+            className="rounded-lg bg-gradient-to-br from-[#185FA5] to-[#0C447C] px-5 py-2 text-sm font-medium text-white shadow-sm shadow-[#185FA5]/20 transition-all hover:shadow-md hover:shadow-[#185FA5]/30"
+          >
+            Get started free
           </Link>
         </div>
       </div>
-    </div>
+    </nav>
   );
 }
