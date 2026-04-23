@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import * as authApi from '../api/auth';
+import { saveToken } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -74,6 +75,7 @@ export function AuthProvider({ children }) {
         window.removeEventListener('message', handler);
 
         if (type === 'google_login_ok') {
+          saveToken(payload);
           await refresh();
           resolve({ status: 'login' });
         } else if (type === 'google_onboard') {

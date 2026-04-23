@@ -10,6 +10,7 @@ use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -45,14 +46,13 @@ class AuthController extends Controller
             ]);
         });
 
-        Auth::login($user);
-        $request->session()->regenerate();
-
         $this->logger->log($user, 'admin.registered');
+        $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
             'user'   => $user->fresh(),
             'tenant' => $user->tenant,
+            'token'  => $token,
         ], 201);
     }
 
@@ -63,30 +63,27 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($data, remember: true)) {
+        $user = User::withoutGlobalScopes()->where('email', $data['email'])->first();
+
+        if (! $user || ! Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credentials.'], 422);
         }
 
-        if ($request->user()->is_paused) {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
+        if ($user->is_paused) {
             return response()->json(['message' => 'Your account is paused. Contact your administrator.'], 403);
         }
 
-        $request->session()->regenerate();
-        $user = $request->user()->load('tenant');
-
+        $user->load('tenant');
         $this->logger->log($user, 'user.login');
+        $token = $user->createToken('api')->plainTextToken;
 
-        return response()->json(['user' => $user, 'tenant' => $user->tenant]);
+        return response()->json(['user' => $user, 'tenant' => $user->tenant, 'token' => $token]);
     }
 
     public function logout(Request $request)
     {
         $this->logger->log($request->user(), 'user.logout');
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out.']);
     }
 

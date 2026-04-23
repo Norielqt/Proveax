@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\InviteService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
@@ -181,9 +180,7 @@ class InviteController extends Controller
             return $user;
         });
 
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return response()->json(['user' => $user->fresh(['tenant'])]);
+        $token = $user->createToken('api')->plainTextToken;
+        return response()->json(['user' => $user->fresh(['tenant']), 'token' => $token]);
     }
 }

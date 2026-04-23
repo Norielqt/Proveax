@@ -1,0 +1,18 @@
+[variables]
+# Pin PHP version; Nixpacks will auto-install required extensions from composer.json
+NIXPACKS_PHP_VERSION = "8.2"
+
+[phases.install]
+cmds = ["composer install --no-dev --optimize-autoloader --no-interaction"]
+
+[phases.build]
+cmds = [
+  "php artisan config:cache",
+  "php artisan route:cache",
+  "php artisan view:cache"
+]
+
+[start]
+# Migrations run at startup so they execute against the live Railway DB.
+# The worker service overrides this command in the Railway dashboard.
+cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"

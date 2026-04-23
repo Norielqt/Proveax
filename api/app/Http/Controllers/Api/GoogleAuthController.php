@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -57,11 +56,9 @@ class GoogleAuthController extends Controller
                 $user->update(['google_id' => $googleUser->getId()]);
             }
 
-            Auth::login($user, remember: true);
-            $request->session()->regenerate();
             $this->logger->log($user, 'user.login.google');
-
-            return $this->popupClose('google_login_ok');
+            $token = $user->createToken('api')->plainTextToken;
+            return $this->popupClose('google_login_ok', $token);
         }
 
         // --- New user: issue a short-lived staging token ---
@@ -120,13 +117,13 @@ class GoogleAuthController extends Controller
 
         Cache::forget($cacheKey);
 
-        Auth::login($user, remember: true);
-        $request->session()->regenerate();
         $this->logger->log($user, 'admin.registered.google');
+        $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
             'user'   => $user->fresh(),
             'tenant' => $user->tenant,
+            'token'  => $token,
         ], 201);
     }
 
@@ -134,11 +131,15 @@ class GoogleAuthController extends Controller
 
     private function popupClose(string $status, string $payload = ''): \Illuminate\Http\Response
     {
-        $frontendUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5173'));
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
 
-        // Sanitise: only allow alphanumeric + basic punctuation in payload
-        $safePayload = preg_replace('/[^a-zA-Z0-9_\-]/', '', $payload);
-        $safeStatus  = preg_replace('/[^a-zA-Z0-9_]/', '', $status);
+        // JSON-encode the message data and target origin so any characters
+        // (including the | in Sanctum tokens) are safely embedded in HTML.
+        $data   = json_encode(
+            ['type' => $status, 'payload' => $payload],
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+        $origin = json_encode($frontendUrl);
 
         $html = <<<HTML
         <!doctype html>
@@ -147,10 +148,7 @@ class GoogleAuthController extends Controller
         <body>
         <script>
           if (window.opener) {
-            window.opener.postMessage(
-              { type: '{$safeStatus}', payload: '{$safePayload}' },
-              '{$frontendUrl}'
-            );
+            window.opener.postMessage({$data}, {$origin});
           }
           window.close();
         </script>
