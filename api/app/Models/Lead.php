@@ -16,6 +16,7 @@ class Lead extends Model
         'address',
         'phone',
         'lead_type',
+        'source_type',
         'home_price_cents',
         'email',
         'notes',

@@ -46,6 +46,7 @@ class RentcastService
     public function snapshot(array $params): array
     {
         $baseQuery = array_filter([
+            'address'       => $params['address']      ?? null,
             'zipCode'       => $params['zipCode']      ?? $params['postalcode'] ?? null,
             'city'          => $params['city']          ?? null,
             'state'         => $params['state']         ?? null,
@@ -170,15 +171,89 @@ class RentcastService
         $avm  = (!$avmResp->failed())  ? ($avmResp->json()  ?? []) : [];
         $rent = (!$rentResp->failed()) ? ($rentResp->json() ?? []) : [];
 
-        return ['data' => [
-            'location'        => $this->normLocation($p),
-            'characteristics' => $this->normCharacteristics($p),
-            'owner'           => $this->normOwner($p),
-            'valuation'       => $this->normValuation($p, $avm, $rent),
-            'transactions'    => $this->normTransactions($p),
-            'mortgage'        => [], // Rentcast does not provide mortgage data
-            'permits'         => [], // Rentcast does not provide permit data
-        ]];
+        return ['data' => $this->normDetail($p, $avm, $rent)];
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Sale Listings (MLS)  — GET /v1/listings/sale
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Fetch sale listings from the Rentcast /listings/sale endpoint.
+     * Accepted $params keys: zipCode, city, state, latitude, longitude, radius,
+     *   propertyType, status (Active|Inactive), listingType (Pending|Withdrawn|Sold|Active)
+     *
+     * Note: listingType is a response field in Rentcast — NOT a query param.
+     * We filter by it server-side after the API call.
+     */
+    public function listings(array $params): array
+    {
+        $query = array_filter([
+            'zipCode'      => $params['zipCode']      ?? null,
+            'city'         => $params['city']         ?? null,
+            'state'        => $params['state']        ?? null,
+            'latitude'     => $params['latitude']     ?? null,
+            'longitude'    => $params['longitude']    ?? null,
+            'radius'       => $params['radius']       ?? null,
+            'propertyType' => $params['propertyType'] ?? null,
+            'status'       => $params['status']       ?? 'Active',
+            'limit'        => 500,
+        ], fn($v) => $v !== null && $v !== '');
+
+        $resp = $this->apiGet('/listings/sale', $query);
+
+        if ($resp->failed()) {
+            return ['data' => [], 'total' => 0, 'error' => $resp->json('error') ?? 'Rentcast listings API error'];
+        }
+
+        $raw = $resp->json() ?? [];
+
+        // listingType is NOT a Rentcast query param — filter on our side
+        $listingType = $params['listingType'] ?? null;
+        if ($listingType) {
+            $raw = array_values(array_filter($raw, fn($l) => ($l['listingType'] ?? '') === $listingType));
+        }
+
+        $rows = array_map([$this, 'normaliseListing'], $raw);
+
+        return ['data' => $rows, 'total' => count($rows)];
+    }
+
+    /**
+     * Normalise a single /listings/sale record into a shape compatible with
+     * the property search rows (so the frontend can render it identically).
+     */
+    private function normaliseListing(array $l): array
+    {
+        return [
+            'attom_id'       => $l['id']              ?? null,
+            'street'         => $l['addressLine1']    ?? null,
+            'address'        => $l['formattedAddress'] ?? trim(($l['addressLine1'] ?? '') . ' ' . ($l['city'] ?? '')),
+            'city'           => $l['city']            ?? null,
+            'state'          => $l['state']           ?? null,
+            'zip'            => $l['zipCode']         ?? null,
+            'lat'            => isset($l['latitude'])  ? (float) $l['latitude']  : null,
+            'lng'            => isset($l['longitude']) ? (float) $l['longitude'] : null,
+            'property_type'  => $l['propertyType']    ?? null,
+            'bedrooms'       => $l['bedrooms']        ?? null,
+            'bathrooms'      => $l['bathrooms']       ?? null,
+            'square_feet'    => $l['squareFootage']   ?? null,
+            'lot_size'       => $l['lotSize']         ?? null,
+            'year_built'     => $l['yearBuilt']       ?? null,
+            'estimated_value'=> $l['price']           ?? null,
+            'owner_name'     => null,
+            'owner_occupied' => null,
+            // Listing-specific extras
+            'list_price'     => $l['price']           ?? null,
+            'listing_type'   => $l['listingType']     ?? null,
+            'listing_status' => $l['status']          ?? null,
+            'listed_date'    => $l['listedDate']      ?? null,
+            'days_on_market' => $l['daysOnMarket']    ?? null,
+            'mls_number'     => $l['mlsNumber']       ?? null,
+            // Pre-computed detail (raw_json stripped by controller before response)
+            'detail'         => $this->normDetail($l),
+            'raw_json'       => json_encode($l, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ];
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -235,6 +310,9 @@ class RentcastService
             'estimated_value' => $this->latestAssessedValue($p),
             'owner_name'      => $this->extractOwnerName($p),
             'owner_occupied'  => isset($p['ownerOccupied']) ? (bool) $p['ownerOccupied'] : null,
+            // Pre-computed detail — lets the frontend skip a follow-up /fulldetail call
+            'detail'          => $this->normDetail($p),
+            // raw_json is stored in DB (never returned in API responses — stripped by controller)
             'raw_json'        => json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ];
     }
@@ -246,15 +324,35 @@ class RentcastService
      */
     public function fullDetailFromCache(array $rawProp): array
     {
-        return ['data' => [
-            'location'        => $this->normLocation($rawProp),
-            'characteristics' => $this->normCharacteristics($rawProp),
-            'owner'           => $this->normOwner($rawProp),
-            'valuation'       => $this->normValuation($rawProp, [], []),
-            'transactions'    => $this->normTransactions($rawProp),
+        return ['data' => $this->normDetail($rawProp)];
+    }
+
+    /**
+     * Compute the standard detail object from a decoded raw property array.
+     * Used when serving from DB cache (zero API calls).
+     */
+    public function detailFromRaw(?string $rawJson): ?array
+    {
+        if (!$rawJson) return null;
+        $p = json_decode($rawJson, true) ?? [];
+        return empty($p) ? null : $this->normDetail($p);
+    }
+
+    /**
+     * Build the unified detail object from a raw Rentcast property / listing array.
+     * Called inline during normalisation and from the cache path.
+     */
+    private function normDetail(array $p, array $avm = [], array $rent = []): array
+    {
+        return [
+            'location'        => $this->normLocation($p),
+            'characteristics' => $this->normCharacteristics($p),
+            'owner'           => $this->normOwner($p),
+            'valuation'       => $this->normValuation($p, $avm, $rent),
+            'transactions'    => $this->normTransactions($p),
             'mortgage'        => [],
             'permits'         => [],
-        ]];
+        ];
     }
 
     private function normLocation(array $p): array

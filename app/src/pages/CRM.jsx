@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { listLeads, createLead, updateLead, deleteLead, LEAD_TYPES } from '../api/leads';
+import { listLeads, createLead, updateLead, deleteLead, SOURCE_TYPES, SOURCE_TYPE_LABELS } from '../api/leads';
 import { TableSkeleton } from '../components/Skeleton';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-const TYPE_STYLE = {
-  cold:      'bg-slate-100 text-slate-700',
-  warm:      'bg-amber-100 text-amber-800',
-  hot:       'bg-rose-100 text-rose-800',
-  qualified: 'bg-blue-100 text-blue-800',
-  closed:    'bg-blue-100 text-blue-800',
+const SOURCE_TYPE_STYLE = {
+  absentee_owner:     'bg-purple-100 text-purple-800',
+  out_of_state_owner: 'bg-indigo-100 text-indigo-800',
+  high_equity:        'bg-emerald-100 text-emerald-800',
+  cash_buyers:        'bg-teal-100 text-teal-800',
+  vacant_lots:        'bg-orange-100 text-orange-800',
+  mls_active:         'bg-green-100 text-green-800',
+  mls_pending:        'bg-yellow-100 text-yellow-800',
+  mls_withdrawn:      'bg-red-100 text-red-800',
+  mls_sold:           'bg-gray-100 text-gray-800',
 };
 
 function fmtPrice(v) {
@@ -93,16 +97,16 @@ function PriceCell({ value, onCommit }) {
   );
 }
 
-function TypeCell({ value, onCommit }) {
+function SourceTypeCell({ value, onCommit }) {
   return (
     <select
       value={value ?? ''}
       onChange={(e) => onCommit(e.target.value || null)}
-      className={`w-full border-0 bg-transparent px-2 py-1.5 text-center text-xs font-medium outline-none focus:ring-1 focus:ring-inset focus:ring-blue-400 ${value ? TYPE_STYLE[value] ?? 'text-gray-700' : 'text-gray-400'}`}
+      className={`w-full border-0 bg-transparent px-2 py-1.5 text-center text-xs font-medium outline-none focus:ring-1 focus:ring-inset focus:ring-blue-400 ${value ? SOURCE_TYPE_STYLE[value] ?? 'text-gray-700' : 'text-gray-400'}`}
     >
       <option value="">—</option>
-      {LEAD_TYPES.map((t) => (
-        <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>
+      {SOURCE_TYPES.map((t) => (
+        <option key={t} value={t}>{SOURCE_TYPE_LABELS[t] ?? t}</option>
       ))}
     </select>
   );
@@ -112,7 +116,6 @@ function TypeCell({ value, onCommit }) {
 export default function CRM() {
   const [rows, setRows]         = useState(null);
   const [query, setQuery]       = useState('');
-  const [typeFilter, setType]   = useState('');
   const [saving, setSaving]     = useState({});
   const [error, setError]       = useState(null);
 
@@ -166,13 +169,12 @@ export default function CRM() {
     if (!rows) return null;
     const q = query.trim().toLowerCase();
     return rows.filter((r) => {
-      if (typeFilter && r.lead_type !== typeFilter) return false;
       if (!q) return true;
       return [r.name, r.address, r.phone, r.email, r.notes]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     });
-  }, [rows, query, typeFilter]);
+  }, [rows, query]);
 
   const lastEdit = rows && rows.length
     ? rows.map((r) => r.updated_at).filter(Boolean).sort().slice(-1)[0]
@@ -192,14 +194,6 @@ export default function CRM() {
             placeholder="Search name, email, phone…"
             className="w-64 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
           />
-          <select
-            value={typeFilter}
-            onChange={(e) => setType(e.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-          >
-            <option value="">All types</option>
-            {LEAD_TYPES.map((t) => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}
-          </select>
           <button
             onClick={addRow}
             className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
@@ -225,7 +219,7 @@ export default function CRM() {
                 <Th>Name</Th>
                 <Th>Address</Th>
                 <Th>Phone</Th>
-                <Th>Type</Th>
+                <Th>Lead</Th>
                 <Th>Price</Th>
                 <Th>Email</Th>
                 <Th>Notes</Th>
@@ -245,7 +239,7 @@ export default function CRM() {
                   <Td><TextCell value={r.name}    onCommit={(v) => patchRow(r.id, { name: v })}    placeholder="Name" /></Td>
                   <Td><TextCell value={r.address} onCommit={(v) => patchRow(r.id, { address: v })} placeholder="Address" /></Td>
                   <Td><TextCell value={r.phone}   onCommit={(v) => patchRow(r.id, { phone: v })}   placeholder="Phone" /></Td>
-                  <Td><TypeCell value={r.lead_type} onCommit={(v) => patchRow(r.id, { lead_type: v })} /></Td>
+                  <Td><SourceTypeCell value={r.source_type} onCommit={(v) => patchRow(r.id, { source_type: v })} /></Td>
                   <Td><PriceCell value={r.home_price} onCommit={(v) => patchRow(r.id, { home_price: v })} /></Td>
                   <Td><TextCell value={r.email}   onCommit={(v) => patchRow(r.id, { email: v })}   placeholder="name@example.com" type="email" /></Td>
                   <Td><TextCell value={r.notes}   onCommit={(v) => patchRow(r.id, { notes: v })}   placeholder="Notes…" /></Td>

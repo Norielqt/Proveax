@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { rentcastSearch, rentcastLoadMore } from '../api/rentcast';
+import { rentcastSearch, rentcastLoadMore, rentcastListings } from '../api/rentcast';
 import { useSubscription } from '../hooks/useSubscription';
 import ResultsList from '../components/search/ResultsList';
 import ResultsMap  from '../components/search/ResultsMap';
@@ -37,22 +37,91 @@ const summarizeRange = (minVal, maxVal, fmt) => {
   return `≤${fmt(maxVal)}`;
 };
 
+// Lead strategy chip options
+const STRATEGY_OPTS = [
+  { value: '',                label: 'All'              },
+  { value: 'absentee_owner',  label: 'Absentee Owner'   },
+  { value: 'out_of_state_owner', label: 'Out of State'  },
+  { value: 'high_equity',     label: 'High Equity'      },
+  { value: 'cash_buyers',     label: 'Cash Buyers'      },
+  { value: 'vacant_lots',     label: 'Vacant Lots'      },
+  { value: 'mls_active',      label: 'MLS Active'       },
+  { value: 'mls_pending',     label: 'MLS Pending'      },
+  { value: 'mls_withdrawn',   label: 'MLS Withdrawn'    },
+  { value: 'mls_sold',        label: 'MLS Sold'         },
+];
+
+const MLS_STRATEGIES = new Set(['mls_active', 'mls_pending', 'mls_withdrawn', 'mls_sold']);
+
+const MLS_PARAMS = {
+  mls_active:   { status: 'Active' },
+  mls_pending:  { status: 'Inactive', listingType: 'Pending' },
+  mls_withdrawn:{ status: 'Inactive', listingType: 'Withdrawn' },
+  mls_sold:     { status: 'Inactive', listingType: 'Sold' },
+};
+
+/** Translate leadStrategy in filters to actual backend params */
+function buildSearchParams(f) {
+  const p = { ...f };
+  const strategy = p.leadStrategy;
+  delete p.leadStrategy;
+  if (strategy === 'absentee_owner')  p.ownerOccupied = 'absentee';
+  else if (strategy === 'vacant_lots') p.propertytype = 'Land';
+  else if (strategy && !MLS_STRATEGIES.has(strategy)) p.strategy = strategy;
+  return p;
+}
+
 /**
- * Parse a free-text query into ATTOM search params.
+ * Parse a free-text query into Rentcast search params.
  * Supports:
- *   "90210"                    → { postalcode: '90210' }
- *   "Brooklyn, NY"             → { city: 'Brooklyn', state: 'NY' }
- *   "Main St, Brooklyn NY 11201" → { postalcode: '11201' }  (ZIP wins when present)
- *   "Beverly Hills CA 90210"   → { postalcode: '90210' }
+ *   "90210"                       → { postalcode: '90210' }
+ *   "Brooklyn, NY"                → { city: 'Brooklyn', state: 'NY' }
+ *   "Beverly Hills CA 90210"      → { postalcode: '90210' }
+ *   "123 Main St, Miami FL 33101" → { address: '123 Main St', postalcode: '33101' }
+ *   "456 Oak Ave, 90210"          → { address: '456 Oak Ave', postalcode: '90210' }
+ *   "789 Elm St, Miami FL"        → { address: '789 Elm St', city: 'Miami', state: 'FL' }
  * Returns null if the query can't be resolved.
  */
 function parseQuery(raw) {
   const q = raw.trim();
   if (!q) return null;
 
-  // Any 5-digit ZIP found anywhere → use it (most specific)
+  // Detect street address: starts with a house number (digits followed by a letter)
+  const isStreetAddress = /^\d+\s+[A-Za-z]/.test(q);
+
+  // Any 5-digit ZIP found anywhere
   const zipMatch = q.match(/\b(\d{5})\b/);
-  if (zipMatch) return { postalcode: zipMatch[1] };
+  const postalcode = zipMatch ? zipMatch[1] : null;
+
+  if (isStreetAddress) {
+    // Street part = everything before the first comma
+    const commaIdx = q.indexOf(',');
+    let streetPart;
+    if (commaIdx !== -1) {
+      streetPart = q.slice(0, commaIdx).trim();
+    } else if (postalcode) {
+      // No comma — strip ZIP (and optional preceding state abbr) from the end
+      streetPart = q.replace(/\s+(?:[A-Za-z]{2}\s+)?\d{5}.*$/, '').trim();
+    } else {
+      streetPart = q;
+    }
+    const address = streetPart || q;
+    const result = { address };
+    if (postalcode) {
+      result.postalcode = postalcode;
+    } else if (commaIdx !== -1) {
+      // Try to extract city + state from after the comma
+      const rest = q.slice(commaIdx + 1).trim();
+      const csMatch = rest.match(/^(.+?),?\s+([A-Za-z]{2})\s*$/);
+      if (csMatch) {
+        result.city  = csMatch[1].trim();
+        result.state = csMatch[2].toUpperCase();
+      }
+    }
+    return result;
+  }
+
+  if (postalcode) return { postalcode };
 
   // "City, ST" or "City ST" — 2-letter state code at the end
   const csMatch = q.match(/^(.+?),?\s+([A-Za-z]{2})\s*$/);
@@ -88,7 +157,7 @@ export default function Dashboard() {
       yearBuiltMax: f.yearBuiltMax ?? '',
       lotSizeMin:   f.lotSizeMin   ?? '',
       lotSizeMax:   f.lotSizeMax   ?? '',
-      ownerOccupied: f.ownerOccupied ?? '',
+      leadStrategy: f.leadStrategy ?? f.ownerOccupied ?? '', // backward compat
     };
   });
   // Ref so callbacks always see latest advFilters without needing it in dep arrays
@@ -114,6 +183,9 @@ export default function Dashboard() {
 
   // Reconstruct query text from filters for the input
   const filtersToQuery = (f) => {
+    if (f.address && f.postalcode) return `${f.address}, ${f.postalcode}`;
+    if (f.address && f.city && f.state) return `${f.address}, ${f.city}, ${f.state}`;
+    if (f.address) return f.address;
     if (f.postalcode) return f.postalcode;
     if (f.city && f.state) return `${f.city}, ${f.state}`;
     return '';
@@ -139,12 +211,12 @@ export default function Dashboard() {
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedProperty, setSelectedProperty] = useState(null);
 
-  const applyFilters = useCallback((parsed, propertytype, ownerOccupiedOverride) => {
+  const applyFilters = useCallback((parsed, propertytype, leadStrategyOverride) => {
     const current = advFiltersRef.current;
     const adv = Object.fromEntries(
       Object.entries({
         ...current,
-        ...(ownerOccupiedOverride !== undefined ? { ownerOccupied: ownerOccupiedOverride } : {}),
+        ...(leadStrategyOverride !== undefined ? { leadStrategy: leadStrategyOverride } : {}),
       }).filter(([, v]) => v !== '' && v != null)
     );
     const next = { ...parsed, ...(propertytype ? { propertytype } : {}), ...adv };
@@ -245,7 +317,7 @@ export default function Dashboard() {
       sqftMin: '', sqftMax: '',
       yearBuiltMin: '', yearBuiltMax: '',
       lotSizeMin: '', lotSizeMax: '',
-      ownerOccupied: '',
+      leadStrategy: '',
     };
     setAdvFilters(empty);
     advFiltersRef.current = empty;
@@ -258,7 +330,8 @@ export default function Dashboard() {
 
   // Fired by map on pan/zoom
   const handleViewChange = useCallback(({ lat, lng, radius }) => {
-    if (filters.postalcode || filters.city) return;
+    if (filters.postalcode || filters.city || filters.address) return;
+    if (MLS_STRATEGIES.has(filters.leadStrategy)) return; // MLS doesn't support lat/lng pan
     clearTimeout(viewTimerRef.current);
     viewTimerRef.current = setTimeout(() => {
       setLoading(true);
@@ -277,10 +350,10 @@ export default function Dashboard() {
         .catch(() => {})
         .finally(() => setLoading(false));
     }, 250);
-  }, [filters.postalcode, filters.city]);
+  }, [filters.postalcode, filters.city, filters.address, filters.leadStrategy]);
 
   useEffect(() => {
-    if (!filters.postalcode && (!filters.city || !filters.state)) {
+    if (!filters.postalcode && (!filters.city || !filters.state) && !filters.address) {
       setResults([]);
       setAttomTotal(0);
       return;
@@ -289,7 +362,22 @@ export default function Dashboard() {
     setHasMore(false);
     setManualSearchKey((k) => k + 1);
     allResultsRef.current.clear();
-    rentcastSearch(filters)
+
+    const strategy = filters.leadStrategy;
+    let searchPromise;
+
+    if (strategy && MLS_STRATEGIES.has(strategy)) {
+      // MLS strategies hit the /listings/sale endpoint
+      const mlsParams = { ...MLS_PARAMS[strategy] };
+      if (filters.postalcode) mlsParams.zipCode = filters.postalcode;
+      if (filters.city)  mlsParams.city  = filters.city;
+      if (filters.state) mlsParams.state = filters.state;
+      searchPromise = rentcastListings(mlsParams);
+    } else {
+      searchPromise = rentcastSearch(buildSearchParams(filters));
+    }
+
+    searchPromise
       .then((r) => {
         const fresh = r.data || [];
         fresh.forEach((p) => {
@@ -306,7 +394,7 @@ export default function Dashboard() {
 
   const handleLoadMore = useCallback(() => {
     setLoadingMore(true);
-    rentcastLoadMore(filters)
+    rentcastLoadMore(buildSearchParams(filters))
       .then((r) => {
         (r.data || []).forEach((p) => {
           const uid = String(p.attom_id ?? `${parseFloat(p.lat).toFixed(5)},${parseFloat(p.lng).toFixed(5)}`);
@@ -455,15 +543,10 @@ export default function Dashboard() {
               );
             })()}
 
-            {/* Lead type chip */}
+            {/* Lead / Strategy chip */}
             {(() => {
-              const LEAD_OPTS = [
-                { value: '',         label: 'All Leads'       },
-                { value: 'absentee', label: 'Absentee Owner'  },
-                { value: 'owner',    label: 'Owner Occupied'  },
-              ];
-              const selected = LEAD_OPTS.find(o => o.value === advFilters.ownerOccupied) ?? LEAD_OPTS[0];
-              const active = !!advFilters.ownerOccupied;
+              const selected = STRATEGY_OPTS.find(o => o.value === (advFilters.leadStrategy ?? '')) ?? STRATEGY_OPTS[0];
+              const active = !!advFilters.leadStrategy;
               const open = openFilter === 'lead';
               return (
                 <div className="relative flex-1 min-w-0">
@@ -487,14 +570,14 @@ export default function Dashboard() {
                     </svg>
                   </button>
                   {open && (
-                    <div className="absolute left-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-[#E8F0FB] bg-white py-1 shadow-xl z-[2000]">
-                      {LEAD_OPTS.map((o) => (
+                    <div className="absolute left-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[#E8F0FB] bg-white py-1 shadow-xl z-[2000]">
+                      {STRATEGY_OPTS.map((o) => (
                         <button
                           key={o.value}
                           type="button"
                           onClick={() => {
                             const val = o.value;
-                            const next = { ...advFiltersRef.current, ownerOccupied: val };
+                            const next = { ...advFiltersRef.current, leadStrategy: val };
                             setAdvFilters(next);
                             advFiltersRef.current = next;
                             const loc = {};
@@ -505,13 +588,13 @@ export default function Dashboard() {
                             setOpenFilter(null);
                           }}
                           className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors ${
-                            advFilters.ownerOccupied === o.value
+                            (advFilters.leadStrategy ?? '') === o.value
                               ? 'bg-[#E6F1FB] text-[#0C447C] font-medium'
                               : 'text-[#444] hover:bg-[#F7FAFF]'
                           }`}
                         >
                           {o.label}
-                          {advFilters.ownerOccupied === o.value && (
+                          {(advFilters.leadStrategy ?? '') === o.value && (
                             <svg className="h-3.5 w-3.5 text-[#185FA5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
@@ -599,7 +682,7 @@ export default function Dashboard() {
             })}
 
             {/* Clear all */}
-            {Object.entries(advFilters).some(([k, v]) => k !== 'ownerOccupied' && v !== '') && (
+            {Object.entries(advFilters).some(([k, v]) => k !== 'leadStrategy' && v !== '') && (
               <button
                 type="button"
                 onClick={() => { handleClearAdv(); setOpenFilter(null); }}

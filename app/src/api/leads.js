@@ -13,3 +13,27 @@ export const deleteLead = async (id) =>
   (await api.delete(`/api/leads/${id}`)).data;
 
 export const LEAD_TYPES = ['cold', 'warm', 'hot', 'qualified', 'closed'];
+
+export const SOURCE_TYPES = [
+  'absentee_owner',
+  'out_of_state_owner',
+  'high_equity',
+  'cash_buyers',
+  'vacant_lots',
+  'mls_active',
+  'mls_pending',
+  'mls_withdrawn',
+  'mls_sold',
+];
+
+export const SOURCE_TYPE_LABELS = {
+  absentee_owner:    'Absentee Owner',
+  out_of_state_owner:'Out of State',
+  high_equity:       'High Equity',
+  cash_buyers:       'Cash Buyers',
+  vacant_lots:       'Vacant Lots',
+  mls_active:        'MLS Active',
+  mls_pending:       'MLS Pending',
+  mls_withdrawn:     'MLS Withdrawn',
+  mls_sold:          'MLS Sold',
+};
