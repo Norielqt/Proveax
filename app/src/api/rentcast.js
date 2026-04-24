@@ -15,6 +15,16 @@ export const rentcastLoadMore = async (params) => {
 };
 
 /**
+ * Fetch MLS sale listings from the Rentcast /listings/sale endpoint.
+ * Accepts: zipCode, city, state, latitude, longitude, radius,
+ *          status ('Active'|'Inactive'), listingType ('Pending'|'Withdrawn'|'Sold'|'Active')
+ */
+export const rentcastListings = async (params) => {
+  const { data } = await api.get('/api/rentcast/listings', { params });
+  return data; // { data: [...], total: N }
+};
+
+/**
  * Full property detail from Rentcast.
  * Pass either rentcastId (the Rentcast property ID string)
  * OR address + zipCode for address-based lookup.

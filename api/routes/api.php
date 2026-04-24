@@ -86,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // ATTOM national database proxy
         Route::get('/rentcast/search',     [RentcastController::class, 'search']);
+        Route::get('/rentcast/listings',   [RentcastController::class, 'listings']);
         Route::get('/rentcast/avm',        [RentcastController::class, 'avm']);
         Route::get('/rentcast/fulldetail', [RentcastController::class, 'fullDetail']);
     });

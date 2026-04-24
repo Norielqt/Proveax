@@ -11,6 +11,11 @@ class LeadController extends Controller
 {
     private const LEAD_TYPES = ['cold', 'warm', 'hot', 'qualified', 'closed'];
 
+    private const SOURCE_TYPES = [
+        'absentee_owner', 'out_of_state_owner', 'high_equity', 'cash_buyers', 'vacant_lots',
+        'mls_active', 'mls_pending', 'mls_withdrawn', 'mls_sold',
+    ];
+
     /** GET /api/leads */
     public function index(Request $request)
     {
@@ -62,7 +67,8 @@ class LeadController extends Controller
             'name'       => ['sometimes', 'nullable', 'string', 'max:200'],
             'address'    => ['sometimes', 'nullable', 'string', 'max:500'],
             'phone'      => ['sometimes', 'nullable', 'string', 'max:50'],
-            'lead_type'  => ['sometimes', 'nullable', 'string', 'in:' . implode(',', self::LEAD_TYPES)],
+            'lead_type'   => ['sometimes', 'nullable', 'string', 'in:' . implode(',', self::LEAD_TYPES)],
+            'source_type' => ['sometimes', 'nullable', 'string', 'in:' . implode(',', self::SOURCE_TYPES)],
             'home_price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100000000'], // dollars
             'email'      => ['sometimes', 'nullable', 'email', 'max:200'],
             'notes'      => ['sometimes', 'nullable', 'string', 'max:10000'],
@@ -89,6 +95,7 @@ class LeadController extends Controller
             'address'            => $lead->address,
             'phone'              => $lead->phone,
             'lead_type'          => $lead->lead_type,
+            'source_type'        => $lead->source_type,
             'home_price'         => $lead->home_price_cents !== null ? $lead->home_price_cents / 100 : null,
             'email'              => $lead->email,
             'notes'              => $lead->notes,

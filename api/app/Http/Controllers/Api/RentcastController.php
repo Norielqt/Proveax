@@ -47,8 +47,15 @@ class RentcastController extends Controller
             'lotSizeMin'   => 'nullable|integer|min:0',
             'lotSizeMax'   => 'nullable|integer|min:0',
             'ownerOccupied' => 'nullable|in:absentee,owner',
+            'strategy'      => 'nullable|string|in:out_of_state_owner,high_equity,cash_buyers',
+            'address'       => 'nullable|string|max:200',
         ]);
 
+        // Map frontend strategy values to backend filter params where possible
+        $strategy = $v['strategy'] ?? null;
+
+        $address    = isset($v['address']) ? trim($v['address']) : null;
+        $hasAddress = !empty($address);
         $zip        = $v['zipCode']  ?? $v['postalcode'] ?? null;
         $hasZip     = !empty($zip);
         $hasCity    = !empty($v['city']) && !empty($v['state']);
@@ -56,8 +63,28 @@ class RentcastController extends Controller
         $loadMore   = !empty($v['loadMore']);
         $typeFilter = $v['propertyType'] ?? $v['propertytype'] ?? null;
 
-        if (!$hasZip && !$hasCity && !$hasLL) {
-            return response()->json(['error' => 'Provide zipCode, city + state, or latitude + longitude.'], 422);
+        if (!$hasZip && !$hasCity && !$hasLL && !$hasAddress) {
+            return response()->json(['error' => 'Provide zipCode, city + state, latitude + longitude, or a street address.'], 422);
+        }
+
+        // ── Address-specific search: try DB first, then live API ──────────
+        if ($hasAddress) {
+            $rows = $this->queryToRows($v, $zip, $hasZip, $hasCity, $typeFilter, $strategy);
+            if (!empty($rows)) {
+                return response()->json(['data' => $rows, 'total' => count($rows), 'has_more' => false, 'source' => 'cache']);
+            }
+            // Not cached yet — hit RentCast directly for this address
+            set_time_limit(0);
+            $result = $this->rentcast->snapshot([
+                'address'      => $address,
+                'zipCode'      => $zip,
+                'city'         => $v['city']  ?? null,
+                'state'        => $v['state'] ?? null,
+                'propertyType' => $typeFilter,
+            ]);
+            $result['data']     = $this->stripRawJson($result['data'] ?? []);
+            $result['has_more'] = false;
+            return response()->json($result);
         }
 
         // Build canonical cache key (ZIP and city searches only)
@@ -71,8 +98,7 @@ class RentcastController extends Controller
 
             // Already have everything — just return DB rows
             if ($record && $record->is_complete) {
-                $rows = $this->localQuery($v, $zip, $hasZip, $hasCity, $typeFilter)
-                    ->get()->map(fn ($p) => $p->toSearchRow())->values()->all();
+                $rows = $this->queryToRows($v, $zip, $hasZip, $hasCity, $typeFilter, $strategy);
                 return response()->json(['data' => $rows, 'total' => count($rows), 'has_more' => false, 'source' => 'cache']);
             }
 
@@ -109,8 +135,7 @@ class RentcastController extends Controller
             ]], ['query_key'], ['result_count', 'last_offset', 'is_complete', 'fetched_at']);
 
             // Return ALL cached rows (including the new batch just inserted)
-            $rows = $this->localQuery($v, $zip, $hasZip, $hasCity, $typeFilter)
-                ->get()->map(fn ($p) => $p->toSearchRow())->values()->all();
+            $rows = $this->queryToRows($v, $zip, $hasZip, $hasCity, $typeFilter, $strategy);
             return response()->json(['data' => $rows, 'total' => count($rows), 'has_more' => !$isComplete, 'source' => 'api']);
         }
 
@@ -122,8 +147,7 @@ class RentcastController extends Controller
                 ->first();
 
             if ($cached) {
-                $rows = $this->localQuery($v, $zip, $hasZip, $hasCity, $typeFilter)
-                    ->get()->map(fn ($p) => $p->toSearchRow())->values()->all();
+                $rows    = $this->queryToRows($v, $zip, $hasZip, $hasCity, $typeFilter, $strategy);
                 $hasMore = !(bool) $cached->is_complete;
                 return response()->json(['data' => $rows, 'total' => count($rows), 'has_more' => $hasMore, 'source' => 'cache']);
             }
@@ -133,8 +157,7 @@ class RentcastController extends Controller
         if (!$queryKey) {
             $count = $this->localQuery($v, $zip, $hasZip, $hasCity, $typeFilter)->count();
             if ($count >= 500) {
-                $rows = $this->localQuery($v, $zip, $hasZip, $hasCity, $typeFilter)
-                    ->get()->map(fn ($p) => $p->toSearchRow())->values()->all();
+                $rows = $this->queryToRows($v, $zip, $hasZip, $hasCity, $typeFilter, $strategy);
                 return response()->json(['data' => $rows, 'total' => count($rows), 'has_more' => false, 'source' => 'cache']);
             }
         }
@@ -174,7 +197,59 @@ class RentcastController extends Controller
             ]], ['query_key'], ['result_count', 'last_offset', 'is_complete', 'fetched_at']);
         }
 
+        if ($strategy && !empty($result['data'])) {
+            $result['data'] = $this->filterRowsByStrategy($result['data'], $strategy);
+            $result['total'] = count($result['data']);
+        }
+
+        // Strip raw_json — it is stored in DB only, never sent to the client
+        $result['data'] = $this->stripRawJson($result['data'] ?? []);
         $result['has_more'] = !$isComplete;
+        return response()->json($result);
+    }
+
+    /**
+     * GET /api/rentcast/listings — fetch MLS sale listings from Rentcast.
+     * GET /api/rentcast/listings?zipCode=33139&status=Active
+     * GET /api/rentcast/listings?zipCode=33139&status=Inactive&listingType=Pending
+     */
+    public function listings(Request $request)
+    {
+        $v = $request->validate([
+            'zipCode'     => 'nullable|string|max:10',
+            'postalcode'  => 'nullable|string|max:10',
+            'city'        => 'nullable|string|max:100',
+            'state'       => 'nullable|string|size:2',
+            'latitude'    => 'nullable|numeric|between:-90,90',
+            'longitude'   => 'nullable|numeric|between:-180,180',
+            'radius'      => 'nullable|numeric|min:0.1|max:25',
+            'status'      => 'nullable|string|in:Active,Inactive',
+            'listingType' => 'nullable|string|in:Active,Pending,Withdrawn,Sold,ForSale',
+        ]);
+
+        $zip    = $v['zipCode'] ?? $v['postalcode'] ?? null;
+        $hasZip = !empty($zip);
+        $hasCity = !empty($v['city']) && !empty($v['state']);
+        $hasLL   = !empty($v['latitude']) && !empty($v['longitude']);
+
+        if (!$hasZip && !$hasCity && !$hasLL) {
+            return response()->json(['error' => 'Provide zipCode, city + state, or latitude + longitude.'], 422);
+        }
+
+        set_time_limit(0);
+        $result = $this->rentcast->listings([
+            'zipCode'     => $zip,
+            'city'        => $v['city']        ?? null,
+            'state'       => $v['state']       ?? null,
+            'latitude'    => $v['latitude']    ?? null,
+            'longitude'   => $v['longitude']   ?? null,
+            'radius'      => $v['radius']      ?? null,
+            'status'      => $v['status']      ?? 'Active',
+            'listingType' => $v['listingType'] ?? null,
+        ]);
+
+        // Strip raw_json before sending to client
+        $result['data'] = $this->stripRawJson($result['data'] ?? []);
         return response()->json($result);
     }
 
@@ -199,6 +274,11 @@ class RentcastController extends Controller
 
         if ($typeFilter) $q->where('property_type', $typeFilter);
 
+        // Address filter — narrow to matching street (combined with zip/city for speed)
+        if (!empty($v['address'])) {
+            $q->whereRaw('LOWER(street) LIKE ?', ['%' . strtolower(trim($v['address'])) . '%']);
+        }
+
         // Only return properties that have coordinates — ensures list count matches map pins
         $q->whereNotNull('lat')->whereNotNull('lng');
 
@@ -218,6 +298,103 @@ class RentcastController extends Controller
         if ($leadType === 'owner')    $q->where('owner_occupied', true);
 
         return $q->orderByDesc('estimated_value');
+    }
+
+    /**
+     * Run a local DB query and apply PHP-level strategy post-filtering,
+     * returning plain search-row arrays ready for JSON output.
+     */
+    private function queryToRows(array $v, ?string $zip, bool $hasZip, bool $hasCity, ?string $typeFilter, ?string $strategy): array
+    {
+        $collection = $this->localQuery($v, $zip, $hasZip, $hasCity, $typeFilter)->get();
+
+        if ($strategy) {
+            $collection = $collection->filter(fn (RentcastProperty $p) => $this->matchesStrategy($p, $strategy));
+        }
+
+        return $collection->map(function (RentcastProperty $p) {
+            $row = $p->toSearchRow();
+            // Attach pre-computed detail so the frontend needs zero follow-up API calls
+            $detail = $this->rentcast->detailFromRaw($p->raw_json);
+            if ($detail) $row['detail'] = $detail;
+            return $row;
+        })->values()->all();
+    }
+
+    /**
+     * Strip raw_json from response rows — it is persisted in the DB only, never sent to clients.
+     * This also significantly reduces response payload size (raw_json is 2–5 KB per property).
+     */
+    private function stripRawJson(array $rows): array
+    {
+        return array_map(static function (array $row): array {
+            unset($row['raw_json']);
+            return $row;
+        }, $rows);
+    }
+
+    /**
+     * Check whether an Eloquent RentcastProperty model matches a given strategy
+     * by inspecting its stored raw_json.
+     */
+    private function matchesStrategy(RentcastProperty $p, string $strategy): bool
+    {
+        $raw = is_string($p->raw_json) ? (json_decode($p->raw_json, true) ?? []) : [];
+
+        return match ($strategy) {
+            'out_of_state_owner' => (function () use ($p, $raw): bool {
+                $ownerState = strtoupper($raw['owner']['mailingAddress']['state'] ?? '');
+                $propState  = strtoupper($p->state ?? '');
+                return $ownerState !== '' && $propState !== '' && $ownerState !== $propState;
+            })(),
+            'high_equity' => (function () use ($raw): bool {
+                // Use tax-assessed value as the estimated value
+                $taxAssessments = $raw['taxAssessments'] ?? [];
+                if (!empty($taxAssessments)) {
+                    $latestYear = max(array_keys($taxAssessments));
+                    $ev = (float) ($taxAssessments[$latestYear]['value'] ?? 0);
+                } else {
+                    $ev = 0;
+                }
+                $lp = (float) ($raw['lastSalePrice'] ?? 0);
+                return $ev > 0 && $lp > 0 && (($ev - $lp) / $ev) > 0.40;
+            })(),
+            'cash_buyers' => (float) ($raw['lastSalePrice'] ?? 0) > 0,
+            default       => true,
+        };
+    }
+
+    /**
+     * Apply strategy filtering to an array of already-normalised snapshot rows
+     * (from a live API call, before they are cached).
+     */
+    private function filterRowsByStrategy(array $rows, string $strategy): array
+    {
+        return array_values(array_filter($rows, function (array $row) use ($strategy): bool {
+            $rawStr = $row['raw_json'] ?? null;
+            $raw    = $rawStr ? (json_decode($rawStr, true) ?? []) : [];
+
+            return match ($strategy) {
+                'out_of_state_owner' => (function () use ($row, $raw): bool {
+                    $ownerState = strtoupper($raw['owner']['mailingAddress']['state'] ?? '');
+                    $propState  = strtoupper($raw['state'] ?? $row['state'] ?? '');
+                    return $ownerState !== '' && $propState !== '' && $ownerState !== $propState;
+                })(),
+                'high_equity' => (function () use ($raw): bool {
+                    $taxAssessments = $raw['taxAssessments'] ?? [];
+                    if (!empty($taxAssessments)) {
+                        $latestYear = max(array_keys($taxAssessments));
+                        $ev = (float) ($taxAssessments[$latestYear]['value'] ?? 0);
+                    } else {
+                        $ev = 0;
+                    }
+                    $lp = (float) ($raw['lastSalePrice'] ?? 0);
+                    return $ev > 0 && $lp > 0 && (($ev - $lp) / $ev) > 0.40;
+                })(),
+                'cash_buyers' => (float) ($raw['lastSalePrice'] ?? 0) > 0,
+                default       => true,
+            };
+        }));
     }
 
     /**

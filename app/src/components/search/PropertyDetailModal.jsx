@@ -34,6 +34,12 @@ export default function PropertyDetailModal({ property, onClose }) {
   };
 
   useEffect(() => {
+    // If the search result already contains pre-computed detail, use it directly —
+    // no follow-up API call needed (saves a billable Rentcast request).
+    if (property.detail) {
+      setReport(property.detail);
+      return;
+    }
     const rid = property.attom_id; // attom_id holds Rentcast ID (compat alias)
     if (rid && isRentcastId(String(rid))) {
       fetchReport({ rentcastId: rid });
