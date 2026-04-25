@@ -421,6 +421,7 @@ class RentcastService
             'absentee'       => isset($p['ownerOccupied'])
                                 ? ($p['ownerOccupied'] ? 'Owner-occupied' : 'Absentee owner')
                                 : null,
+            'mail_state'     => $mail['state'] ?? null,
             'mail_addr'      => $mail
                                 ? trim(implode(', ', array_filter([
                                     $mail['addressLine1'] ?? '',

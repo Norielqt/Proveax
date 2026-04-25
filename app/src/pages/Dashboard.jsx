@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { rentcastSearch, rentcastLoadMore, rentcastListings } from '../api/rentcast';
+import { createLead } from '../api/leads';
 import { useSubscription } from '../hooks/useSubscription';
-import ResultsList from '../components/search/ResultsList';
+import ResultsList, { propertyKey } from '../components/search/ResultsList';
 import ResultsMap  from '../components/search/ResultsMap';
 import PropertyDetailModal from '../components/search/PropertyDetailModal';
 
@@ -191,7 +192,7 @@ export default function Dashboard() {
     return '';
   };
   const [queryText, setQueryText] = useState(() => filtersToQuery(initFilters()));
-  const [parseError, setParseError] = useState('');
+  const [, setParseError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestTimerRef = useRef(null);
@@ -199,7 +200,7 @@ export default function Dashboard() {
   const inputRef = useRef(null);
 
   const [results, setResults] = useState([]);
-  const [attomTotal, setAttomTotal] = useState(0);
+  const [, setAttomTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const allResultsRef = useRef(new Map());
@@ -210,6 +211,11 @@ export default function Dashboard() {
   const [panSearchKey, setPanSearchKey] = useState(0);
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // Multi-select for "Add to CRM"
+  const [selectedKeys, setSelectedKeys] = useState(new Set());
+  const [crmSaving, setCrmSaving] = useState(false);
+  const [crmToast, setCrmToast] = useState(null); // { count, error }
 
   const applyFilters = useCallback((parsed, propertytype, leadStrategyOverride) => {
     const current = advFiltersRef.current;
@@ -354,6 +360,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!filters.postalcode && (!filters.city || !filters.state) && !filters.address) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       setAttomTotal(0);
       return;
@@ -391,6 +398,94 @@ export default function Dashboard() {
       .catch(() => setResults([]))
       .finally(() => setLoading(false));
   }, [filters]);
+
+  const handleToggle = useCallback((key) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const handleToggleAll = useCallback((properties) => {
+    setSelectedKeys((prev) => {
+      const allKeys = properties.map(propertyKey);
+      const allSelected = allKeys.every((k) => prev.has(k));
+      if (allSelected) {
+        const next = new Set(prev);
+        allKeys.forEach((k) => next.delete(k));
+        return next;
+      }
+      return new Set([...prev, ...allKeys]);
+    });
+  }, []);
+
+  const handleAddToCRM = useCallback(async () => {
+    if (!selectedKeys.size || crmSaving) return;
+    const toAdd = results.filter((p) => selectedKeys.has(propertyKey(p)));
+    const filterStrategy = filters.leadStrategy || null;
+    setCrmSaving(true);
+    setCrmToast(null);
+    let saved = 0;
+    let lastError = null;
+    for (const p of toAdd) {
+      try {
+        const addr = p.address ||
+          [p.street, p.city && p.state ? `${p.city}, ${p.state}` : (p.city || p.state), p.zip]
+            .filter(Boolean).join(', ');
+        const priceNum = p.estimated_value != null ? Number(p.estimated_value) : NaN;
+        const addrStr = addr || null;
+
+        // Auto-detect lead type from property data when no filter is active
+        let sourceType = filterStrategy;
+        if (!sourceType) {
+          // MLS listing types — detected from listing_status field
+          const status      = (p.listing_status ?? '').toLowerCase();
+          if      (status === 'active')    sourceType = 'mls_active';
+          else if (status === 'pending')   sourceType = 'mls_pending';
+          else if (status === 'withdrawn') sourceType = 'mls_withdrawn';
+          else if (status === 'sold')      sourceType = 'mls_sold';
+          else {
+            // Property-data based detection
+            const ownerState   = p.detail?.owner?.mail_state?.toUpperCase() ?? null;
+            const propState    = (p.state ?? '').toUpperCase();
+            const isAbsentee   = p.owner_occupied === false;
+            const isOutOfState = ownerState && propState && ownerState !== propState;
+            const isVacantLot  = (p.property_type ?? '').toLowerCase() === 'land';
+
+            // High equity: estimated value is ≥40% more than last recorded sale price
+            const lastSale     = p.detail?.transactions?.[0]?.sale_price;
+            const estVal       = p.estimated_value;
+            const isHighEquity = lastSale && estVal && Number(estVal) >= Number(lastSale) * 1.4;
+
+            if      (isVacantLot)  sourceType = 'vacant_lots';
+            else if (isHighEquity) sourceType = 'high_equity';
+            else if (isOutOfState) sourceType = 'out_of_state_owner';
+            else if (isAbsentee)   sourceType = 'absentee_owner';
+          }
+        }
+
+        await createLead({
+          name:        p.owner_name || addrStr,
+          address:     addrStr,
+          home_price:  Number.isFinite(priceNum) && priceNum > 0 ? priceNum : null,
+          source_type: sourceType,
+        });
+        saved++;
+      } catch (err) {
+        lastError = err?.response?.data?.message || err?.message || 'Unknown error';
+        console.error('[Add to CRM] failed for property:', p.attom_id, err?.response?.data ?? err);
+      }
+    }
+    setCrmSaving(false);
+    setSelectedKeys(new Set());
+    if (saved > 0) {
+      setCrmToast({ count: saved, error: null });
+    } else {
+      setCrmToast({ count: 0, error: lastError || 'Failed to add leads. Check console for details.' });
+    }
+    setTimeout(() => setCrmToast(null), 6000);
+  }, [selectedKeys, results, filters.leadStrategy, crmSaving]);
 
   const handleLoadMore = useCallback(() => {
     setLoadingMore(true);
@@ -755,7 +850,38 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="h-full overflow-y-auto border-l border-gray-200 bg-white shadow-lg flex flex-col">
-            <ResultsList properties={results} onHover={setHoveredId} onSelect={setSelectedProperty} />
+            {/* ── Add to CRM action bar ────────────────────────────── */}
+            {selectedKeys.size > 0 && (
+              <div className="shrink-0 border-b border-blue-200 bg-blue-600 px-3 py-2.5 flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-white whitespace-nowrap">
+                  {selectedKeys.size} selected
+                </span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <button
+                    onClick={() => setSelectedKeys(new Set())}
+                    className="text-xs text-blue-200 hover:text-white transition-colors whitespace-nowrap"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleAddToCRM}
+                    disabled={crmSaving}
+                    className="rounded-md bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60 transition-colors whitespace-nowrap"
+                  >
+                    {crmSaving ? 'Saving…' : 'Add to CRM'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <ResultsList
+              properties={results}
+              onHover={setHoveredId}
+              onSelect={setSelectedProperty}
+              selected={selectedKeys}
+              onToggle={handleToggle}
+              onToggleAll={handleToggleAll}
+            />
             {hasMore && (
               <div className="shrink-0 p-3 border-t border-gray-100">
                 <button
@@ -771,6 +897,41 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── CRM toast notification ───────────────────────────────── */}
+      {crmToast && (
+        <div className="pointer-events-none fixed top-6 right-6 z-[9999]">
+          <div className={`pointer-events-auto flex items-center gap-3 rounded-xl px-5 py-3.5 shadow-2xl ring-1 ${
+            crmToast.error
+              ? 'bg-red-600 ring-red-500/40'
+              : 'bg-green-600 ring-green-500/40'
+          }`}>
+            {crmToast.error ? (
+              <svg className="h-5 w-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+            <span className="text-sm font-semibold text-white">
+              {crmToast.error
+                ? crmToast.error
+                : `${crmToast.count} lead${crmToast.count !== 1 ? 's' : ''} added to CRM successfully`
+              }
+            </span>
+            <button
+              onClick={() => setCrmToast(null)}
+              className="ml-2 rounded-full p-0.5 text-white/70 hover:text-white transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {selectedProperty && (
         <PropertyDetailModal property={selectedProperty} onClose={() => setSelectedProperty(null)} />

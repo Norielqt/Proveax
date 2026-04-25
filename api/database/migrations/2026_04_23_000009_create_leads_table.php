@@ -16,7 +16,8 @@ return new class extends Migration {
             $t->string('name', 200)->nullable();
             $t->string('address', 500)->nullable();
             $t->string('phone', 50)->nullable();
-            $t->string('lead_type', 40)->nullable();   // cold|warm|hot|qualified|closed (free-form, client may extend)
+            $t->string('lead_type', 40)->nullable();   // cold|warm|hot|qualified|closed
+            $t->string('source_type', 40)->nullable(); // absentee_owner|out_of_state_owner|etc
             $t->bigInteger('home_price_cents')->nullable(); // store as cents; rendered as $ on client
             $t->string('email', 200)->nullable();
             $t->text('notes')->nullable();
