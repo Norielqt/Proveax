@@ -14,7 +14,7 @@ class RentcastProperty extends Model
     protected $fillable = [
         'rentcast_id', 'street', 'address', 'city', 'state', 'zip',
         'lat', 'lng', 'property_type', 'bedrooms', 'bathrooms',
-        'square_feet', 'lot_size', 'year_built', 'estimated_value',
+        'square_feet', 'lot_size', 'year_built', 'estimated_value', 'last_sale_price',
         'owner_name', 'owner_occupied', 'fetched_at', 'raw_json',
         'avm_json', 'avm_fetched_at',
     ];
@@ -23,6 +23,7 @@ class RentcastProperty extends Model
         'lat'             => 'float',
         'lng'             => 'float',
         'estimated_value' => 'float',
+        'last_sale_price' => 'float',
         'owner_occupied'  => 'boolean',
         'fetched_at'      => 'datetime',
         'avm_fetched_at'  => 'datetime',
@@ -54,6 +55,7 @@ class RentcastProperty extends Model
                 'lot_size'        => $r['lot_size']        ?? null,
                 'year_built'      => $r['year_built']      ?? null,
                 'estimated_value' => $r['estimated_value'] ?? null,
+                'last_sale_price' => isset($r['last_sale_price']) ? (float) $r['last_sale_price'] : null,
                 'owner_name'      => $r['owner_name']      ?? null,
                 'owner_occupied'  => $r['owner_occupied']  ?? null,
                 'raw_json'        => $r['raw_json']        ?? null,
@@ -66,7 +68,7 @@ class RentcastProperty extends Model
         $updateCols = [
             'street', 'address', 'city', 'state', 'zip', 'lat', 'lng',
             'property_type', 'bedrooms', 'bathrooms', 'square_feet',
-            'lot_size', 'year_built', 'estimated_value', 'owner_name',
+            'lot_size', 'year_built', 'estimated_value', 'last_sale_price', 'owner_name',
             'owner_occupied', 'raw_json', 'fetched_at',
         ];
 
@@ -77,8 +79,6 @@ class RentcastProperty extends Model
 
     public function toSearchRow(): array
     {
-        $raw = is_string($this->raw_json) ? (json_decode($this->raw_json, true) ?? []) : [];
-
         return [
             'attom_id'        => $this->rentcast_id, // compat alias for frontend
             'street'          => $this->street ?: $this->address,
@@ -95,7 +95,7 @@ class RentcastProperty extends Model
             'lot_size'        => $this->lot_size,
             'year_built'      => $this->year_built,
             'estimated_value' => $this->estimated_value,
-            'last_sale_price' => isset($raw['lastSalePrice']) ? (float) $raw['lastSalePrice'] : null,
+            'last_sale_price' => $this->last_sale_price,
             'owner_name'      => $this->owner_name,
             'owner_occupied'  => $this->owner_occupied,
         ];
