@@ -92,79 +92,102 @@ export default function PropertyDetailModal({ property, onClose }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Panel */}
-      <div className="relative w-full max-w-5xl my-8 bg-gray-50 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-4xl my-6 bg-white rounded-xl shadow-2xl overflow-hidden">
 
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
+          className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-white hover:bg-white/20 transition-colors"
           aria-label="Close"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        {/* ── Hero header ─────────────────────────────────────────────────────── */}
-        <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-8 pt-8 pb-6">
-          <div className="flex items-start justify-between gap-4 flex-wrap pr-10">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <svg className="h-4 w-4 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-xs font-medium text-blue-200 uppercase tracking-wider">Property Detail</span>
-              </div>
-              <h1 className="text-2xl font-bold text-white leading-tight">{address}</h1>
-              <p className="text-blue-200 mt-0.5">{cityLine}</p>
+        {/* ── Hero ── */}
+        <div className="relative bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-5">
+          <div className="flex items-center justify-between gap-4 pr-10">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-blue-200 uppercase tracking-[0.18em] mb-1">Property</p>
+              <h1 className="text-xl font-bold text-white leading-tight truncate">{address}</h1>
+              <p className="text-blue-100 mt-0.5 text-xs">{cityLine}</p>
             </div>
-            {!hasReport && (
-              <button
-                onClick={() => {
-                  const rid = p.attom_id;
-                  rid && isRentcastId(String(rid))
-                    ? fetchReport({ rentcastId: rid })
-                    : fetchReport({ address: p.address || p.street, zipCode: p.zip });
-                }}
-                disabled={loading}
-                className="rounded-lg bg-white/15 border border-white/25 px-4 py-2 text-sm font-medium text-white hover:bg-white/25 disabled:opacity-50 shrink-0 transition-colors"
-              >
-                {loading ? 'Loading…' : 'Load full report'}
-              </button>
-            )}
-            {loading && hasReport && (
-              <span className="flex items-center gap-1.5 text-sm text-blue-200 animate-pulse">
-                <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                Refreshing…
-              </span>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {!hasReport && (
+                <button
+                  onClick={() => {
+                    const rid = p.attom_id;
+                    rid && isRentcastId(String(rid))
+                      ? fetchReport({ rentcastId: rid })
+                      : fetchReport({ address: p.address || p.street, zipCode: p.zip });
+                  }}
+                  disabled={loading}
+                  className="rounded-md bg-blue-600 hover:bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition-colors"
+                >
+                  {loading ? 'Loading…' : 'Load report'}
+                </button>
+              )}
+              {loading && hasReport && (
+                <span className="flex items-center gap-1 text-xs text-blue-100">
+                  <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  Refreshing
+                </span>
+              )}
+            </div>
           </div>
 
-
+          {/* Inline stats */}
+          {(() => {
+            const price = val.avm_value ?? val.assessed_total ?? p.estimated_value;
+            const beds  = char.beds ?? p.bedrooms;
+            const baths = char.baths_total ?? p.bathrooms;
+            const sqft  = char.sqft ?? p.square_feet;
+            const year  = char.year_built ?? p.year_built;
+            const type  = char.property_type ?? p.property_type;
+            const stats = [
+              price && { label: 'Value', value: fmt$(price) },
+              type  && { label: 'Type',  value: type },
+              beds  && { label: 'Bed',   value: beds },
+              baths && { label: 'Bath',  value: baths },
+              sqft  && { label: 'SqFt',  value: Number(sqft).toLocaleString() },
+              year  && { label: 'Year',  value: year },
+            ].filter(Boolean);
+            if (!stats.length) return null;
+            return (
+              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-blue-400/30 pt-3">
+                {stats.map((s, i) => (
+                  <div key={i} className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-200">{s.label}</span>
+                    <span className="text-sm font-semibold text-white">{s.value}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {error && (
-          <div className="mx-6 mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-600 flex items-center gap-2">
-            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <div className="mx-4 mt-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 flex items-center gap-2">
+            <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
             {error}
           </div>
         )}
 
-        {/* ── Tabs ──────────────────────────────────────────────────────────── */}
-        <div className="flex gap-1 px-6 pt-4 border-b border-gray-200 bg-white">
+        {/* ── Tabs ── */}
+        <div className="flex gap-1 px-4 border-b border-gray-200 bg-white">
           {[
             { id: 'property',     label: 'Property' },
             { id: 'owner',        label: 'Owner' },
-            { id: 'transactions', label: 'Transaction History' },
+            { id: 'transactions', label: 'Transactions' },
           ].map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors focus:outline-none ${
+              className={`px-3 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors focus:outline-none ${
                 tab === id
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               {label}
@@ -172,15 +195,16 @@ export default function PropertyDetailModal({ property, onClose }) {
           ))}
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="max-h-[calc(100vh-14rem)] overflow-y-auto bg-gray-50">
+        <div className="p-4 space-y-3">
 
           <LoadingCtx.Provider value={loading && !hasReport}>
 
           {/* ── Tab: Property ─────────────────────────────────────────────────── */}
           {tab === 'property' && (
             <div className="space-y-4">
-              <Card title="Property Characteristics" loading={loading && !hasReport}>
-                <div className="grid gap-8 md:grid-cols-2">
+              <Card title="Property Characteristics" loading={loading && !hasReport} icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                <div className="grid gap-x-6 gap-y-1 md:grid-cols-2">
                   <div className="space-y-4">
                     <FieldGroup heading="Size &amp; Rooms">
                       <StatRow label="Type"         value={char.property_type ?? p.property_type} />
@@ -213,8 +237,8 @@ export default function PropertyDetailModal({ property, onClose }) {
                 </div>
               </Card>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card title="Valuation &amp; Assessment" loading={loading && !hasReport}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Card title="Valuation &amp; Assessment" loading={loading && !hasReport} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
                   <div className="space-y-4">
                     <FieldGroup heading="AVM (Automated)">
                       <StatRow label="Estimate" value={fmt$(val.avm_value)} accent />
@@ -233,7 +257,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                   </div>
                 </Card>
 
-                <Card title="Location" loading={loading && !hasReport}>
+                <Card title="Location" loading={loading && !hasReport} icon="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z">
                   <div className="space-y-4">
                     <FieldGroup heading="Address">
                       <StatRow label="Full address" value={loc.address_full} />
@@ -258,8 +282,8 @@ export default function PropertyDetailModal({ property, onClose }) {
           {/* ── Tab: Owner ────────────────────────────────────────────────────── */}
           {tab === 'owner' && (
             <div className="space-y-4">
-              <Card title="Owner Info" loading={loading && !hasReport}>
-                <div className="grid gap-8 md:grid-cols-2">
+              <Card title="Owner Info" loading={loading && !hasReport} icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                <div className="grid gap-x-6 gap-y-3 md:grid-cols-2">
                   <div>
                     <FieldGroup heading="Ownership">
                       <StatRow label="Owner 1"         value={own.owner1_name ?? p.owner_name} />
@@ -310,7 +334,7 @@ export default function PropertyDetailModal({ property, onClose }) {
           {/* ── Tab: Transaction History ──────────────────────────────────────── */}
           {tab === 'transactions' && (
             <div className="space-y-4">
-              <Card title={`Transaction History${txns.length ? ` · ${txns.length} records` : ''}`} loading={loading && !hasReport}>
+              <Card title={`Transaction History${txns.length ? ` · ${txns.length} records` : ''}`} loading={loading && !hasReport} icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6m-6 4h4">
                 {txns.length === 0 && hasReport ? (
                   <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                     <svg className="h-10 w-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -352,6 +376,7 @@ export default function PropertyDetailModal({ property, onClose }) {
           </LoadingCtx.Provider>
 
         </div>
+        </div>
       </div>
     </div>
   );
@@ -360,29 +385,34 @@ export default function PropertyDetailModal({ property, onClose }) {
 // ─── UI Primitives ────────────────────────────────────────────────────────────
 
 
-function Card({ title, loading, children }) {
+function Card({ title, loading, children, icon }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
-        <h2 className="text-sm font-semibold text-gray-800" dangerouslySetInnerHTML={{ __html: title }} />
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <svg className="h-3.5 w-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d={icon ?? 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'} />
+          </svg>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-700" dangerouslySetInnerHTML={{ __html: title }} />
+        </div>
         {loading && (
-          <span className="flex items-center gap-1 text-xs text-gray-400 animate-pulse">
+          <span className="flex items-center gap-1 text-[10px] text-gray-400 animate-pulse">
             <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-            Loading…
+            Loading
           </span>
         )}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="px-4 py-3">{children}</div>
     </div>
   );
 }
 
 function FieldGroup({ heading, children }) {
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2"
+    <div className="mb-3 last:mb-0">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 pb-1 border-b border-gray-100"
         dangerouslySetInnerHTML={{ __html: heading }} />
-      <dl className="space-y-2">{children}</dl>
+      <dl>{children}</dl>
     </div>
   );
 }
@@ -392,11 +422,11 @@ function StatRow({ label, value, accent }) {
   const empty = value === null || value === undefined || value === '';
   if (!isLoading && empty) return null;
   return (
-    <div className="flex items-center justify-between gap-4 py-1">
-      <dt className="text-sm text-gray-500 shrink-0">{label}</dt>
-      <dd className={`text-sm font-semibold text-right ${accent ? 'text-blue-600' : 'text-gray-900'}`}>
+    <div className="flex items-center justify-between gap-3 py-1">
+      <dt className="text-xs text-gray-500 shrink-0">{label}</dt>
+      <dd className={`text-xs font-semibold text-right truncate ${accent ? 'text-blue-600' : 'text-gray-900'}`}>
         {isLoading && empty
-          ? <span className="inline-block h-3 w-24 rounded-md bg-gray-200 animate-pulse" />
+          ? <span className="inline-block h-3 w-20 rounded bg-gray-200 animate-pulse" />
           : value
         }
       </dd>

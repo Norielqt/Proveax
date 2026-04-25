@@ -3,18 +3,6 @@ import { listLeads, createLead, updateLead, deleteLead, SOURCE_TYPES, SOURCE_TYP
 import { TableSkeleton } from '../components/Skeleton';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-const SOURCE_TYPE_STYLE = {
-  absentee_owner:     'bg-purple-100 text-purple-800',
-  out_of_state_owner: 'bg-indigo-100 text-indigo-800',
-  high_equity:        'bg-emerald-100 text-emerald-800',
-  cash_buyers:        'bg-teal-100 text-teal-800',
-  vacant_lots:        'bg-orange-100 text-orange-800',
-  mls_active:         'bg-green-100 text-green-800',
-  mls_pending:        'bg-yellow-100 text-yellow-800',
-  mls_withdrawn:      'bg-red-100 text-red-800',
-  mls_sold:           'bg-gray-100 text-gray-800',
-};
-
 function fmtPrice(v) {
   if (v === null || v === undefined || v === '') return '';
   const n = Number(v);
@@ -35,6 +23,15 @@ function timeAgo(ts) {
 function TextCell({ value, onCommit, type = 'text', placeholder = '' }) {
   const [draft, setDraft] = useState(value ?? '');
   const dirty = useRef(false);
+  const ref = useRef(null);
+
+  // Auto-resize textarea height to fit content
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [draft]);
 
   useEffect(() => {
     if (!dirty.current) setDraft(value ?? '');
@@ -46,18 +43,20 @@ function TextCell({ value, onCommit, type = 'text', placeholder = '' }) {
     if (next !== (value ?? null)) onCommit(next);
   };
 
+  // email type isn't valid on textarea, we just use text behaviour
   return (
-    <input
-      type={type}
+    <textarea
+      ref={ref}
+      rows={1}
       value={draft ?? ''}
       placeholder={placeholder}
       onChange={(e) => { dirty.current = true; setDraft(e.target.value); }}
       onBlur={commit}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') { e.currentTarget.blur(); }
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); }
         if (e.key === 'Escape') { dirty.current = false; setDraft(value ?? ''); e.currentTarget.blur(); }
       }}
-      className="w-full border-0 bg-transparent px-2 py-1.5 text-center text-sm text-gray-800 outline-none focus:bg-blue-50/60 focus:ring-1 focus:ring-inset focus:ring-blue-400"
+      className="w-full resize-none overflow-hidden border-0 bg-transparent px-3 py-2.5 text-left text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:bg-blue-50/60 focus:ring-1 focus:ring-inset focus:ring-blue-400"
     />
   );
 }
@@ -84,7 +83,7 @@ function PriceCell({ value, onCommit }) {
   return (
     <input
       value={display ?? ''}
-      placeholder="$0"
+      placeholder="No Data"
       onFocus={() => { setFocused(true); setDraft(value ?? ''); }}
       onChange={(e) => { dirty.current = true; setDraft(e.target.value); }}
       onBlur={commit}
@@ -92,23 +91,46 @@ function PriceCell({ value, onCommit }) {
         if (e.key === 'Enter') { e.currentTarget.blur(); }
         if (e.key === 'Escape') { dirty.current = false; setDraft(value ?? ''); e.currentTarget.blur(); }
       }}
-      className="w-full border-0 bg-transparent px-2 py-1.5 text-center text-sm tabular-nums text-gray-800 outline-none focus:bg-blue-50/60 focus:ring-1 focus:ring-inset focus:ring-blue-400"
+      className="w-full border-0 bg-transparent px-3 py-2.5 text-left text-sm tabular-nums text-gray-800 outline-none placeholder:text-gray-400 focus:bg-blue-50/60 focus:ring-1 focus:ring-inset focus:ring-blue-400"
     />
   );
 }
 
+const SOURCE_TYPE_BADGE = {
+  absentee_owner:     'bg-amber-100 text-amber-800',
+  out_of_state_owner: 'bg-blue-100 text-blue-800',
+  high_equity:        'bg-emerald-100 text-emerald-800',
+  cash_buyers:        'bg-violet-100 text-violet-800',
+  vacant_lots:        'bg-orange-100 text-orange-800',
+  mls_active:         'bg-green-100 text-green-800',
+  mls_pending:        'bg-yellow-100 text-yellow-800',
+  mls_withdrawn:      'bg-gray-100 text-gray-500',
+  mls_sold:           'bg-red-100 text-red-700',
+};
+
 function SourceTypeCell({ value, onCommit }) {
   return (
-    <select
-      value={value ?? ''}
-      onChange={(e) => onCommit(e.target.value || null)}
-      className={`w-full border-0 bg-transparent px-2 py-1.5 text-center text-xs font-medium outline-none focus:ring-1 focus:ring-inset focus:ring-blue-400 ${value ? SOURCE_TYPE_STYLE[value] ?? 'text-gray-700' : 'text-gray-400'}`}
-    >
-      <option value="">—</option>
-      {SOURCE_TYPES.map((t) => (
-        <option key={t} value={t}>{SOURCE_TYPE_LABELS[t] ?? t}</option>
-      ))}
-    </select>
+    <div className="relative min-h-[42px]">
+      <select
+        value={value ?? ''}
+        onChange={(e) => onCommit(e.target.value || null)}
+        className="absolute inset-0 w-full cursor-pointer border-0 bg-transparent opacity-0"
+      >
+        <option value="">No Data</option>
+        {SOURCE_TYPES.map((t) => (
+          <option key={t} value={t}>{SOURCE_TYPE_LABELS[t] ?? t}</option>
+        ))}
+      </select>
+      <div className="pointer-events-none flex min-h-[42px] items-center px-3">
+        {value ? (
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${SOURCE_TYPE_BADGE[value] ?? 'bg-gray-100 text-gray-600'}`}>
+            {SOURCE_TYPE_LABELS[value] ?? value}
+          </span>
+        ) : (
+          <span className="text-sm text-gray-400">—</span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -165,16 +187,66 @@ export default function CRM() {
     catch { setRows(prev); setError('Delete failed.'); }
   };
 
+  const [sort, setSort] = useState({ key: null, dir: 'asc' });
+
+  const toggleSort = (key) => {
+    setSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+        : { key, dir: 'asc' }
+    );
+  };
+
   const filtered = useMemo(() => {
     if (!rows) return null;
     const q = query.trim().toLowerCase();
-    return rows.filter((r) => {
+    const base = rows.filter((r) => {
       if (!q) return true;
       return [r.name, r.address, r.phone, r.email, r.notes]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     });
-  }, [rows, query]);
+
+    if (!sort.key) return base;
+
+    const LEAD_ORDER = [
+      'absentee_owner', 'out_of_state_owner', 'high_equity',
+      'cash_buyers', 'vacant_lots',
+      'mls_active', 'mls_pending', 'mls_withdrawn', 'mls_sold',
+    ];
+
+    return [...base].sort((a, b) => {
+      let av = a[sort.key];
+      let bv = b[sort.key];
+
+      if (sort.key === 'home_price') {
+        av = av == null ? -Infinity : Number(av);
+        bv = bv == null ? -Infinity : Number(bv);
+        return sort.dir === 'asc' ? av - bv : bv - av;
+      }
+
+      if (sort.key === 'source_type') {
+        const ai = LEAD_ORDER.indexOf(av ?? '');
+        const bi = LEAD_ORDER.indexOf(bv ?? '');
+        const an = ai === -1 ? 999 : ai;
+        const bn = bi === -1 ? 999 : bi;
+        return sort.dir === 'asc' ? an - bn : bn - an;
+      }
+
+      if (sort.key === 'phone') {
+        const an = parseFloat(String(av ?? '').replace(/\D/g, '')) || Infinity;
+        const bn = parseFloat(String(bv ?? '').replace(/\D/g, '')) || Infinity;
+        return sort.dir === 'asc' ? an - bn : bn - an;
+      }
+
+      // alphabetical
+      av = (av ?? '').toLowerCase();
+      bv = (bv ?? '').toLowerCase();
+      if (av < bv) return sort.dir === 'asc' ? -1 : 1;
+      if (av > bv) return sort.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [rows, query, sort]);
 
   const lastEdit = rows && rows.length
     ? rows.map((r) => r.updated_at).filter(Boolean).sort().slice(-1)[0]
@@ -182,7 +254,7 @@ export default function CRM() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 pr-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">CRM</h1>
           <p className="mt-1 text-sm text-gray-500">Shared lead spreadsheet. Changes save automatically.</p>
@@ -196,7 +268,7 @@ export default function CRM() {
           />
           <button
             onClick={addRow}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
           >
             + New lead
           </button>
@@ -209,19 +281,19 @@ export default function CRM() {
         </div>
       )}
 
-      <div className="mt-5 overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="mt-5 overflow-x-auto rounded-xl border border-gray-200 bg-white mx-5 shadow-sm">
         {!filtered ? (
           <div className="p-4"><TableSkeleton rows={6} cols={7} /></div>
         ) : (
-          <table className="w-full table-fixed border-collapse text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead className="bg-gray-50">
-              <tr className="text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <Th>Name</Th>
-                <Th>Address</Th>
-                <Th>Phone</Th>
-                <Th>Lead</Th>
-                <Th>Price</Th>
-                <Th>Email</Th>
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <SortableTh sortKey="name"        sort={sort} onSort={toggleSort}>Name</SortableTh>
+                <SortableTh sortKey="address"     sort={sort} onSort={toggleSort}>Address</SortableTh>
+                <SortableTh sortKey="phone"       sort={sort} onSort={toggleSort}>Phone</SortableTh>
+                <SortableTh sortKey="source_type" sort={sort} onSort={toggleSort}>Lead</SortableTh>
+                <SortableTh sortKey="home_price"  sort={sort} onSort={toggleSort}>Price</SortableTh>
+                <SortableTh sortKey="email"       sort={sort} onSort={toggleSort}>Email</SortableTh>
                 <Th>Notes</Th>
                 <Th className="w-20">Action</Th>
               </tr>
@@ -235,17 +307,24 @@ export default function CRM() {
                 </tr>
               )}
               {filtered.map((r) => (
-                <tr key={r.id} className="group hover:bg-gray-50/60">
-                  <Td><TextCell value={r.name}    onCommit={(v) => patchRow(r.id, { name: v })}    placeholder="Name" /></Td>
-                  <Td><TextCell value={r.address} onCommit={(v) => patchRow(r.id, { address: v })} placeholder="Address" /></Td>
-                  <Td><TextCell value={r.phone}   onCommit={(v) => patchRow(r.id, { phone: v })}   placeholder="Phone" /></Td>
+                <tr key={r.id} className="group transition-colors hover:bg-indigo-50/30">
+                  <Td>
+                    <div className="flex items-center gap-2">
+                      <span className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 select-none">
+                        {r.name ? r.name.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : '?'}
+                      </span>
+                      <TextCell value={r.name} onCommit={(v) => patchRow(r.id, { name: v })} placeholder="No Data" />
+                    </div>
+                  </Td>
+                  <Td><TextCell value={r.address} onCommit={(v) => patchRow(r.id, { address: v })} placeholder="No Data" /></Td>
+                  <Td><TextCell value={r.phone}   onCommit={(v) => patchRow(r.id, { phone: v })}   placeholder="No Data" /></Td>
                   <Td><SourceTypeCell value={r.source_type} onCommit={(v) => patchRow(r.id, { source_type: v })} /></Td>
                   <Td><PriceCell value={r.home_price} onCommit={(v) => patchRow(r.id, { home_price: v })} /></Td>
-                  <Td><TextCell value={r.email}   onCommit={(v) => patchRow(r.id, { email: v })}   placeholder="name@example.com" type="email" /></Td>
-                  <Td><TextCell value={r.notes}   onCommit={(v) => patchRow(r.id, { notes: v })}   placeholder="Notes…" /></Td>
+                  <Td><TextCell value={r.email}   onCommit={(v) => patchRow(r.id, { email: v })}   placeholder="No Data" type="email" /></Td>
+                  <Td><TextCell value={r.notes}   onCommit={(v) => patchRow(r.id, { notes: v })}   placeholder="No Data" /></Td>
                   <Td>
                     <div className="flex items-center justify-center gap-1">
-                      {saving[r.id] && <span className="text-[10px] text-gray-400">saving…</span>}
+                      {saving[r.id] && <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-400" title="Saving…" />}
                       <button
                         onClick={() => removeRow(r.id)}
                         title="Delete lead"
@@ -265,7 +344,7 @@ export default function CRM() {
       </div>
 
       {filtered && filtered.length > 0 && (
-        <p className="mt-3 text-xs text-gray-400">
+        <p className="mt-3 text-xs text-gray-400 mx-5">
           {filtered.length} of {rows.length} leads
           {lastEdit && <> · last edit {timeAgo(lastEdit)}</>}
         </p>
@@ -275,8 +354,24 @@ export default function CRM() {
 }
 
 function Th({ children, className = '' }) {
-  return <th className={`border-b border-gray-200 px-2 py-2 ${className}`}>{children}</th>;
+  return <th className={`border-b border-gray-200 px-4 py-3 ${className}`}>{children}</th>;
 }
 function Td({ children, className = '' }) {
-  return <td className={`align-middle text-center ${className}`}>{children}</td>;
+  return <td className={`align-middle ${className}`}>{children}</td>;
+}
+function SortableTh({ children, sortKey, sort, onSort, className = '' }) {
+  const active = sort.key === sortKey;
+  return (
+    <th
+      className={`border-b border-gray-200 px-4 py-3 cursor-pointer select-none hover:bg-gray-100 ${className}`}
+      onClick={() => onSort(sortKey)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        <span className="text-[10px] text-gray-400">
+          {active ? (sort.dir === 'asc' ? '▲' : '▼') : '⇅'}
+        </span>
+      </span>
+    </th>
+  );
 }

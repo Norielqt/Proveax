@@ -69,7 +69,7 @@ class LeadController extends Controller
             'phone'      => ['sometimes', 'nullable', 'string', 'max:50'],
             'lead_type'   => ['sometimes', 'nullable', 'string', 'in:' . implode(',', self::LEAD_TYPES)],
             'source_type' => ['sometimes', 'nullable', 'string', 'in:' . implode(',', self::SOURCE_TYPES)],
-            'home_price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100000000'], // dollars
+            'home_price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:1000000000'], // dollars (up to $1B)
             'email'      => ['sometimes', 'nullable', 'email', 'max:200'],
             'notes'      => ['sometimes', 'nullable', 'string', 'max:10000'],
         ];
