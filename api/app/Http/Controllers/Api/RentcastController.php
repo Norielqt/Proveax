@@ -147,9 +147,20 @@ class RentcastController extends Controller
                 ->first();
 
             if ($cached) {
-                $rows    = $this->queryToRows($v, $zip, $hasZip, $hasCity, $typeFilter, $strategy);
-                $hasMore = !(bool) $cached->is_complete;
-                return response()->json(['data' => $rows, 'total' => count($rows), 'has_more' => $hasMore, 'source' => 'cache']);
+                // Bust cache if properties are missing raw_json (pre-migration records) —
+                // re-fetch from live API so raw_json and last_sale_price are populated.
+                $hasStaleRows = $this->localQuery($v, $zip, $hasZip, $hasCity, $typeFilter)
+                    ->whereNull('raw_json')
+                    ->exists();
+
+                if (!$hasStaleRows) {
+                    $rows    = $this->queryToRows($v, $zip, $hasZip, $hasCity, $typeFilter, $strategy);
+                    $hasMore = !(bool) $cached->is_complete;
+                    return response()->json(['data' => $rows, 'total' => count($rows), 'has_more' => $hasMore, 'source' => 'cache']);
+                }
+
+                // Stale rows detected — delete the query key so the live API path re-fetches below
+                DB::table('rentcast_fetched_queries')->where('query_key', $queryKey)->delete();
             }
         }
 
