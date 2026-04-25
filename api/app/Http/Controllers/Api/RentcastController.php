@@ -460,14 +460,61 @@ class RentcastController extends Controller
     /**
      * Automated valuation model only.
      * GET /api/rentcast/avm?address=123+Main+St&zipCode=33139
+     *
+     * Cached in DB on rentcast_properties.avm_json — once fetched, all subsequent
+     * requests for the same property are served from cache (zero API calls, zero cost).
+     * Pass refresh=1 to force a re-fetch.
      */
     public function avm(Request $request)
     {
         $v = $request->validate([
             'address' => 'required|string|max:300',
             'zipCode' => 'required|string|max:10',
+            'refresh' => 'nullable|boolean',
         ]);
 
-        return response()->json($this->rentcast->avm($v['address'], $v['zipCode']));
+        $refresh = (bool) ($v['refresh'] ?? false);
+
+        // Try cache first — match by formatted address + zip
+        if (!$refresh) {
+            $cached = RentcastProperty::query()
+                ->where('zip', $v['zipCode'])
+                ->whereNotNull('avm_json')
+                ->where(function ($q) use ($v) {
+                    $q->where('address', $v['address'])
+                      ->orWhere('street', $v['address']);
+                })
+                ->first();
+
+            if ($cached && $cached->avm_json) {
+                $data = is_string($cached->avm_json)
+                    ? (json_decode($cached->avm_json, true) ?? null)
+                    : $cached->avm_json;
+                if ($data) {
+                    return response()->json(['data' => $data, 'source' => 'cache']);
+                }
+            }
+        }
+
+        $result = $this->rentcast->avm($v['address'], $v['zipCode']);
+
+        // Persist on success — keyed by rentcast_id when available, else by address+zip
+        if (!empty($result['data'])) {
+            $rid = $result['data']['rentcast_id'] ?? null;
+            $row = $rid
+                ? RentcastProperty::query()->where('rentcast_id', $rid)->first()
+                : RentcastProperty::query()->where('zip', $v['zipCode'])
+                    ->where(function ($q) use ($v) {
+                        $q->where('address', $v['address'])->orWhere('street', $v['address']);
+                    })->first();
+
+            if ($row) {
+                $row->avm_json       = json_encode($result['data'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $row->avm_fetched_at = now();
+                $row->save();
+            }
+        }
+
+        return response()->json($result + ['source' => 'live']);
     }
 }

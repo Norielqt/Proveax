@@ -57,7 +57,7 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
         {properties.map((p) => {
           const key        = propertyKey(p);
           const id         = p.attom_id ?? p.id;
-          const value      = formatValue(p.estimated_value);
+          const value      = formatValue(p.last_sale_price);
           const sqft       = p.square_feet ? Number(p.square_feet).toLocaleString() : null;
           const type       = formatType(p.property_type);
           const isSelected = selectable && selected?.has(key);
@@ -107,7 +107,7 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
                     {value
                       ? <>
                           <p className="text-sm font-semibold text-gray-900">{value}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">Est. value</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Last sale price</p>
                         </>
                       : <p className="text-xs text-gray-300">—</p>
                     }

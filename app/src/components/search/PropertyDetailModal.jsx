@@ -2,7 +2,7 @@
 
 const LoadingCtx = createContext(false);
 import { runSkipTrace } from '../../api/properties';
-import { rentcastFullDetail } from '../../api/rentcast';
+import { rentcastFullDetail, rentcastAvm } from '../../api/rentcast';
 import { useSubscription } from '../../hooks/useSubscription';
 
 const isRentcastId = (id) => !!id && String(id).length > 5 && /[a-zA-Z]/.test(String(id));
@@ -19,6 +19,26 @@ export default function PropertyDetailModal({ property, onClose }) {
   const [tracing,  setTracing]  = useState(false);
   const [traceErr, setTraceErr] = useState('');
   const [tab,      setTab]      = useState('property');
+
+  // ── On-demand AVM (one billable /avm/value call per property) ──
+  const [avm,      setAvm]      = useState(null);
+  const [avmLoading, setAvmLoading] = useState(false);
+  const [avmErr,   setAvmErr]   = useState('');
+  const loadAvm = async () => {
+    setAvmLoading(true); setAvmErr('');
+    try {
+      const addr = p.address || p.street || (report?.location?.line1);
+      const zip  = p.zip || report?.location?.zip;
+      if (!addr || !zip) throw new Error('Missing address or zip');
+      const r = await rentcastAvm(addr, zip);
+      if (r.error || !r.data) throw new Error(r.error ?? 'No AVM returned');
+      setAvm(r.data);
+    } catch (e) {
+      setAvmErr(e.message || 'Failed to load AVM.');
+    } finally {
+      setAvmLoading(false);
+    }
+  };
 
   const fetchReport = async ({ rentcastId, address, zipCode }) => {
     setLoading(true); setError('');
@@ -47,6 +67,14 @@ export default function PropertyDetailModal({ property, onClose }) {
       fetchReport({ address: property.address, zipCode: property.zip });
     }
   }, [property.attom_id]); // eslint-disable-line
+
+  // Auto-load AVM on modal open (cached in DB after first fetch — zero-cost on revisit)
+  useEffect(() => {
+    const addr = property.address || property.street;
+    const zip  = property.zip;
+    if (addr && zip) loadAvm();
+    // eslint-disable-next-line
+  }, [property.attom_id]);
 
   useEffect(() => {
     if (report && (!p?.address || !p?.city)) {
@@ -139,14 +167,24 @@ export default function PropertyDetailModal({ property, onClose }) {
 
           {/* Inline stats */}
           {(() => {
-            const price = val.avm_value ?? val.assessed_total ?? p.estimated_value;
+            // Pick the best price source and label it accurately
+            let priceLabel = 'Last Sale Price';
+            let price = p.last_sale_price;
+            if (price == null && p.list_price != null) {
+              price = p.list_price;
+              priceLabel = 'List Price';
+            }
+            if (price == null) {
+              price = val.avm_value;
+              if (price != null) priceLabel = 'Est. Market Value';
+            }
             const beds  = char.beds ?? p.bedrooms;
             const baths = char.baths_total ?? p.bathrooms;
             const sqft  = char.sqft ?? p.square_feet;
             const year  = char.year_built ?? p.year_built;
             const type  = char.property_type ?? p.property_type;
             const stats = [
-              price && { label: 'Value', value: fmt$(price) },
+              price && { label: priceLabel, value: fmt$(price) },
               type  && { label: 'Type',  value: type },
               beds  && { label: 'Bed',   value: beds },
               baths && { label: 'Bath',  value: baths },
@@ -237,6 +275,14 @@ export default function PropertyDetailModal({ property, onClose }) {
                 </div>
               </Card>
 
+              <AvmCard
+                avm={avm}
+                loading={avmLoading}
+                error={avmErr}
+                onLoad={loadAvm}
+                lastSalePrice={p.last_sale_price}
+              />
+
               <div className="grid gap-3 md:grid-cols-2">
                 <Card title="Valuation &amp; Assessment" loading={loading && !hasReport} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
                   <div className="space-y-4">
@@ -246,8 +292,9 @@ export default function PropertyDetailModal({ property, onClose }) {
                       <StatRow label="High"     value={fmt$(val.avm_high)} />
                     </FieldGroup>
                     <FieldGroup heading="Assessed Value">
-                      <StatRow label="Land"  value={fmt$(val.assessed_land)} />
-                      <StatRow label="Total" value={fmt$(val.assessed_total)} />
+                      <StatRow label="Land"         value={fmt$(val.assessed_land)} />
+                      <StatRow label="Improvements" value={fmt$(val.assessed_impr)} />
+                      <StatRow label="Total"        value={fmt$(val.assessed_total)} />
                     </FieldGroup>
                     <FieldGroup heading="Taxes">
                       <StatRow label="Tax year"   value={val.tax_year} />
@@ -456,6 +503,124 @@ function RowFixed({ label, value }) {
       <dd className={`text-sm font-semibold text-right ${empty ? 'text-gray-300' : 'text-gray-900'}`}>
         {empty ? '—' : value}
       </dd>
+    </div>
+  );
+}
+
+// ─── AVM Card ────────────────────────────────────────────────────────────────
+function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
+  // Empty state — show a load button (1 billable Rentcast call)
+  if (!avm && !loading && !error) {
+    return (
+      <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Estimated Market Value</p>
+          <p className="text-xs text-gray-600 mt-0.5">Run RentCast AVM to fetch market estimate, confidence range &amp; comparable sales.</p>
+        </div>
+        <button
+          onClick={onLoad}
+          className="shrink-0 rounded-md bg-blue-600 hover:bg-blue-700 px-3 py-2 text-xs font-semibold text-white transition-colors"
+        >
+          Load AVM
+        </button>
+      </div>
+    );
+  }
+
+  if (loading && !avm) {
+    return (
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 flex items-center gap-2 text-xs text-blue-700">
+        <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+          Fetching AVM &amp; comparables…
+      </div>
+    );
+  }
+
+  if (error && !avm) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-center justify-between gap-4">
+        <p className="text-xs text-red-700">{error}</p>
+        <button onClick={onLoad} className="shrink-0 rounded-md bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-semibold text-white">Retry</button>
+      </div>
+    );
+  }
+
+  const value = avm.avm_value;
+  const low   = avm.avm_low;
+  const high  = avm.avm_high;
+  const lsp   = lastSalePrice ?? avm.last_sale_price;
+  const delta = (value != null && lsp != null) ? value - lsp : null;
+  const pct   = (delta != null && lsp > 0) ? (delta / lsp) * 100 : null;
+
+  // Range bar: position the marker between low and high
+  let markerPct = 50;
+  if (value != null && low != null && high != null && high > low) {
+    markerPct = Math.max(0, Math.min(100, ((value - low) / (high - low)) * 100));
+  }
+
+  const comps = (avm.comparables || []).slice(0, 3);
+
+  return (
+    <div className="rounded-lg border border-blue-200 bg-white shadow-sm overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-3 flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-200">RentCast AVM</p>
+          <p className="text-2xl font-bold text-white leading-tight">{value != null ? `$${Number(value).toLocaleString()}` : '—'}</p>
+        </div>
+        {delta != null && (
+          <div className="text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-200">vs Last Sale</p>
+            <p className={`text-sm font-bold ${delta >= 0 ? 'text-emerald-300' : 'text-amber-300'}`}>
+              {delta >= 0 ? '+' : ''}${Math.abs(delta).toLocaleString()}
+              {pct != null && <span className="ml-1 text-xs opacity-90">({pct >= 0 ? '+' : ''}{pct.toFixed(1)}%)</span>}
+            </p>
+            <p className="text-[10px] text-blue-200 mt-0.5">Sold ${Number(lsp).toLocaleString()}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Confidence range bar */}
+      {low != null && high != null && (
+        <div className="px-4 pt-3 pb-2">
+          <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">
+            <span>Low ${Number(low).toLocaleString()}</span>
+            <span className="text-gray-500">85% confidence range</span>
+            <span>High ${Number(high).toLocaleString()}</span>
+          </div>
+          <div className="relative h-2 rounded-full bg-gradient-to-r from-amber-200 via-blue-200 to-emerald-200">
+            <div
+              className="absolute -top-1 h-4 w-1 bg-blue-700 rounded-sm shadow-md"
+              style={{ left: `calc(${markerPct}% - 2px)` }}
+              title={`Estimate: $${Number(value).toLocaleString()}`}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Comparable sales */}
+      {comps.length > 0 && (
+        <div className="px-4 pt-3 pb-4 border-t border-gray-100 mt-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Comparable Sales · {comps.length}</p>
+          <div className="space-y-1.5">
+            {comps.map((c) => (
+              <div key={c.id} className="flex items-center justify-between gap-3 rounded-md bg-gray-50 hover:bg-blue-50/40 px-3 py-2 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-gray-900 truncate">{c.address}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    {[c.bedrooms && `${c.bedrooms}bd`, c.bathrooms && `${c.bathrooms}ba`, c.square_feet && `${Number(c.square_feet).toLocaleString()} sqft`, c.distance != null && `${c.distance.toFixed(2)} mi`].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-bold text-gray-900">{c.price != null ? `$${Number(c.price).toLocaleString()}` : '—'}</p>
+                  {c.correlation != null && (
+                    <p className="text-[10px] text-gray-400">{Math.round(c.correlation * 100)}% match</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

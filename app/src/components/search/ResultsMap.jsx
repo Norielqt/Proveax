@@ -36,7 +36,7 @@ function toGeoJSON(props) {
           geometry: { type: 'Point', coordinates: [lng, lat] },
           properties: {
             uid,
-            price: formatPrice(p.estimated_value) || '',
+            price: formatPrice(p.last_sale_price) || '',
             street: p.street || p.address || '',
             city: p.city || '',
             state: p.state || '',
@@ -346,7 +346,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
                 <div style="text-align:center">
                   <div style="font-size:15px;font-weight:700;color:#111827">${fp.price || '—'}</div>
-                  <div style="font-size:10px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Est. Value</div>
+                  <div style="font-size:10px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Last Sale Price</div>
                 </div>
                 <div style="text-align:center;border-left:1px solid #f3f4f6;border-right:1px solid #f3f4f6">
                   <div style="font-size:15px;font-weight:700;color:#111827">${fp.sqft || '—'}</div>

@@ -16,6 +16,7 @@ class RentcastProperty extends Model
         'lat', 'lng', 'property_type', 'bedrooms', 'bathrooms',
         'square_feet', 'lot_size', 'year_built', 'estimated_value',
         'owner_name', 'owner_occupied', 'fetched_at', 'raw_json',
+        'avm_json', 'avm_fetched_at',
     ];
 
     protected $casts = [
@@ -24,6 +25,7 @@ class RentcastProperty extends Model
         'estimated_value' => 'float',
         'owner_occupied'  => 'boolean',
         'fetched_at'      => 'datetime',
+        'avm_fetched_at'  => 'datetime',
     ];
 
     /**
@@ -75,6 +77,8 @@ class RentcastProperty extends Model
 
     public function toSearchRow(): array
     {
+        $raw = is_string($this->raw_json) ? (json_decode($this->raw_json, true) ?? []) : [];
+
         return [
             'attom_id'        => $this->rentcast_id, // compat alias for frontend
             'street'          => $this->street ?: $this->address,
@@ -91,6 +95,7 @@ class RentcastProperty extends Model
             'lot_size'        => $this->lot_size,
             'year_built'      => $this->year_built,
             'estimated_value' => $this->estimated_value,
+            'last_sale_price' => isset($raw['lastSalePrice']) ? (float) $raw['lastSalePrice'] : null,
             'owner_name'      => $this->owner_name,
             'owner_occupied'  => $this->owner_occupied,
         ];
