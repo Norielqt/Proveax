@@ -7,3 +7,5 @@
     font-weight: 400;
   }
 }
+
+.maplibregl-ctrl-bottom-left { transform: scale(0.75); opacity: 0.6; }

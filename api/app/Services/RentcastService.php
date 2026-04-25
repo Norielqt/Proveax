@@ -270,13 +270,43 @@ class RentcastService
 
         $raw = $resp->json() ?? [];
 
+        $comps = array_map(static function (array $c): array {
+            return [
+                'id'                => $c['id']                ?? null,
+                'address'           => $c['formattedAddress']  ?? null,
+                'city'              => $c['city']              ?? null,
+                'state'             => $c['state']             ?? null,
+                'zip'               => $c['zipCode']           ?? null,
+                'lat'               => isset($c['latitude'])   ? (float) $c['latitude']  : null,
+                'lng'               => isset($c['longitude'])  ? (float) $c['longitude'] : null,
+                'property_type'     => $c['propertyType']      ?? null,
+                'bedrooms'          => $c['bedrooms']          ?? null,
+                'bathrooms'         => $c['bathrooms']         ?? null,
+                'square_feet'       => $c['squareFootage']     ?? null,
+                'lot_size'          => $c['lotSize']           ?? null,
+                'year_built'        => $c['yearBuilt']         ?? null,
+                'price'             => $c['price']             ?? null,
+                'status'            => $c['status']            ?? null,
+                'listing_type'      => $c['listingType']       ?? null,
+                'listed_date'       => $c['listedDate']        ?? null,
+                'days_on_market'    => $c['daysOnMarket']      ?? null,
+                'distance'          => $c['distance']          ?? null,
+                'correlation'       => $c['correlation']       ?? null,
+            ];
+        }, $raw['comparables'] ?? []);
+
+        $subject = $raw['subjectProperty'] ?? [];
+
         return ['data' => [
-            'rentcast_id'    => $raw['id']             ?? null,
-            'avm_value'      => $raw['price']          ?? null,
-            'avm_low'        => $raw['priceRangeLow']  ?? null,
-            'avm_high'       => $raw['priceRangeHigh'] ?? null,
-            'avm_date'       => null,
-            'confidence'     => null,
+            'rentcast_id'     => $raw['id']             ?? null,
+            'avm_value'       => $raw['price']          ?? null,
+            'avm_low'         => $raw['priceRangeLow']  ?? null,
+            'avm_high'        => $raw['priceRangeHigh'] ?? null,
+            'avm_date'        => null,
+            'confidence'      => null,
+            'last_sale_price' => isset($subject['lastSalePrice']) ? (float) $subject['lastSalePrice'] : null,
+            'last_sale_date'  => $subject['lastSaleDate'] ?? null,
+            'comparables'     => $comps,
         ]];
     }
 
@@ -308,6 +338,7 @@ class RentcastService
             'lot_size'        => $p['lotSize']          ?? null,
             'year_built'      => $p['yearBuilt']        ?? null,
             'estimated_value' => $this->latestAssessedValue($p),
+            'last_sale_price' => isset($p['lastSalePrice']) ? (float) $p['lastSalePrice'] : null,
             'owner_name'      => $this->extractOwnerName($p),
             'owner_occupied'  => isset($p['ownerOccupied']) ? (bool) $p['ownerOccupied'] : null,
             // Pre-computed detail — lets the frontend skip a follow-up /fulldetail call
