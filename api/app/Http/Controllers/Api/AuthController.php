@@ -87,6 +87,18 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logged out.']);
     }
 
+    public function updateProfile(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+        ]);
+
+        $user = $request->user();
+        $user->update(['name' => $data['name']]);
+
+        return response()->json(['user' => $user->fresh()]);
+    }
+
     public function me(Request $request)
     {
         return response()->json([

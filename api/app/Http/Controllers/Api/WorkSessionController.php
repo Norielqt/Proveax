@@ -236,4 +236,39 @@ class WorkSessionController extends Controller
             'live_session'         => $live,
         ]);
     }
+
+    /**
+     * GET /api/work-sessions/daily
+     * Returns work sessions grouped by day with total active seconds.
+     * Query params: from (YYYY-MM-DD), to (YYYY-MM-DD), user_id (admin only)
+     * Defaults to current calendar month.
+     */
+    public function daily(Request $request)
+    {
+        $user   = $request->user();
+        $isAdmin = $user->role->value === 'admin';
+
+        $from = $request->filled('from')
+            ? Carbon::parse($request->from)->startOfDay()
+            : now()->startOfMonth()->startOfDay();
+
+        $to = $request->filled('to')
+            ? Carbon::parse($request->to)->endOfDay()
+            : now()->endOfMonth()->endOfDay();
+
+        $targetUserId = $user->id;
+        if ($isAdmin && $request->filled('user_id')) {
+            $targetUserId = (int) $request->user_id;
+        }
+
+        $rows = WorkSession::where('user_id', $targetUserId)
+            ->whereBetween('started_at', [$from, $to])
+            ->whereNotNull('ended_at')
+            ->selectRaw('DATE(started_at) as date, SUM(active_seconds) as total_seconds, COUNT(*) as session_count')
+            ->groupByRaw('DATE(started_at)')
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return response()->json($rows);
+    }
 }

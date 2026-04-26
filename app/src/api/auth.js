@@ -23,6 +23,8 @@ export const logout = async () => {
 
 export const me = async () => (await api.get('/api/me')).data;
 
+export const updateProfile = async (payload) => (await api.put('/api/me/profile', payload)).data;
+
 /** Returns the Google OAuth URL to open in a popup */
 export const getGoogleRedirectUrl = async () => {
   const { data } = await api.get('/auth/google/redirect-url');

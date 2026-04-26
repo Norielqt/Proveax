@@ -1,5 +1,9 @@
 import api from './client';
 
+// Daily session summary
+export const getDailyLog = async (params = {}) =>
+  (await api.get('/api/work-sessions/daily', { params })).data;
+
 // Timesheets
 export const listTimesheets = async (params = {}) =>
   (await api.get('/api/timesheets', { params })).data;

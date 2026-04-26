@@ -1,184 +1,164 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TableSkeleton } from '../../components/Skeleton';
 import { useAuth } from '../../context/AuthContext';
-import {
-  listTimesheets, generateTimesheet, submitTimesheet,
-  approveTimesheet, rejectTimesheet, timesheetExportUrl,
-} from '../../api/reports';
+import { getDailyLog } from '../../api/reports';
 import { listMembers } from '../../api/team';
-
-function mondayOf(date) {
-  const d = new Date(date);
-  const day = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
 
 function fmtHours(seconds) {
   return (seconds / 3600).toFixed(2);
 }
 
-const STATUS_STYLE = {
-  draft:     'bg-gray-100 text-gray-700',
-  submitted: 'bg-amber-100 text-amber-800',
-  approved:  'bg-blue-100 text-blue-800',
-  rejected:  'bg-rose-100 text-rose-800',
-};
-
 export default function Timesheets() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const [rows, setRows] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ status: '', user_id: '' });
-  const [busy, setBusy] = useState(false);
+  // ── Month navigation ──────────────────────────────────────────────────────
+  const [monthOffset, setMonthOffset] = useState(0); // 0 = current month
+  const { label, from, to } = useMemo(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + monthOffset);
+    const y = d.getFullYear();
+    const m = d.getMonth(); // 0-indexed
+    const firstDay = new Date(y, m, 1);
+    const lastDay  = new Date(y, m + 1, 0);
+    return {
+      label: firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      from:  firstDay.toISOString().slice(0, 10),
+      to:    lastDay.toISOString().slice(0, 10),
+    };
+  }, [monthOffset]);
 
-  const reload = async () => {
-    setLoading(true);
+  // ── Daily log state ───────────────────────────────────────────────────────
+  const [dailyRows, setDailyRows] = useState([]);
+  const [dailyLoading, setDailyLoading] = useState(true);
+  const [memberFilter, setMemberFilter] = useState('');
+  const [members, setMembers] = useState([]);
+
+  const reloadDaily = async () => {
+    setDailyLoading(true);
     try {
-      const params = {};
-      if (filters.status) params.status = filters.status;
-      if (filters.user_id) params.user_id = filters.user_id;
-      setRows(await listTimesheets(params));
+      const params = { from, to };
+      if (isAdmin && memberFilter) params.user_id = memberFilter;
+      setDailyRows(await getDailyLog(params));
     } finally {
-      setLoading(false);
+      setDailyLoading(false);
     }
   };
 
-  useEffect(() => { reload(); }, [filters.status, filters.user_id]);
+  useEffect(() => { reloadDaily(); }, [from, to, memberFilter]);
   useEffect(() => {
     if (isAdmin) listMembers().then((r) => setMembers(r.members ?? r ?? []));
   }, [isAdmin]);
 
-  const generate = async (weeksAgo = 0) => {
-    setBusy(true);
-    try {
-      const d = mondayOf(new Date());
-      d.setDate(d.getDate() - weeksAgo * 7);
-      await generateTimesheet(d.toISOString().slice(0, 10));
-      await reload();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const doSubmit = async (id) => {
-    if (!confirm('Submit this timesheet for review? You cannot edit it after.')) return;
-    await submitTimesheet(id);
-    reload();
-  };
-
-  const doReview = async (id, action) => {
-    const n = prompt(`Optional note for ${action}:`) ?? '';
-    if (action === 'approve') await approveTimesheet(id, n);
-    else await rejectTimesheet(id, n);
-    reload();
-  };
+  const totalMonthSeconds = useMemo(
+    () => dailyRows.reduce((sum, r) => sum + Number(r.total_seconds), 0),
+    [dailyRows]
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Timesheets</h1>
-          <p className="mt-1 text-sm text-gray-500">Weekly rollup of tracked time. Submit for approval.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => generate(0)} disabled={busy}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
-            Generate this week
-          </button>
-          <button onClick={() => generate(1)} disabled={busy}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-            Generate last week
-          </button>
-          {isAdmin && (
-            <a href={timesheetExportUrl(filters)} target="_blank" rel="noopener"
-              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-              Export CSV
-            </a>
-          )}
-        </div>
-      </div>
+      <section>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Timesheets</h1>
+            <p className="mt-1 text-sm text-gray-500">Daily breakdown of your logged time.</p>
+          </div>
 
-      <div className="flex flex-wrap gap-2 rounded-md border border-gray-200 bg-white p-3">
-        <select value={filters.status}
-          onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm">
-          <option value="">All statuses</option>
-          <option value="draft">Draft</option>
-          <option value="submitted">Submitted</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
-        {isAdmin && (
-          <select value={filters.user_id}
-            onChange={(e) => setFilters((f) => ({ ...f, user_id: e.target.value }))}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm">
-            <option value="">All members</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <select
+                value={memberFilter}
+                onChange={(e) => setMemberFilter(e.target.value)}
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              >
+                <option value="">All members</option>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            )}
+            {/* Month navigation */}
+            <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-1 py-1">
+              <button
+                onClick={() => setMonthOffset((o) => o - 1)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="min-w-[130px] text-center text-sm font-medium text-gray-700">{label}</span>
+              <button
+                onClick={() => setMonthOffset((o) => Math.min(o + 1, 0))}
+                disabled={monthOffset === 0}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Monthly total pill */}
+        {!dailyLoading && dailyRows.length > 0 && (
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-sm text-gray-500">Total this month:</span>
+            <span className="rounded-full bg-blue-50 px-3 py-0.5 text-sm font-semibold text-blue-700">
+              {fmtHours(totalMonthSeconds)} hrs
+            </span>
+          </div>
         )}
-      </div>
 
-      {loading ? (
-        <TableSkeleton rows={5} cols={isAdmin ? 7 : 6} />
-      ) : (
-      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-            <tr>
-              <th className="px-4 py-2 text-left">Week</th>
-              {isAdmin && <th className="px-4 py-2 text-left">Member</th>}
-              <th className="px-4 py-2 text-right">Hours</th>
-              <th className="px-4 py-2 text-left">Status</th>
-              <th className="px-4 py-2 text-left">Submitted</th>
-              <th className="px-4 py-2 text-left">Reviewed</th>
-              <th className="px-4 py-2 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {rows.length === 0 ? (
-              <tr><td colSpan={isAdmin ? 7 : 6} className="px-4 py-6 text-center text-gray-500">No timesheets yet. Click Generate to create one.</td></tr>
-            ) : rows.map((r) => {
-              const isOwner = r.user_id === user?.id;
-              return (
-                <tr key={r.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2">{r.week_start} → {r.week_end}</td>
-                  {isAdmin && <td className="px-4 py-2">{r.user?.name ?? '—'}</td>}
-                  <td className="px-4 py-2 text-right tabular-nums">{fmtHours(r.total_active_seconds)}</td>
-                  <td className="px-4 py-2">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[r.status]}`}>
-                      {r.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-gray-500">{r.submitted_at ? new Date(r.submitted_at).toLocaleString() : '—'}</td>
-                  <td className="px-4 py-2 text-gray-500">{r.reviewed_at ? new Date(r.reviewed_at).toLocaleString() : '—'}</td>
-                  <td className="px-4 py-2 text-right">
-                    {isOwner && r.status === 'draft' && (
-                      <button onClick={() => doSubmit(r.id)} className="text-blue-600 hover:underline">Submit</button>
-                    )}
-                    {isAdmin && r.status === 'submitted' && !isOwner && (
-                      <div className="flex justify-end gap-3">
-                        <button onClick={() => doReview(r.id, 'approve')} className="text-blue-600 hover:underline">Approve</button>
-                        <button onClick={() => doReview(r.id, 'reject')} className="text-rose-600 hover:underline">Reject</button>
-                      </div>
-                    )}
-                    {r.reviewer_note && (
-                      <p className="mt-1 text-xs text-gray-500">Note: {r.reviewer_note}</p>
-                    )}
-                  </td>
+        {dailyLoading ? (
+          <TableSkeleton rows={6} cols={3} />
+        ) : dailyRows.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-white py-12 text-center text-sm text-gray-400">
+            No sessions logged for {label}.
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <table className="min-w-full divide-y divide-gray-100 text-sm">
+              <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-5 py-3 text-left">Date</th>
+                  <th className="px-5 py-3 text-right">Hours Logged</th>
+                  <th className="px-5 py-3 text-right">Sessions</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      )}
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {dailyRows.map((r) => {
+                  const dateLabel = new Date(r.date + 'T00:00:00').toLocaleDateString('en-US', {
+                    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+                  });
+                  const hrs = fmtHours(r.total_seconds);
+                  const pct = Math.min((Number(r.total_seconds) / (8 * 3600)) * 100, 100);
+                  return (
+                    <tr key={r.date} className="hover:bg-gray-50">
+                      <td className="px-5 py-3 font-medium text-gray-800">{dateLabel}</td>
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          {/* Progress bar toward 8h */}
+                          <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-gray-100">
+                            <div
+                              className={`h-full rounded-full ${pct >= 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="tabular-nums font-semibold text-gray-900">{hrs} hrs</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-right tabular-nums text-gray-500">{r.session_count}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
