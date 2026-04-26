@@ -38,27 +38,20 @@ const summarizeRange = (minVal, maxVal, fmt) => {
   return `≤${fmt(maxVal)}`;
 };
 
-// Lead strategy chip options
+// Lead strategy chip options (no "All" — deselecting everything = All)
 const STRATEGY_OPTS = [
-  { value: '',                label: 'All'              },
   { value: 'absentee_owner',  label: 'Absentee Owner'   },
   { value: 'out_of_state_owner', label: 'Out of State'  },
   { value: 'high_equity',     label: 'High Equity'      },
   { value: 'cash_buyers',     label: 'Cash Buyers'      },
   { value: 'vacant_lots',     label: 'Vacant Lots'      },
-  { value: 'mls_active',      label: 'MLS Active'       },
-  { value: 'mls_pending',     label: 'MLS Pending'      },
   { value: 'mls_withdrawn',   label: 'MLS Withdrawn'    },
-  { value: 'mls_sold',        label: 'MLS Sold'         },
 ];
 
-const MLS_STRATEGIES = new Set(['mls_active', 'mls_pending', 'mls_withdrawn', 'mls_sold']);
+const MLS_STRATEGIES = new Set(['mls_withdrawn']);
 
 const MLS_PARAMS = {
-  mls_active:   { status: 'Active' },
-  mls_pending:  { status: 'Inactive', listingType: 'Pending' },
   mls_withdrawn:{ status: 'Inactive', listingType: 'Withdrawn' },
-  mls_sold:     { status: 'Inactive', listingType: 'Sold' },
 };
 
 /** Translate leadStrategy in filters to actual backend params */
@@ -158,7 +151,9 @@ export default function Dashboard() {
       yearBuiltMax: f.yearBuiltMax ?? '',
       lotSizeMin:   f.lotSizeMin   ?? '',
       lotSizeMax:   f.lotSizeMax   ?? '',
-      leadStrategy: f.leadStrategy ?? f.ownerOccupied ?? '', // backward compat
+      leadStrategies: Array.isArray(f.leadStrategies) ? f.leadStrategies
+                     : f.leadStrategy               ? [f.leadStrategy]   // backward compat
+                     : [],
     };
   });
   // Ref so callbacks always see latest advFilters without needing it in dep arrays
@@ -217,13 +212,15 @@ export default function Dashboard() {
   const [crmSaving, setCrmSaving] = useState(false);
   const [crmToast, setCrmToast] = useState(null); // { count, error }
 
-  const applyFilters = useCallback((parsed, propertytype, leadStrategyOverride) => {
+  const applyFilters = useCallback((parsed, propertytype, leadStrategiesOverride) => {
     const current = advFiltersRef.current;
     const adv = Object.fromEntries(
       Object.entries({
         ...current,
-        ...(leadStrategyOverride !== undefined ? { leadStrategy: leadStrategyOverride } : {}),
-      }).filter(([, v]) => v !== '' && v != null)
+        ...(leadStrategiesOverride !== undefined ? { leadStrategies: leadStrategiesOverride } : {}),
+      }).filter(([k, v]) =>
+        k === 'leadStrategies' ? (Array.isArray(v) && v.length > 0) : (v !== '' && v != null)
+      )
     );
     const next = { ...parsed, ...(propertytype ? { propertytype } : {}), ...adv };
     const clean = Object.fromEntries(Object.entries(next).filter(([, v]) => v !== undefined && v !== ''));
@@ -323,7 +320,7 @@ export default function Dashboard() {
       sqftMin: '', sqftMax: '',
       yearBuiltMin: '', yearBuiltMax: '',
       lotSizeMin: '', lotSizeMax: '',
-      leadStrategy: '',
+      leadStrategies: [],
     };
     setAdvFilters(empty);
     advFiltersRef.current = empty;
@@ -337,7 +334,7 @@ export default function Dashboard() {
   // Fired by map on pan/zoom
   const handleViewChange = useCallback(({ lat, lng, radius }) => {
     if (filters.postalcode || filters.city || filters.address) return;
-    if (MLS_STRATEGIES.has(filters.leadStrategy)) return; // MLS doesn't support lat/lng pan
+    if ((filters.leadStrategies ?? []).some(s => MLS_STRATEGIES.has(s))) return; // MLS doesn't support lat/lng pan
     clearTimeout(viewTimerRef.current);
     viewTimerRef.current = setTimeout(() => {
       setLoading(true);
@@ -356,7 +353,7 @@ export default function Dashboard() {
         .catch(() => {})
         .finally(() => setLoading(false));
     }, 250);
-  }, [filters.postalcode, filters.city, filters.address, filters.leadStrategy]);
+  }, [filters.postalcode, filters.city, filters.address, filters.leadStrategies]);
 
   useEffect(() => {
     if (!filters.postalcode && (!filters.city || !filters.state) && !filters.address) {
@@ -370,18 +367,47 @@ export default function Dashboard() {
     setManualSearchKey((k) => k + 1);
     allResultsRef.current.clear();
 
-    const strategy = filters.leadStrategy;
+    const strategies = filters.leadStrategies ?? [];
     let searchPromise;
 
-    if (strategy && MLS_STRATEGIES.has(strategy)) {
-      // MLS strategies hit the /listings/sale endpoint
-      const mlsParams = { ...MLS_PARAMS[strategy] };
-      if (filters.postalcode) mlsParams.zipCode = filters.postalcode;
-      if (filters.city)  mlsParams.city  = filters.city;
-      if (filters.state) mlsParams.state = filters.state;
-      searchPromise = rentcastListings(mlsParams);
+    if (strategies.length === 0) {
+      // No strategy filter — plain property search
+      const params = buildSearchParams({ ...filters, leadStrategy: undefined });
+      searchPromise = rentcastSearch(params);
+    } else if (strategies.length === 1) {
+      const strategy = strategies[0];
+      if (MLS_STRATEGIES.has(strategy)) {
+        const mlsParams = { ...MLS_PARAMS[strategy] };
+        if (filters.postalcode) mlsParams.zipCode = filters.postalcode;
+        if (filters.city)  mlsParams.city  = filters.city;
+        if (filters.state) mlsParams.state = filters.state;
+        searchPromise = rentcastListings(mlsParams);
+      } else {
+        searchPromise = rentcastSearch(buildSearchParams({ ...filters, leadStrategy: strategy }));
+      }
     } else {
-      searchPromise = rentcastSearch(buildSearchParams(filters));
+      // Multiple strategies — fan-out one call per strategy, merge & deduplicate results
+      const calls = strategies.map((strategy) => {
+        if (MLS_STRATEGIES.has(strategy)) {
+          const mlsParams = { ...MLS_PARAMS[strategy] };
+          if (filters.postalcode) mlsParams.zipCode = filters.postalcode;
+          if (filters.city)  mlsParams.city  = filters.city;
+          if (filters.state) mlsParams.state = filters.state;
+          return rentcastListings(mlsParams).catch(() => ({ data: [] }));
+        }
+        return rentcastSearch(buildSearchParams({ ...filters, leadStrategy: strategy })).catch(() => ({ data: [] }));
+      });
+      searchPromise = Promise.all(calls).then((responses) => {
+        const merged = [];
+        const seen = new Set();
+        for (const r of responses) {
+          for (const p of (r.data || [])) {
+            const uid = String(p.attom_id ?? `${parseFloat(p.lat).toFixed(5)},${parseFloat(p.lng).toFixed(5)}`);
+            if (!seen.has(uid)) { seen.add(uid); merged.push(p); }
+          }
+        }
+        return { data: merged, total: merged.length, has_more: false };
+      });
     }
 
     searchPromise
@@ -423,7 +449,9 @@ export default function Dashboard() {
   const handleAddToCRM = useCallback(async () => {
     if (!selectedKeys.size || crmSaving) return;
     const toAdd = results.filter((p) => selectedKeys.has(propertyKey(p)));
-    const filterStrategy = filters.leadStrategy || null;
+    const strategies = filters.leadStrategies ?? [];
+    // Use the selected strategy only when exactly one is chosen; otherwise auto-detect per property
+    const filterStrategy = strategies.length === 1 ? strategies[0] : null;
     setCrmSaving(true);
     setCrmToast(null);
     let saved = 0;
@@ -439,12 +467,9 @@ export default function Dashboard() {
         // Auto-detect lead type from property data when no filter is active
         let sourceType = filterStrategy;
         if (!sourceType) {
-          // MLS listing types — detected from listing_status field
+          // MLS withdrawn — detected from listing_status field
           const status      = (p.listing_status ?? '').toLowerCase();
-          if      (status === 'active')    sourceType = 'mls_active';
-          else if (status === 'pending')   sourceType = 'mls_pending';
-          else if (status === 'withdrawn') sourceType = 'mls_withdrawn';
-          else if (status === 'sold')      sourceType = 'mls_sold';
+          if (status === 'withdrawn') sourceType = 'mls_withdrawn';
           else {
             // Property-data based detection
             const ownerState   = p.detail?.owner?.mail_state?.toUpperCase() ?? null;
@@ -485,7 +510,7 @@ export default function Dashboard() {
       setCrmToast({ count: 0, error: lastError || 'Failed to add leads. Check console for details.' });
     }
     setTimeout(() => setCrmToast(null), 6000);
-  }, [selectedKeys, results, filters.leadStrategy, crmSaving]);
+  }, [selectedKeys, results, filters.leadStrategies, crmSaving]);
 
   const handleLoadMore = useCallback(() => {
     setLoadingMore(true);
@@ -638,11 +663,15 @@ export default function Dashboard() {
               );
             })()}
 
-            {/* Lead / Strategy chip */}
+            {/* Lead / Strategy chip — multi-select */}
             {(() => {
-              const selected = STRATEGY_OPTS.find(o => o.value === (advFilters.leadStrategy ?? '')) ?? STRATEGY_OPTS[0];
-              const active = !!advFilters.leadStrategy;
+              const selectedArr = advFilters.leadStrategies ?? [];
+              const active = selectedArr.length > 0;
               const open = openFilter === 'lead';
+              // Chip label: "Lead · Absentee Owner" (1) or "Lead · 2" (many)
+              const chipSuffix = selectedArr.length === 1
+                ? STRATEGY_OPTS.find(o => o.value === selectedArr[0])?.label
+                : selectedArr.length > 1 ? `${selectedArr.length} selected` : null;
               return (
                 <div className="relative flex-1 min-w-0">
                   <button
@@ -658,7 +687,7 @@ export default function Dashboard() {
                   >
                     <span className="flex min-w-0 items-center gap-1 truncate">
                       <span className={`truncate ${active ? '' : 'text-[#555]'}`}>Lead</span>
-                      {active && <span className="truncate text-[#0C447C]">· {selected.label}</span>}
+                      {chipSuffix && <span className="truncate text-[#0C447C]">· {chipSuffix}</span>}
                     </span>
                     <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -666,36 +695,44 @@ export default function Dashboard() {
                   </button>
                   {open && (
                     <div className="absolute left-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[#E8F0FB] bg-white py-1 shadow-xl z-[2000]">
-                      {STRATEGY_OPTS.map((o) => (
-                        <button
-                          key={o.value}
-                          type="button"
-                          onClick={() => {
-                            const val = o.value;
-                            const next = { ...advFiltersRef.current, leadStrategy: val };
-                            setAdvFilters(next);
-                            advFiltersRef.current = next;
-                            const loc = {};
-                            if (filters.postalcode) loc.postalcode = filters.postalcode;
-                            if (filters.city)       loc.city = filters.city;
-                            if (filters.state)      loc.state = filters.state;
-                            applyFilters(loc, filters.propertytype, val);
-                            setOpenFilter(null);
-                          }}
-                          className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors ${
-                            (advFilters.leadStrategy ?? '') === o.value
-                              ? 'bg-[#E6F1FB] text-[#0C447C] font-medium'
-                              : 'text-[#444] hover:bg-[#F7FAFF]'
-                          }`}
-                        >
-                          {o.label}
-                          {(advFilters.leadStrategy ?? '') === o.value && (
-                            <svg className="h-3.5 w-3.5 text-[#185FA5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                      ))}
+                      {STRATEGY_OPTS.map((o) => {
+                        const checked = selectedArr.includes(o.value);
+                        return (
+                          <button
+                            key={o.value}
+                            type="button"
+                            onClick={() => {
+                              const next = checked
+                                ? selectedArr.filter(v => v !== o.value)
+                                : [...selectedArr, o.value];
+                              const nextFilters = { ...advFiltersRef.current, leadStrategies: next };
+                              setAdvFilters(nextFilters);
+                              advFiltersRef.current = nextFilters;
+                              const loc = {};
+                              if (filters.postalcode) loc.postalcode = filters.postalcode;
+                              if (filters.city)       loc.city = filters.city;
+                              if (filters.state)      loc.state = filters.state;
+                              applyFilters(loc, filters.propertytype, next);
+                              // keep dropdown open for multi-select
+                            }}
+                            className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors ${
+                              checked ? 'bg-[#E6F1FB] text-[#0C447C] font-medium' : 'text-[#444] hover:bg-[#F7FAFF]'
+                            }`}
+                          >
+                            {/* checkbox */}
+                            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                              checked ? 'border-[#185FA5] bg-[#185FA5]' : 'border-[#C5D9F0] bg-white'
+                            }`}>
+                              {checked && (
+                                <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </span>
+                            {o.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -777,7 +814,7 @@ export default function Dashboard() {
             })}
 
             {/* Clear all */}
-            {Object.entries(advFilters).some(([k, v]) => k !== 'leadStrategy' && v !== '') && (
+            {Object.entries(advFilters).some(([k, v]) => k === 'leadStrategies' ? v.length > 0 : v !== '') && (
               <button
                 type="button"
                 onClick={() => { handleClearAdv(); setOpenFilter(null); }}

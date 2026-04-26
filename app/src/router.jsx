@@ -11,6 +11,7 @@ import AdminActivity from './pages/AdminActivity';
 import GoogleOnboarding from './pages/GoogleOnboarding';
 import CRM from './pages/CRM';
 import MySession from './pages/MySession';
+import Settings from './pages/Settings';
 import AppShell from './components/layout/AppShell';
 import LoadingScreen from './components/layout/LoadingScreen';
 import ConsentGate from './components/team/ConsentGate';
@@ -58,6 +59,7 @@ export default function Router() {
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/crm" element={<CRM />} />
             <Route path="/me/session" element={<MySession />} />
+            <Route path="/settings" element={<Settings />} />
 
             {/* Admin team routes */}
             <Route element={<RequireAdmin />}>

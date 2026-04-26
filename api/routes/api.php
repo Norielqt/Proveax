@@ -34,9 +34,10 @@ Route::get('/screenshots/{id}/image', [ScreenshotController::class, 'show'])
 // ---------- Authenticated ----------
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::get ('/me',     [AuthController::class, 'me']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/me/consent', [AuthController::class, 'consent']);
+    Route::get ('/me',            [AuthController::class, 'me']);
+    Route::put ('/me/profile',     [AuthController::class, 'updateProfile']);
+    Route::post('/logout',         [AuthController::class, 'logout']);
+    Route::post('/me/consent',     [AuthController::class, 'consent']);
 
     // CRM leads — shared workspace spreadsheet; any team member can read/write
     Route::get   ('/leads',        [LeadController::class, 'index']);
@@ -47,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Work sessions — every authed user may manage their own session
     Route::get ('/work-sessions/current',        [WorkSessionController::class, 'current']);
     Route::get ('/work-sessions/today-summary',  [WorkSessionController::class, 'todaySummary']);
+    Route::get ('/work-sessions/daily',          [WorkSessionController::class, 'daily']);
     Route::get ('/work-sessions',                [WorkSessionController::class, 'index']);
     Route::post('/work-sessions',                [WorkSessionController::class, 'start']);
     Route::post('/work-sessions/{id}/heartbeat', [WorkSessionController::class, 'heartbeat']);

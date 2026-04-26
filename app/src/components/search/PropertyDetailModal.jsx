@@ -241,6 +241,14 @@ export default function PropertyDetailModal({ property, onClose }) {
           {/* ── Tab: Property ─────────────────────────────────────────────────── */}
           {tab === 'property' && (
             <div className="space-y-4">
+              <AvmCard
+                avm={avm}
+                loading={avmLoading}
+                error={avmErr}
+                onLoad={loadAvm}
+                lastSalePrice={p.last_sale_price}
+              />
+
               <Card title="Property Characteristics" loading={loading && !hasReport} icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
                 <div className="grid gap-x-6 gap-y-1 md:grid-cols-2">
                   <div className="space-y-4">
@@ -274,14 +282,6 @@ export default function PropertyDetailModal({ property, onClose }) {
                   </div>
                 </div>
               </Card>
-
-              <AvmCard
-                avm={avm}
-                loading={avmLoading}
-                error={avmErr}
-                onLoad={loadAvm}
-                lastSalePrice={p.last_sale_price}
-              />
 
               <div className="grid gap-3 md:grid-cols-2">
                 <Card title="Valuation &amp; Assessment" loading={loading && !hasReport} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
@@ -336,7 +336,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                       <StatRow label="Owner 1"         value={own.owner1_name ?? p.owner_name} />
                       <StatRow label="Owner 2"         value={own.owner2_name} />
                       <StatRow label="Ownership type"  value={own.owner_type} />
-                      <StatRow label="Absentee status" value={own.absentee} />
+                      <StatRow label="Status" value={own.absentee} />
                       <StatRow label="Mailing address" value={own.mail_addr ?? p.owner_mailing_address} />
                     </FieldGroup>
                   </div>
@@ -402,7 +402,11 @@ export default function PropertyDetailModal({ property, onClose }) {
                       <tbody>
                         {txns.map((t, i) => (
                           <tr key={i} className="border-b border-gray-50 hover:bg-blue-50/40 transition-colors">
-                            <td className="py-3 pr-6 text-gray-600 font-mono text-xs">{t.sale_date}</td>
+                            <td className="py-3 pr-6 text-gray-600 text-xs">
+                              {t.sale_date
+                                ? new Date(t.sale_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                                : <span className="text-gray-300">—</span>}
+                            </td>
                             <td className="py-3 pr-6 font-semibold text-gray-900">{fmt$(t.sale_price) ?? <span className="text-gray-300">—</span>}</td>
                             <td className="py-3">
                               {t.event
@@ -515,7 +519,7 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
       <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Estimated Market Value</p>
-          <p className="text-xs text-gray-600 mt-0.5">Run RentCast AVM to fetch market estimate, confidence range &amp; comparable sales.</p>
+          <p className="text-xs text-gray-600 mt-0.5">Run Proveax AVM to fetch market estimate, confidence range &amp; comparable sales.</p>
         </div>
         <button
           onClick={onLoad}
@@ -564,7 +568,7 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
     <div className="rounded-lg border border-blue-200 bg-white shadow-sm overflow-hidden">
       <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-200">RentCast AVM</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-200">Proveax AVM</p>
           <p className="text-2xl font-bold text-white leading-tight">{value != null ? `$${Number(value).toLocaleString()}` : '—'}</p>
         </div>
         {delta != null && (

@@ -102,10 +102,7 @@ const SOURCE_TYPE_BADGE = {
   high_equity:        'bg-emerald-100 text-emerald-800',
   cash_buyers:        'bg-violet-100 text-violet-800',
   vacant_lots:        'bg-orange-100 text-orange-800',
-  mls_active:         'bg-green-100 text-green-800',
-  mls_pending:        'bg-yellow-100 text-yellow-800',
   mls_withdrawn:      'bg-gray-100 text-gray-500',
-  mls_sold:           'bg-red-100 text-red-700',
 };
 
 function SourceTypeCell({ value, onCommit }) {
@@ -211,8 +208,7 @@ export default function CRM() {
 
     const LEAD_ORDER = [
       'absentee_owner', 'out_of_state_owner', 'high_equity',
-      'cash_buyers', 'vacant_lots',
-      'mls_active', 'mls_pending', 'mls_withdrawn', 'mls_sold',
+      'cash_buyers', 'vacant_lots', 'mls_withdrawn',
     ];
 
     return [...base].sort((a, b) => {
