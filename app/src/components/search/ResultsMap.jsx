@@ -52,7 +52,7 @@ function toGeoJSON(props) {
 
 const EMPTY_FC = { type: 'FeatureCollection', features: [] };
 
-export default function ResultsMap({ properties, onViewChange, manualKey = 0, panKey = 0, hoveredId = null, onSelect }) {
+export default function ResultsMap({ properties, onViewChange, manualKey = 0, panKey = 0, hoveredId = null, onSelect, flyTo = null }) {
   const containerRef     = useRef(null);
   const mapRef           = useRef(null);
   const onViewRef        = useRef(onViewChange);
@@ -64,6 +64,8 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
   const prevPanKeyRef    = useRef(panKey);
   const propertiesRef    = useRef(properties);
   const prevHoveredIdRef = useRef(null);
+  const prevFlyToRef     = useRef(null);
+  const pendingFlyRef    = useRef(false); // true when a manual search fired but results haven't arrived yet
 
   useEffect(() => { onViewRef.current = onViewChange; }, [onViewChange]);
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
@@ -426,13 +428,18 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     prevManualKeyRef.current = manualKey;
     prevPanKeyRef.current    = panKey;
 
+    // If a new manual search fired, mark the pending fly flag.
+    // We don't fly yet because properties might still be empty.
+    if (isManualSearch) pendingFlyRef.current = true;
+
     const apply = () => {
       // Just update GeoJSON — GL layers re-render automatically (no DOM churn)
       if (map.getSource('properties')) {
         map.getSource('properties').setData(toGeoJSON(properties));
       }
 
-      if (isManualSearch && properties.length > 0) {
+      if (pendingFlyRef.current && properties.length > 0) {
+        pendingFlyRef.current = false;
         const first = properties.find((p) => p.lat != null && p.lng != null);
         if (first) {
           suppressMoveRef.current = true;
@@ -444,6 +451,21 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     if (map.isStyleLoaded()) apply();
     else map.once('styledata', apply);
   }, [properties, manualKey, panKey]);
+
+  // ── Fly to geocoded location when user picks a suggestion ────────────────
+  useEffect(() => {
+    if (!flyTo || flyTo === prevFlyToRef.current) return;
+    prevFlyToRef.current = flyTo;
+    const map = mapRef.current;
+    if (!map) return;
+    suppressMoveRef.current = true;
+    if (flyTo.bbox && flyTo.bbox.length === 4) {
+      const [west, south, east, north] = flyTo.bbox;
+      map.fitBounds([[west, south], [east, north]], { padding: 60, duration: 900, maxZoom: 14 });
+    } else if (flyTo.center) {
+      map.flyTo({ center: flyTo.center, zoom: 12, duration: 900 });
+    }
+  }, [flyTo]);
 
   // ── Hover highlight (amber ring via GL source) ────────────────────────────
   useEffect(() => {

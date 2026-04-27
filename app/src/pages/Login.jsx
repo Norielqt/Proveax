@@ -17,6 +17,7 @@ export default function Login() {
     setError(''); setLoading(true);
     try {
       await login(email, password);
+      sessionStorage.setItem('show_welcome', '1');
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials.');
@@ -26,7 +27,10 @@ export default function Login() {
   };
 
   const handleGoogleSuccess = ({ status, token }) => {
-    if (status === 'login')   return navigate('/search', { replace: true });
+    if (status === 'login') {
+      sessionStorage.setItem('show_welcome', '1');
+      return navigate('/search', { replace: true });
+    }
     if (status === 'onboard') return navigate('/google/onboarding', { replace: true, state: { token } });
   };
 

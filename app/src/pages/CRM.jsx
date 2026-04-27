@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { listLeads, createLead, updateLead, deleteLead, SOURCE_TYPES, SOURCE_TYPE_LABELS } from '../api/leads';
+import { listLeads, createLead, updateLead, deleteLead, SOURCE_TYPES, SOURCE_TYPE_LABELS, uploadLeadFile, deleteLeadFile } from '../api/leads';
 import { TableSkeleton } from '../components/Skeleton';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -131,12 +131,106 @@ function SourceTypeCell({ value, onCommit }) {
   );
 }
 
+// ── File attachment cell (multi-file) ──────────────────────────────────
+function FileCell({ leadId, files = [], onFileAdded, onFileDeleted, notify }) {
+  const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const inputRef = useRef(null);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploading(true);
+    try {
+      const newFile = await uploadLeadFile(leadId, file);
+      onFileAdded(newFile);
+      notify('Uploaded successfully');
+    } catch {
+      notify('Upload failed. Please try again.', true);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (fileId) => {
+    if (!confirm('Remove this file? This cannot be undone.')) return;
+    setDeletingId(fileId);
+    try {
+      await deleteLeadFile(leadId, fileId);
+      onFileDeleted(fileId);
+      notify('Deleted successfully');
+    } catch (err) {
+      const msg = err?.response?.data || 'Delete failed. Please try again.';
+      notify(typeof msg === 'string' ? msg : 'Delete failed. Please try again.', true);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1 px-3 py-2 min-w-[140px]">
+      {files.map((f) => (
+        <div key={f.id} className="flex items-center gap-1">
+          <svg className="h-3 w-3 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+          <a
+            href={f.file_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="max-w-[100px] truncate text-xs font-medium text-blue-600 hover:underline"
+            title={f.file_name}
+          >
+            {f.file_name}
+          </a>
+          {deletingId === f.id ? (
+            <span className="ml-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
+          ) : (
+            <button
+              onClick={() => handleDelete(f.id)}
+              title="Remove file"
+              className="ml-auto rounded p-0.5 text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      ))}
+      <div>
+        {uploading ? (
+          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        ) : (
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="flex items-center gap-0.5 rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-xs text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
+          >
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Add
+          </button>
+        )}
+        <input ref={inputRef} type="file" className="hidden" onChange={handleUpload} />
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────
 export default function CRM() {
   const [rows, setRows]         = useState(null);
   const [query, setQuery]       = useState('');
   const [saving, setSaving]     = useState({});
   const [error, setError]       = useState(null);
+  const [toast, setToast]       = useState(null); // { message, error }
+
+  const notify = useCallback((message, isError = false) => {
+    setToast({ message, error: isError });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -250,6 +344,33 @@ export default function CRM() {
 
   return (
     <div className="p-4 md:p-8">
+      {/* ── File toast notification ───────────────────────────────── */}
+      {toast && (
+        <div className="pointer-events-none fixed top-6 right-6 z-[9999]">
+          <div className={`pointer-events-auto flex items-center gap-3 rounded-xl px-5 py-3.5 shadow-2xl ring-1 ${
+            toast.error ? 'bg-red-600 ring-red-500/40' : 'bg-green-600 ring-green-500/40'
+          }`}>
+            {toast.error ? (
+              <svg className="h-5 w-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+            <span className="text-sm font-semibold text-white">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 rounded-full p-0.5 text-white/70 hover:text-white transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-3 pr-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">CRM</h1>
@@ -291,13 +412,14 @@ export default function CRM() {
                 <SortableTh sortKey="home_price"  sort={sort} onSort={toggleSort}>Price</SortableTh>
                 <SortableTh sortKey="email"       sort={sort} onSort={toggleSort}>Email</SortableTh>
                 <Th>Notes</Th>
+                <Th>File</Th>
                 <Th className="w-20">Action</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-500">
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500">
                     {rows?.length === 0 ? 'No leads yet. Click + New lead to start.' : 'No leads match those filters.'}
                   </td>
                 </tr>
@@ -318,6 +440,23 @@ export default function CRM() {
                   <Td><PriceCell value={r.home_price} onCommit={(v) => patchRow(r.id, { home_price: v })} /></Td>
                   <Td><TextCell value={r.email}   onCommit={(v) => patchRow(r.id, { email: v })}   placeholder="No Data" type="email" /></Td>
                   <Td><TextCell value={r.notes}   onCommit={(v) => patchRow(r.id, { notes: v })}   placeholder="No Data" /></Td>
+                  <Td>
+                    <FileCell
+                      leadId={r.id}
+                      files={r.files ?? []}
+                      notify={notify}
+                      onFileAdded={(newFile) =>
+                        setRows((rs) => rs.map((x) =>
+                          x.id === r.id ? { ...x, files: [...(x.files ?? []), newFile] } : x
+                        ))
+                      }
+                      onFileDeleted={(fileId) =>
+                        setRows((rs) => rs.map((x) =>
+                          x.id === r.id ? { ...x, files: (x.files ?? []).filter((f) => f.id !== fileId) } : x
+                        ))
+                      }
+                    />
+                  </Td>
                   <Td>
                     <div className="flex items-center justify-center gap-1">
                       {saving[r.id] && <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-400" title="Saving…" />}

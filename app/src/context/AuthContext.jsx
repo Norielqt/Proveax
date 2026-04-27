@@ -73,10 +73,20 @@ export function AuthProvider({ children }) {
 
       const origin = new URL(import.meta.env.VITE_API_URL).origin;
 
-      const handler = async (event) => {
+      let settled = false;
+
+      const cleanup = () => {
+        window.removeEventListener('message', messageHandler);
+        window.removeEventListener('focus', focusHandler);
+      };
+
+      const messageHandler = async (event) => {
         if (event.origin !== origin) return;
         const { type, payload } = event.data ?? {};
-        window.removeEventListener('message', handler);
+        console.log('[Google OAuth] message received:', { type, origin: event.origin });
+        if (settled) return;
+        settled = true;
+        cleanup();
 
         if (type === 'google_login_ok') {
           saveToken(payload);
@@ -89,16 +99,22 @@ export function AuthProvider({ children }) {
         }
       };
 
-      window.addEventListener('message', handler);
+      // When the popup closes (user dismissed it), focus returns to this window.
+      // We wait a short tick to let any postMessage arrive first before treating
+      // it as a cancellation. This avoids polling popup.closed which is blocked
+      // by the COOP header Google sends on their consent page.
+      const focusHandler = () => {
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            reject(new Error('Sign-in cancelled.'));
+          }
+        }, 300);
+      };
 
-      // Clean up if user closes popup manually
-      const timer = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(timer);
-          window.removeEventListener('message', handler);
-          reject(new Error('Sign-in cancelled.'));
-        }
-      }, 500);
+      window.addEventListener('message', messageHandler);
+      window.addEventListener('focus', focusHandler);
     });
 
   return (
