@@ -5,6 +5,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\WelcomeNotification;
 use App\Services\ActivityLogger;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
@@ -47,6 +48,8 @@ class AuthController extends Controller
         });
 
         $this->logger->log($user, 'admin.registered');
+        $user->load('tenant');
+        $user->notify(new WelcomeNotification($user));
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([

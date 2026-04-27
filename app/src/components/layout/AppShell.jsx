@@ -79,12 +79,22 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
       {/* Avatar button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-gray-100 focus:outline-none transition-colors"
         aria-haspopup="true"
         aria-expanded={open}
       >
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-6.5 8c0-3.59 2.91-6.5 6.5-6.5s6.5 2.91 6.5 6.5H5.5Z" />
+        {/* Avatar circle */}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+          {user?.name?.[0]?.toUpperCase() ?? '?'}
+        </div>
+        {/* Name + Role */}
+        <div className="text-left leading-tight">
+          <p className="text-sm font-semibold text-gray-900 max-w-[120px] truncate">{user?.name ?? '—'}</p>
+          <p className="text-[11px] text-gray-500 capitalize">{user?.role === 'admin' ? 'Admin' : 'Employee'}</p>
+        </div>
+        {/* Chevron */}
+        <svg className={`h-4 w-4 text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
