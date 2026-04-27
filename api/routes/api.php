@@ -86,6 +86,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/wallet/top-up/intent',       [WalletController::class, 'createTopUpIntent']);
     Route::post('/wallet/top-up/confirm',      [WalletController::class, 'confirmTopUp']);
 
+    // Payment methods (saved cards)
+    Route::get   ('/payment-methods',                [\App\Http\Controllers\Api\PaymentMethodController::class, 'index']);
+    Route::post  ('/payment-methods/setup-intent',   [\App\Http\Controllers\Api\PaymentMethodController::class, 'createSetupIntent']);
+    Route::post  ('/payment-methods/{id}/default',   [\App\Http\Controllers\Api\PaymentMethodController::class, 'setDefault']);
+    Route::delete('/payment-methods/{id}',           [\App\Http\Controllers\Api\PaymentMethodController::class, 'destroy']);
+
     // Feature-gated: trial OR paid
     Route::middleware('feature.access')->group(function () {
         Route::get('/properties/search', [PropertyController::class, 'search'])->name('properties.search');

@@ -166,6 +166,17 @@ export default function AppShell() {
   const { user, tenant, logout } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [walletOpen, setWalletOpen] = useState(false);
+  const [welcomeToast, setWelcomeToast] = useState(null);
+
+  // Show welcome toast once after login
+  useEffect(() => {
+    if (sessionStorage.getItem('show_welcome') && user?.name) {
+      sessionStorage.removeItem('show_welcome');
+      setWelcomeToast(user.name);
+      const t = setTimeout(() => setWelcomeToast(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [user]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -197,6 +208,28 @@ export default function AppShell() {
       </main>
 
       <WalletDrawer open={walletOpen} onClose={() => setWalletOpen(false)} />
+
+      {/* Welcome toast */}
+      {welcomeToast !== null && (
+        <div className="pointer-events-none fixed top-16 right-6 z-[9999]">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-xl bg-blue-700 px-5 py-3.5 shadow-2xl ring-1 ring-blue-600/40">
+            <svg className="h-5 w-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm font-semibold text-white">
+              Welcome back{welcomeToast ? `, ${welcomeToast}` : ''}!
+            </span>
+            <button
+              onClick={() => setWelcomeToast(null)}
+              className="ml-2 rounded-full p-0.5 text-white/70 hover:text-white transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

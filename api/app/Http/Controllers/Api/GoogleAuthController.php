@@ -11,6 +11,7 @@ use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -41,8 +42,20 @@ class GoogleAuthController extends Controller
     public function callback(Request $request): \Illuminate\Http\Response
     {
         try {
-            $googleUser = Socialite::driver('google')->stateless()->user();
-        } catch (\Throwable) {
+            $driver = Socialite::driver('google')->stateless();
+
+            // On local dev, PHP's bundled CA bundle can't verify Google's cert.
+            // Skip SSL verification outside of production.
+            if (! app()->isProduction()) {
+                $driver->setHttpClient(new \GuzzleHttp\Client(['verify' => false]));
+            }
+
+            $googleUser = $driver->user();
+        } catch (\Throwable $e) {
+            Log::error('Google OAuth callback failed', [
+                'error'   => $e->getMessage(),
+                'class'   => get_class($e),
+            ]);
             return $this->popupClose('google_error', 'OAuth failed.');
         }
 
@@ -156,6 +169,8 @@ class GoogleAuthController extends Controller
         </html>
         HTML;
 
-        return response($html, 200)->header('Content-Type', 'text/html');
+        return response($html, 200)
+            ->header('Content-Type', 'text/html')
+            ->header('Cross-Origin-Opener-Policy', 'unsafe-none');
     }
 }

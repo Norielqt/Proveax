@@ -204,6 +204,7 @@ export default function Dashboard() {
   const viewTimerRef   = useRef(null);
   const [manualSearchKey, setManualSearchKey] = useState(0);
   const [panSearchKey, setPanSearchKey] = useState(0);
+  const [mapFlyTo, setMapFlyTo] = useState(null); // { center:[lng,lat], bbox:[w,s,e,n]|undefined }
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedProperty, setSelectedProperty] = useState(null);
 
@@ -268,6 +269,8 @@ export default function Dashboard() {
           return {
             label: f.place_name,
             text: isZip ? f.text.split('-')[0] : (st ? `${f.text}, ${st}` : f.place_name),
+            center: f.center,   // [lng, lat]
+            bbox:   f.bbox,     // [west, south, east, north] — may be undefined
           };
         });
         setSuggestions(items);
@@ -291,6 +294,7 @@ export default function Dashboard() {
     setShowSuggestions(false);
     clearTimeout(autoSearchTimerRef.current);
     clearTimeout(suggestTimerRef.current);
+    // After results load, ResultsMap flies to the first property automatically (isManualSearch)
     const parsed = parseQuery(item.text);
     if (parsed) applyFilters(parsed, filters.propertytype);
   }, [filters.propertytype, applyFilters]);

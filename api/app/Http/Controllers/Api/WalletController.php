@@ -56,10 +56,24 @@ class WalletController extends Controller
         $user   = $request->user();
         $stripe = new StripeClient($secret);
 
+        // Lazy-create the tenant's Stripe customer so cards saved during
+        // top-up are reusable from /settings.
+        $tenant = $user->tenant;
+        if (!$tenant->stripe_customer_id) {
+            $customer = $stripe->customers->create([
+                'email' => $user->email,
+                'name'  => $tenant->name ?: $user->name,
+                'metadata' => ['tenant_id' => (string) $tenant->id],
+            ]);
+            $tenant->forceFill(['stripe_customer_id' => $customer->id])->save();
+        }
+
         $intent = $stripe->paymentIntents->create([
             'amount'               => (int) round($data['amount'] * 100), // Stripe uses cents
             'currency'             => 'usd',
+            'customer'             => $tenant->stripe_customer_id,
             'payment_method_types' => ['card', 'link', 'us_bank_account'],
+            'setup_future_usage'   => 'off_session',
             'metadata' => [
                 'user_id'   => (string) $user->id,
                 'tenant_id' => (string) $user->tenant_id,
