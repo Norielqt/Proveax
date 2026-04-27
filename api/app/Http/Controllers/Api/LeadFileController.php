@@ -7,7 +7,6 @@ use App\Models\Lead;
 use App\Models\LeadFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -81,19 +80,19 @@ class LeadFileController extends Controller
 
     // ── Delete ────────────────────────────────────────────────────────────
 
-    public function destroy(Request $request, int $leadId, int $fileId): Response
+    public function destroy(Request $request, int $leadId, int $fileId): JsonResponse
     {
         $leadFile = LeadFile::where('lead_id', $leadId)->findOrFail($fileId);
 
         $deleted = $this->dropboxDelete($this->getAccessToken(), $leadFile->dropbox_path);
 
         if (! $deleted) {
-            return response('Failed to delete file from Dropbox. Please try again.', 500);
+            return response()->json(['error' => 'Failed to delete file from Dropbox. Please try again.'], 500);
         }
 
         $leadFile->delete();
 
-        return response()->noContent();
+        return response()->json(null, 204);
     }
 
     // ── Serialiser ────────────────────────────────────────────────────────
