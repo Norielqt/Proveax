@@ -51,10 +51,12 @@ class InviteService
                 ));
             return true;
         } catch (\Throwable $e) {
-            Log::warning('Invite email failed to send', [
+            Log::error('Invite email failed to send', [
                 'invite_id' => $invite->id,
                 'email'     => $invite->email,
                 'error'     => $e->getMessage(),
+                'exception' => get_class($e),
+                'trace'     => $e->getTraceAsString(),
             ]);
             return false;
         }
