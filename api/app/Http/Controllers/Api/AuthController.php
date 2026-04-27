@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -49,7 +50,16 @@ class AuthController extends Controller
 
         $this->logger->log($user, 'admin.registered');
         $user->load('tenant');
-        $user->notify(new WelcomeNotification($user));
+        try {
+            $user->notify(new WelcomeNotification($user));
+        } catch (\Throwable $e) {
+            Log::error('Welcome email failed', [
+                'user_id'   => $user->id,
+                'email'     => $user->email,
+                'error'     => $e->getMessage(),
+                'exception' => get_class($e),
+            ]);
+        }
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
