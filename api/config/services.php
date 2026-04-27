@@ -25,6 +25,13 @@ return [
         'token' => env('POSTMARK_TOKEN'),
     ],
 
+    'dropbox' => [
+        'access_token'  => env('DROPBOX_ACCESS_TOKEN'),   // local dev: generated token from App Console
+        'app_key'       => env('DROPBOX_APP_KEY'),
+        'app_secret'    => env('DROPBOX_APP_SECRET'),
+        'refresh_token' => env('DROPBOX_REFRESH_TOKEN'),  // production: OAuth2 refresh-token flow
+    ],
+
     'google' => [
         'client_id'     => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

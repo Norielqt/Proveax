@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\TimesheetController;
 use App\Http\Controllers\Api\ApiUsageController;
 use App\Http\Controllers\Api\TeamOverviewController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\LeadFileController;
 use Illuminate\Support\Facades\Route;
 
 // Google OAuth – complete onboarding (no auth required yet)
@@ -39,11 +40,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout',         [AuthController::class, 'logout']);
     Route::post('/me/consent',     [AuthController::class, 'consent']);
 
-    // CRM leads — shared workspace spreadsheet; any team member can read/write
-    Route::get   ('/leads',        [LeadController::class, 'index']);
-    Route::post  ('/leads',        [LeadController::class, 'store']);
-    Route::patch ('/leads/{id}',   [LeadController::class, 'update']);
-    Route::delete('/leads/{id}',   [LeadController::class, 'destroy']);
+    // CRM leads
+    Route::get   ('/leads',                        [LeadController::class, 'index']);
+    Route::post  ('/leads',                        [LeadController::class, 'store']);
+    Route::patch ('/leads/{id}',                   [LeadController::class, 'update']);
+    Route::delete('/leads/{id}',                   [LeadController::class, 'destroy']);
+    // CRM lead file attachments (Dropbox — multiple files per lead)
+    Route::get   ('/leads/{id}/files',             [LeadFileController::class, 'index']);
+    Route::post  ('/leads/{id}/files',             [LeadFileController::class, 'upload']);
+    Route::delete('/leads/{leadId}/files/{fileId}',[LeadFileController::class, 'destroy']);
 
     // Work sessions — every authed user may manage their own session
     Route::get ('/work-sessions/current',        [WorkSessionController::class, 'current']);

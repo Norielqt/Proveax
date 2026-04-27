@@ -19,7 +19,7 @@ class LeadController extends Controller
     /** GET /api/leads */
     public function index(Request $request)
     {
-        return Lead::with(['updatedBy:id,name'])
+        return Lead::with(['updatedBy:id,name', 'files'])
             ->orderByDesc('created_at')
             ->get()
             ->map(fn ($l) => $this->toRow($l));
@@ -36,7 +36,7 @@ class LeadController extends Controller
             'updated_by_user_id' => $request->user()->id,
         ]));
 
-        return response()->json($this->toRow($lead->load('updatedBy:id,name')), 201);
+        return response()->json($this->toRow($lead->load(['updatedBy:id,name', 'files'])), 201);
     }
 
     /** PATCH /api/leads/{id} — inline cell update */
@@ -49,7 +49,7 @@ class LeadController extends Controller
         $lead->updated_by_user_id = $request->user()->id;
         $lead->save();
 
-        return response()->json($this->toRow($lead->load('updatedBy:id,name')));
+        return response()->json($this->toRow($lead->load(['updatedBy:id,name', 'files'])));
     }
 
     /** DELETE /api/leads/{id} */
@@ -99,6 +99,12 @@ class LeadController extends Controller
             'home_price'         => $lead->home_price_cents !== null ? $lead->home_price_cents / 100 : null,
             'email'              => $lead->email,
             'notes'              => $lead->notes,
+            'files'              => $lead->files->map(fn ($f) => [
+                'id'        => $f->id,
+                'file_name' => $f->file_name,
+                'file_url'  => $f->file_url,
+                'created_at'=> $f->created_at?->toIso8601String(),
+            ]),
             'updated_at'         => $lead->updated_at?->toIso8601String(),
             'updated_by_name'    => $lead->updatedBy?->name,
         ];
