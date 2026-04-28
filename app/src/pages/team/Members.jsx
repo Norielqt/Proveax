@@ -160,14 +160,14 @@ export default function Members() {
         Team members {!fetchingMembers && `(${members.length})`}
       </h2>
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
             <tr>
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Email</th>
-              <th className="px-4 py-2 font-medium">Role</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium"></th>
+              <th className="w-1/4 px-4 py-2 font-medium">Name</th>
+              <th className="w-1/4 px-4 py-2 font-medium">Email</th>
+              <th className="w-1/6 px-4 py-2 font-medium">Role</th>
+              <th className="w-1/6 px-4 py-2 font-medium">Status</th>
+              <th className="w-24 px-4 py-2 font-medium"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -252,60 +252,71 @@ export default function Members() {
         <>
           <h2 className="mt-8 mb-3 font-semibold text-gray-900">Invitations</h2>
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Email</th>
-                  <th className="px-4 py-2 font-medium">Role</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2 font-medium">Invited by</th>
-                  <th className="px-4 py-2 font-medium">Sent</th>
-                  <th className="px-4 py-2 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {invites.map((inv) => {
-                  const status = inv.status ?? (inv.accepted_at ? 'accepted' : 'pending');
-                  const canAct = status === 'pending' || status === 'expired';
-                  const busy = actionId === `inv-${inv.id}`;
-                  return (
-                    <tr key={inv.id} className="text-gray-700">
-                      <td className="px-4 py-2.5">{inv.email}</td>
-                      <td className="px-4 py-2.5 capitalize">{inv.role ?? 'employee'}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${INVITE_STATUS[status] ?? INVITE_STATUS.pending}`}>
-                          {status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500">{inv.invited_by?.name ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500">
-                        {inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
-                        {isAdmin && canAct && (
-                          <div className="inline-flex gap-2">
-                            <button
-                              onClick={() => doResend(inv.id)}
-                              disabled={busy}
-                              className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                            >
-                              Resend
-                            </button>
-                            <button
-                              onClick={() => doRevoke(inv.id)}
-                              disabled={busy}
-                              className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            >
-                              Revoke
-                            </button>
-                          </div>
-                        )}
-                      </td>
+            {(() => {
+              const hasInvitedBy = invites.some((i) => i.invited_by?.name);
+              const hasActions   = isAdmin && invites.some((i) => {
+                const s = i.status ?? (i.accepted_at ? 'accepted' : 'pending');
+                return s === 'pending' || s === 'expired';
+              });
+              return (
+                <table className="w-full table-fixed text-sm">
+                  <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                    <tr>
+                      <th className="w-1/4 px-4 py-2 font-medium">Email</th>
+                      <th className="w-1/8 px-4 py-2 font-medium">Role</th>
+                      <th className="w-1/8 px-4 py-2 font-medium">Status</th>
+                      {hasInvitedBy && <th className="w-1/6 px-4 py-2 font-medium">Invited by</th>}
+                      <th className="w-1/6 px-4 py-2 font-medium">Sent</th>
+                      {hasActions && <th className="px-4 py-2 font-medium"></th>}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {invites.map((inv) => {
+                      const status = inv.status ?? (inv.accepted_at ? 'accepted' : 'pending');
+                      const canAct = status === 'pending' || status === 'expired';
+                      const busy = actionId === `inv-${inv.id}`;
+                      return (
+                        <tr key={inv.id} className="text-gray-700">
+                          <td className="px-4 py-2.5">{inv.email}</td>
+                          <td className="px-4 py-2.5 capitalize">{inv.role ?? 'employee'}</td>
+                          <td className="px-4 py-2.5">
+                            <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${INVITE_STATUS[status] ?? INVITE_STATUS.pending}`}>
+                              {status}
+                            </span>
+                          </td>
+                          {hasInvitedBy && <td className="px-4 py-2.5 text-xs text-gray-500">{inv.invited_by?.name ?? '—'}</td>}
+                          <td className="px-4 py-2.5 text-xs text-gray-500">
+                            {inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}
+                          </td>
+                          {hasActions && (
+                            <td className="px-4 py-2.5 text-right">
+                              {canAct && (
+                                <div className="inline-flex gap-2">
+                                  <button
+                                    onClick={() => doResend(inv.id)}
+                                    disabled={busy}
+                                    className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                                  >
+                                    Resend
+                                  </button>
+                                  <button
+                                    onClick={() => doRevoke(inv.id)}
+                                    disabled={busy}
+                                    className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                  >
+                                    Revoke
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              );
+            })()}
           </div>
         </>
       )}

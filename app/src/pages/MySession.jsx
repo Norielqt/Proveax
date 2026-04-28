@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useWorkSession } from '../hooks/useWorkSession';
+import { useWorkSessionContext } from '../context/WorkSessionContext';
 
 const fmt = (secs) => {
   const s = Math.max(0, Math.floor(secs));
@@ -13,7 +13,7 @@ export default function MySession() {
   const {
     session, settings, loading, starting, ending, error, isIdle,
     idleSeconds, totalTodaySeconds, dayEnded, start, end, pause,
-  } = useWorkSession();
+  } = useWorkSessionContext();
 
   const [withScreenshots, setWithScreenshots] = useState(true);
   const [confirmEnd, setConfirmEnd] = useState(false);

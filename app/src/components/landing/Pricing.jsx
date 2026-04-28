@@ -15,7 +15,7 @@ const PLANS = [
       'Email support',
     ],
     pop: false,
-    cta: 'Get started',
+    cta: 'Start free trial',
   },
   {
     id: 'team',
@@ -31,7 +31,7 @@ const PLANS = [
       'Priority support',
     ],
     pop: true,
-    cta: 'Start free trial',
+    cta: 'Get started',
   },
   {
     id: 'business',

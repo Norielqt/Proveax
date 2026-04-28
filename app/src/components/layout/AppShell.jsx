@@ -1,8 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { WorkSessionProvider, useWorkSessionContext } from '../../context/WorkSessionContext';
 import WalletDrawer from '../WalletDrawer';
 import proviaxxLogo from '../../assets/Proveax_logo.png.png';
+
+function fmtTimer(secs) {
+  const s = Math.max(0, Math.floor(secs));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function SessionTimerPill() {
+  const { session, totalTodaySeconds, loading } = useWorkSessionContext();
+  const isRunning = session && !session.ended_at && !loading;
+  if (!isRunning) return null;
+  return (
+    <Link
+      to="/me/session"
+      className="flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 hover:bg-green-100 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+      title="Go to My Session"
+    >
+      {/* pulsing dot */}
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+      </span>
+      <span className="text-sm font-semibold tabular-nums text-green-700">
+        {fmtTimer(totalTodaySeconds)}
+      </span>
+    </Link>
+  );
+}
 
 function PlanBadge({ tenant, onClose }) {
   const status = tenant?.subscription_status;
@@ -189,6 +221,7 @@ export default function AppShell() {
   }, [user]);
 
   return (
+    <WorkSessionProvider>
     <div className="flex h-screen flex-col overflow-hidden">
       <header className="relative z-[1100] flex h-16 items-center justify-between border-b bg-white pr-4">
         <Link to="/search" className="flex items-center gap-2">
@@ -209,11 +242,12 @@ export default function AppShell() {
               ${Number(user?.balance ?? 0).toFixed(2)}
             </span>
           </button>
+          <SessionTimerPill />
           <AccountMenu user={user} tenant={tenant} isAdmin={isAdmin} logout={logout} />
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-scroll">
+      <main className="flex-1 overflow-y-scroll" style={{ background: '#f9f9f9' }}>
         <Outlet />
       </main>
 
@@ -241,5 +275,6 @@ export default function AppShell() {
         </div>
       )}
     </div>
+    </WorkSessionProvider>
   );
 }

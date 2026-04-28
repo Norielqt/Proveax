@@ -9,11 +9,11 @@ const TICK_MS             = 1_000;  // timer tick every 1s
 const BLACK_CHECK_MS      = 30_000; // sample the share stream every 30s
 const BLACK_TOLERANCE_MS  = 120_000; // auto-end after 2 min of continuous black
 
-// Fire a keepalive request during tab unload so the final counters and the
-// end marker survive the page going away. sendBeacon can't set Authorization
-// headers, so we use fetch(..., keepalive: true) which supports them and is
-// permitted by the browser to outlive the document.
-function flushOnUnload(sessionId, activeSeconds, idleSeconds, { endSession: shouldEnd = true, reason = 'unload' } = {}) {
+// Fire a keepalive heartbeat during tab unload so the final counters survive
+// the page going away. We deliberately do NOT end the session here — a refresh
+// or accidental close should not lose progress. The server's stale-session
+// closer (2x idle-timeout) handles truly abandoned sessions as 'orphaned'.
+function flushOnUnload(sessionId, activeSeconds, idleSeconds) {
   try {
     const base  = import.meta.env.VITE_API_URL || '';
     const token = getToken();
@@ -24,26 +24,16 @@ function flushOnUnload(sessionId, activeSeconds, idleSeconds, { endSession: shou
       Accept:          'application/json',
       Authorization:   `Bearer ${token}`,
     };
-    const active = Math.round(activeSeconds);
-    const idle   = Math.round(idleSeconds);
 
-    // Always flush the latest counters.
     fetch(`${base}/api/work-sessions/${sessionId}/heartbeat`, {
       method: 'POST',
       keepalive: true,
       headers,
-      body: JSON.stringify({ active_seconds: active, idle_seconds: idle }),
+      body: JSON.stringify({
+        active_seconds: Math.round(activeSeconds),
+        idle_seconds:   Math.round(idleSeconds),
+      }),
     }).catch(() => {});
-
-    // And (optionally) end the session so it doesn't hang open.
-    if (shouldEnd) {
-      fetch(`${base}/api/work-sessions/${sessionId}/end`, {
-        method: 'POST',
-        keepalive: true,
-        headers,
-        body: JSON.stringify({ active_seconds: active, idle_seconds: idle, reason }),
-      }).catch(() => {});
-    }
   } catch {
     // best-effort; swallow
   }
@@ -199,16 +189,12 @@ export function useWorkSession() {
     // Fire a best-effort final flush when the tab is actually going away.
     // 'pagehide' is the most reliable signal (fires for BFCache + real close),
     // 'beforeunload' is a belt-and-suspenders backup for older browsers.
-    const onPageHide = (e) => {
+    const onPageHide = () => {
       accumulate();
-      // If the page is going into BFCache (can be restored), keep the session
-      // open — just flush counters. Otherwise end it.
-      const goingAway = !(e && e.persisted);
       flushOnUnload(
         session.id,
         activeSecondsRef.current,
         idleSecondsRef.current,
-        { endSession: goingAway, reason: 'unload' },
       );
     };
     window.addEventListener('pagehide', onPageHide);
