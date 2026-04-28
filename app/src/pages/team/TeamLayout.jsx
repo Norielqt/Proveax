@@ -28,52 +28,53 @@ export default function TeamLayout({ base = '/admin/team' }) {
   const items = getItems(base).filter((it) => !it.adminOnly || isAdmin);
 
   return (
-    <div className="mx-auto max-w-7xl p-4 md:p-8">
+    <div className="flex min-h-full">
 
-      {/* Mobile: horizontal scrollable tabs — sits ABOVE content, not inside the flex row */}
-      <div className="mb-4 -mx-4 flex gap-1 overflow-x-auto px-4 pb-1 md:hidden">
-        {items.map((it) => (
-          <NavLink
-            key={it.to}
-            to={it.to}
-            end={it.end}
-            className={({ isActive }) =>
-              `shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium ${
-                isActive ? 'bg-blue-600 text-white' : 'border border-gray-200 bg-white text-gray-600'
-              }`
-            }
-          >
-            {it.label}
-          </NavLink>
-        ))}
-      </div>
+      {/* Classic sidebar — desktop only */}
+      <aside className="sticky top-0 hidden h-[calc(100vh-4rem)] w-56 shrink-0 flex-col border-r border-gray-200 bg-white md:flex">
+        <div className="px-5 py-5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">My Team</p>
+        </div>
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
+          {items.map((it) => (
+            <NavLink
+              key={it.to}
+              to={it.to}
+              end={it.end}
+              className={({ isActive }) => `${nav} ${isActive ? active : idle}`}
+            >
+              <Icon d={it.icon} />
+              {it.label}
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
 
-      {/* Desktop: sidebar + content side by side */}
-      <div className="flex items-start gap-6">
-        <aside className="sticky top-4 hidden w-56 shrink-0 md:block">
-          <div className="rounded-xl border border-gray-200 bg-white p-3">
-            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-              My Team
-            </p>
-            <nav className="flex flex-col gap-0.5">
-              {items.map((it) => (
-                <NavLink
-                  key={it.to}
-                  to={it.to}
-                  end={it.end}
-                  className={({ isActive }) => `${nav} ${isActive ? active : idle}`}
-                >
-                  <Icon d={it.icon} />
-                  {it.label}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        </aside>
+      {/* Right side: mobile tabs + page content */}
+      <div className="flex min-w-0 flex-1 flex-col">
 
-        <section className="min-w-0 flex-1">
+        {/* Mobile: horizontal scrollable tabs */}
+        <div className="flex gap-1 overflow-x-auto border-b border-gray-200 bg-white px-4 py-2 md:hidden">
+          {items.map((it) => (
+            <NavLink
+              key={it.to}
+              to={it.to}
+              end={it.end}
+              className={({ isActive }) =>
+                `shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium ${
+                  isActive ? 'bg-blue-600 text-white' : 'border border-gray-200 bg-white text-gray-600'
+                }`
+              }
+            >
+              {it.label}
+            </NavLink>
+          ))}
+        </div>
+
+        {/* Page content */}
+        <div className="flex-1 p-6 md:p-8">
           <Outlet />
-        </section>
+        </div>
       </div>
     </div>
   );

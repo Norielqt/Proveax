@@ -97,12 +97,12 @@ function PriceCell({ value, onCommit }) {
 }
 
 const SOURCE_TYPE_BADGE = {
-  absentee_owner:     'bg-amber-100 text-amber-800',
-  out_of_state_owner: 'bg-blue-100 text-blue-800',
-  high_equity:        'bg-emerald-100 text-emerald-800',
-  cash_buyers:        'bg-violet-100 text-violet-800',
-  vacant_lots:        'bg-orange-100 text-orange-800',
-  mls_withdrawn:      'bg-gray-100 text-gray-500',
+  absentee_owner:     'bg-violet-100 text-violet-700',
+  out_of_state_owner: 'bg-blue-100 text-blue-700',
+  high_equity:        'bg-teal-100 text-teal-700',
+  cash_buyers:        'bg-amber-100 text-amber-700',
+  vacant_lots:        'bg-rose-100 text-rose-700',
+  mls_withdrawn:      'bg-slate-100 text-slate-600',
 };
 
 function SourceTypeCell({ value, onCommit }) {
@@ -373,7 +373,7 @@ export default function CRM() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3 pr-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">CRM</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Customer Relationship Management</h1>
           <p className="mt-1 text-sm text-gray-500">Shared lead spreadsheet. Changes save automatically.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -495,18 +495,12 @@ function Td({ children, className = '' }) {
   return <td className={`align-middle ${className}`}>{children}</td>;
 }
 function SortableTh({ children, sortKey, sort, onSort, className = '' }) {
-  const active = sort.key === sortKey;
   return (
     <th
       className={`border-b border-gray-200 px-4 py-3 cursor-pointer select-none hover:bg-gray-100 ${className}`}
       onClick={() => onSort(sortKey)}
     >
-      <span className="inline-flex items-center gap-1">
-        {children}
-        <span className="text-[10px] text-gray-400">
-          {active ? (sort.dir === 'asc' ? '▲' : '▼') : '⇅'}
-        </span>
-      </span>
+      {children}
     </th>
   );
 }

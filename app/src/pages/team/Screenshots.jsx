@@ -11,8 +11,7 @@ export default function Screenshots() {
   const isAdmin = user?.role === 'admin';
   const [members, setMembers] = useState([]);
   const [userId,  setUserId]  = useState('');
-  const [from,    setFrom]    = useState(todayISO());
-  const [to,      setTo]      = useState(todayISO());
+  const [date,    setDate]    = useState(todayISO());
   const [shots,   setShots]   = useState([]);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -26,8 +25,8 @@ export default function Screenshots() {
     try {
       const data = await listScreenshots({
         user_id: userId || undefined,
-        from:    from || undefined,
-        to:      to   || undefined,
+        from:    date   || undefined,
+        to:      date   || undefined,
       });
       setShots(data);
     } finally { setLoading(false); }
@@ -69,12 +68,8 @@ export default function Screenshots() {
             </select>
           </Field>
         )}
-        <Field label="From">
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
-        </Field>
-        <Field label="To">
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+        <Field label="Date">
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
             className="rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
         </Field>
         <button onClick={run} disabled={loading}
