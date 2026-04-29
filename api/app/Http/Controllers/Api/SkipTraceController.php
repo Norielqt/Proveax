@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class SkipTraceController extends Controller
 {
-    public const COST = 0.10;
+    public const COST = 0.20;
 
     public function __construct(
         private ActivityLogger $logger,
@@ -29,7 +29,7 @@ class SkipTraceController extends Controller
 
         if (!$charge) {
             return response()->json([
-                'message' => 'Insufficient wallet balance. Please top up your wallet.',
+                'message' => 'Not enough skip traces. Please buy more.',
             ], 402);
         }
 

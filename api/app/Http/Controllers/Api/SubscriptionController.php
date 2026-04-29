@@ -23,12 +23,19 @@ class SubscriptionController extends Controller
             'is_active'                => $tenant->hasActiveSubscription(),
             'is_canceled'              => $tenant->isCanceled(),
             'has_access'               => $tenant->hasFeatureAccess(),
+            'needs_onboarding'         => $tenant->needsBillingOnboarding(),
             'days_left'                => $tenant->trial_ends_at
                 ? max(0, (int) now()->diffInDays($tenant->trial_ends_at, false))
                 : null,
             'seat_limit'               => $tenant->seatLimit(),
             'seats_used'               => $tenant->seatsUsed(),
             'seats_remaining'          => $tenant->seatsRemaining(),
+            'card' => $tenant->card_last4 ? [
+                'brand'     => $tenant->card_brand,
+                'last4'     => $tenant->card_last4,
+                'exp_month' => $tenant->card_exp_month,
+                'exp_year'  => $tenant->card_exp_year,
+            ] : null,
         ]);
     }
 
@@ -41,34 +48,20 @@ class SubscriptionController extends Controller
 
     public function createSubscriptionIntent(Request $request)
     {
-        $plan = $request->input('plan', 'starter');
-
-        return response()->json(
-            $this->subscriptions->createSubscriptionIntent($request->user()->tenant, $plan)
-        );
+        // Legacy endpoint — replaced by /api/billing/onboarding/* flow.
+        abort(410, 'This endpoint is no longer supported. Please use the onboarding flow.');
     }
 
     public function confirmSubscription(Request $request)
     {
-        $request->validate([
-            'payment_intent_id' => 'required|string',
-            'plan'              => 'required|string|in:starter,team,business',
-        ]);
-
-        $this->subscriptions->confirmSubscription(
-            $request->user()->tenant,
-            $request->input('payment_intent_id'),
-            $request->input('plan'),
-        );
-
-        return response()->json(['ok' => true]);
+        abort(410, 'This endpoint is no longer supported. Please use the onboarding flow.');
     }
 
     public function cancel(Request $request)
     {
         $tenant = $request->user()->tenant;
 
-        if (! $tenant->hasActiveSubscription()) {
+        if (! $tenant->hasActiveSubscription() && ! $tenant->isOnTrial()) {
             abort(422, 'No active subscription to cancel.');
         }
 

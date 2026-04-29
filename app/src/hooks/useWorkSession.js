@@ -57,6 +57,7 @@ export function useWorkSession() {
   const [error,    setError]    = useState(null);
   const [isIdle,   setIsIdle]   = useState(false);
   const [dayEnded, setDayEnded] = useState(false);
+  const [shareResumeDeadline, setShareResumeDeadline] = useState(null);
   // Tick counter forces re-renders so UI can show live counters from refs.
   const [, setTick] = useState(0);
 
@@ -144,6 +145,21 @@ export function useWorkSession() {
     events.forEach((e) => window.addEventListener(e, bump, { passive: true }));
     return () => events.forEach((e) => window.removeEventListener(e, bump));
   }, []);
+
+  // ---------- auto-pause if share isn't resumed after a refresh ----------
+  // When the page reloads while a screenshots-enabled session is running,
+  // the captured stream is gone (browser security). Immediately auto-pause
+  // so no untracked time is accumulated. The user can resume from the banner.
+  useEffect(() => {
+    if (!session) return;
+    if (session.ended_at) return;
+    if (!session.screenshots_enabled) return;
+    if (streamRef.current) return; // share already attached — nothing to do
+
+    setShareResumeDeadline(null);
+    _endInternal('auto_paused').catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id]);
 
   // ---------- timer + heartbeat loops ----------
   useEffect(() => {
@@ -240,49 +256,11 @@ export function useWorkSession() {
       const data = await startSession(!!withScreenshots);
       setSession(data.session);
       // Do NOT reset pastSecondsRef — it carries today's accumulated total
-      activeSecondsRef.current = 0;
-      idleSecondsRef.current   = 0;
-      lastActivityRef.current  = Date.now();
+      activeSecondsRef.current   = 0;
+      idleSecondsRef.current     = 0;
+      lastActivityRef.current    = Date.now();
 
-      if (stream) {
-        streamRef.current = stream;
-
-        // If user clicks browser's built-in "Stop sharing" button
-        stream.getVideoTracks()[0].addEventListener('ended', () => {
-          _endInternal('share_stopped').catch(() => {});
-        });
-
-        // Play stream into off-screen video for canvas capture
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.muted = true;
-        await video.play();
-        videoRef.current = video;
-
-        const intervalMs = (settings?.screenshot_interval_minutes ?? 10) * 60_000;
-
-        // First capture after ~15s to confirm pipeline works, then on schedule
-        firstCaptureRef.current = setTimeout(() => captureScreenshot(data.session.id), 15_000);
-
-        captureRef.current = setInterval(() => captureScreenshot(data.session.id), intervalMs);
-
-        // Stream-black watchdog: if the laptop sleeps / monitor disconnects /
-        // OS blanks the share, the video usually turns into a black frame but
-        // the 'ended' event never fires. Sample a few pixels every 30s; if
-        // they're all near-black for > BLACK_TOLERANCE_MS, end the session.
-        blackCheckRef.current = setInterval(() => {
-          const black = isStreamBlack();
-          if (black === null) return; // not ready yet
-          if (black) {
-            if (!blackSinceRef.current) blackSinceRef.current = Date.now();
-            if (Date.now() - blackSinceRef.current >= BLACK_TOLERANCE_MS) {
-              _endInternal('stream_black').catch(() => {});
-            }
-          } else {
-            blackSinceRef.current = null;
-          }
-        }, BLACK_CHECK_MS);
-      }
+      if (stream) attachStream(stream, data.session.id);
 
       return data.session;
     } catch (e) {
@@ -299,6 +277,70 @@ export function useWorkSession() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings]);
+
+  // Attach a captured screen-share stream to the local capture pipeline.
+  // Used by both start() (fresh session) and resumeShare() (after a refresh).
+  const attachStream = (stream, sessionId) => {
+    streamRef.current = stream;
+
+    stream.getVideoTracks()[0].addEventListener('ended', () => {
+      // User stopped sharing via the browser's built-in "Stop sharing" button.
+      // Treat as auto-pause so they can resume without losing their session.
+      _endInternal('auto_paused').catch(() => {});
+    });
+
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.muted = true;
+    video.play().catch(() => {});
+    videoRef.current = video;
+
+    const intervalMs = (settings?.screenshot_interval_minutes ?? 10) * 60_000;
+
+    firstCaptureRef.current = setTimeout(() => captureScreenshot(sessionId), 15_000);
+    captureRef.current      = setInterval(() => captureScreenshot(sessionId), intervalMs);
+
+    blackCheckRef.current = setInterval(() => {
+      const black = isStreamBlack();
+      if (black === null) return;
+      if (black) {
+        if (!blackSinceRef.current) blackSinceRef.current = Date.now();
+        if (Date.now() - blackSinceRef.current >= BLACK_TOLERANCE_MS) {
+          _endInternal('stream_black').catch(() => {});
+        }
+      } else {
+        blackSinceRef.current = null;
+      }
+    }, BLACK_CHECK_MS);
+
+    setShareResumeDeadline(null); // resume succeeded — cancel the grace timer
+    setTick((t) => t + 1); // refresh consumers (needsShareResume flips false)
+  };
+
+  // Re-prompt the user for screen share after a page refresh while a session
+  // with screenshots_enabled is still active server-side. Requires a user
+  // gesture (button click).
+  const resumeShare = useCallback(async () => {
+    if (!session || session.ended_at) return;
+    if (!session.screenshots_enabled) return;
+    if (streamRef.current) return; // already attached
+
+    setError(null);
+    try {
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        throw new Error('Your browser does not support screen sharing.');
+      }
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 2 },
+        audio: false,
+      });
+      attachStream(stream, session.id);
+    } catch (e) {
+      const msg = e?.message || 'Could not resume screen share.';
+      setError(msg);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, settings]);
 
   // ---------- screenshot capture ----------
   const captureScreenshot = async (sessionId) => {
@@ -323,6 +365,11 @@ export function useWorkSession() {
 
     try {
       await uploadScreenshot(sessionId, blob, new Date().toISOString());
+      // Update session state directly so the count is always authoritative
+      setSession((prev) => {
+        if (!prev) return prev;
+        return { ...prev, screenshots_count: (prev.screenshots_count ?? 0) + 1 };
+      });
     } catch {
       // swallow — we don't want a failed upload to kill the session
     }
@@ -394,11 +441,21 @@ export function useWorkSession() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [session]);
 
+  // True when an active session expects screenshots but the local stream is
+  // missing (typical after a page refresh — getDisplayMedia cannot be re-
+  // acquired without a fresh user gesture).
+  const needsShareResume = !!session
+    && !session.ended_at
+    && !!session.screenshots_enabled
+    && !streamRef.current;
+
   return {
     session, settings, loading, starting, ending, error, isIdle, dayEnded,
     activeSeconds:     Math.round(activeSecondsRef.current),
     idleSeconds:       Math.round(idleSecondsRef.current),
     totalTodaySeconds: Math.round(pastSecondsRef.current + activeSecondsRef.current),
-    start, end, pause,
+    needsShareResume,
+    shareResumeDeadline,
+    start, end, pause, resumeShare,
   };
 }

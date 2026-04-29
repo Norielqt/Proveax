@@ -136,6 +136,28 @@ class PaymentMethodController extends Controller
             'invoice_settings' => ['default_payment_method' => $id],
         ]);
 
+        // Also point the active subscription at this card so future automatic
+        // charges (incl. trial-end) use it explicitly.
+        if ($tenant->stripe_subscription_id) {
+            try {
+                $stripe->subscriptions->update($tenant->stripe_subscription_id, [
+                    'default_payment_method' => $id,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Could not update subscription default PM', ['error' => $e->getMessage()]);
+            }
+        }
+
+        // Cache card metadata on the tenant for quick UI display
+        if (! empty($pm->card)) {
+            $tenant->forceFill([
+                'card_brand'     => $pm->card->brand,
+                'card_last4'     => $pm->card->last4,
+                'card_exp_month' => $pm->card->exp_month,
+                'card_exp_year'  => $pm->card->exp_year,
+            ])->save();
+        }
+
         return response()->json(['ok' => true]);
     }
 

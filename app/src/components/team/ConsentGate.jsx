@@ -12,7 +12,8 @@ export default function ConsentGate({ children }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  const needsConsent = !!user && !user.monitoring_consent_at;
+  const isAdmin     = user?.role === 'admin';
+  const needsConsent = !!user && !isAdmin && !user.monitoring_consent_at;
 
   useEffect(() => {
     if (needsConsent) getTeamSettings().then(setSettings).catch(() => {});

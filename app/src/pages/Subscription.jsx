@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuth } from '../context/AuthContext';
@@ -97,6 +98,7 @@ function CancelModal({ onConfirm, onClose, canceling }) {
 
 export default function Subscription() {
   const { user, refresh } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
   const [status, setStatus]       = useState(null);
   const [loading, setLoading]     = useState(true);
@@ -113,15 +115,9 @@ export default function Subscription() {
   }, []);
 
   const handleSelect = async (plan) => {
-    setPreparing(plan.id);
-    try {
-      const { client_secret } = await createSubscriptionIntent(plan.id);
-      setSelected({ plan, clientSecret: client_secret });
-    } catch {
-      /* ignore */
-    } finally {
-      setPreparing(null);
-    }
+    // The legacy one-off PaymentIntent flow is removed. Admins should always
+    // go through /onboarding/plan, which handles trial-aware subscriptions.
+    navigate('/onboarding/plan');
   };
 
   const handlePaid = async (paymentIntentId) => {

@@ -12,6 +12,7 @@ import GoogleOnboarding from './pages/GoogleOnboarding';
 import CRM from './pages/CRM';
 import MySession from './pages/MySession';
 import Settings from './pages/Settings';
+import OnboardingPlan from './pages/OnboardingPlan';
 import AppShell from './components/layout/AppShell';
 import LoadingScreen from './components/layout/LoadingScreen';
 import ConsentGate from './components/team/ConsentGate';
@@ -36,6 +37,22 @@ function RequireAuth() {
   );
 }
 
+// Block admins who haven't picked a plan / saved a card yet from the rest of
+// the app. Non-admins (invited employees) are never gated. The onboarding
+// page itself renders OUTSIDE this gate.
+function RequireBillingOnboarded() {
+  const { user, tenant } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const needsOnboarding =
+    isAdmin
+    && tenant
+    && !tenant.subscription_status
+    && !tenant.subscription_plan
+    && !tenant.stripe_subscription_id;
+  if (needsOnboarding) return <Navigate to="/onboarding/plan" replace />;
+  return <Outlet />;
+}
+
 function RequireAdmin() {
   const { user } = useAuth();
   return user?.role === 'admin' ? <Outlet /> : <Navigate to="/search" replace />;
@@ -52,7 +69,11 @@ export default function Router() {
         <Route path="/google/onboarding" element={<GoogleOnboarding />} />
 
         <Route element={<RequireAuth />}>
-          <Route element={<AppShell />}>
+          {/* Onboarding stands alone — no AppShell, no billing gate */}
+          <Route path="/onboarding/plan" element={<OnboardingPlan />} />
+
+          <Route element={<RequireBillingOnboarded />}>
+            <Route element={<AppShell />}>
             <Route path="/search" element={<Dashboard />} />
             <Route path="/dashboard" element={<Navigate to="/search" replace />} />
             <Route path="/properties/:id" element={<PropertyDetail />} />
@@ -83,6 +104,7 @@ export default function Router() {
               <Route path="screenshots" element={<TeamScreenshots />} />
               <Route path="*" element={<Navigate to="/team/members" replace />} />
             </Route>
+          </Route>
           </Route>
         </Route>
 

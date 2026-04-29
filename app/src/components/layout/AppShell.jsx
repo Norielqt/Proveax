@@ -15,23 +15,53 @@ function fmtTimer(secs) {
 }
 
 function SessionTimerPill() {
-  const { session, totalTodaySeconds, loading } = useWorkSessionContext();
-  const isRunning = session && !session.ended_at && !loading;
-  if (!isRunning) return null;
+  const { session, totalTodaySeconds, loading, dayEnded } = useWorkSessionContext();
+  if (loading) return null;
+  if (dayEnded) return null;
+
+  const isRunning = !!session && !session.ended_at;
+  const isPaused  = !isRunning && totalTodaySeconds > 0;
+  if (!isRunning && !isPaused) return null;
+
+  const PAUSE_REASONS = {
+    auto_paused:   'Screen share stopped',
+    share_stopped: 'Screen share stopped',
+    stream_black:  'Screen went black',
+    idle_timeout:  'Idle timeout',
+    paused:        'Manually paused',
+    stale:         'Connection lost',
+  };
+  const pauseReason = isPaused && session?.end_reason
+    ? (PAUSE_REASONS[session.end_reason] ?? 'Paused')
+    : 'Paused';
+
+  const wrapCls = isRunning
+    ? 'border-green-200 bg-green-50 hover:bg-green-100 focus:ring-green-500'
+    : 'border-red-200 bg-red-50 hover:bg-red-100 focus:ring-red-500';
+  const textCls = isRunning ? 'text-green-700' : 'text-red-700';
+
   return (
     <Link
       to="/me/session"
-      className="flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 hover:bg-green-100 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-      title="Go to My Session"
+      className={`flex items-center gap-2 rounded-full border ${wrapCls} px-3 py-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2`}
+      title={isRunning ? 'Go to My Session' : `${pauseReason} — tap to resume`}
     >
-      {/* pulsing dot */}
-      <span className="relative flex h-2 w-2 shrink-0">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-      </span>
-      <span className="text-sm font-semibold tabular-nums text-green-700">
+      {isRunning ? (
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+        </span>
+      ) : (
+        <svg className="h-3.5 w-3.5 shrink-0 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+        </svg>
+      )}
+      <span className={`text-sm font-semibold tabular-nums ${textCls}`}>
         {fmtTimer(totalTodaySeconds)}
       </span>
+      {isPaused && (
+        <span className="text-[10px] font-bold uppercase tracking-wider text-red-600">{pauseReason}</span>
+      )}
     </Link>
   );
 }
@@ -146,44 +176,61 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
             </div>
           </div>
 
-          {/* Nav */}
-          <div className="p-2 space-y-0.5">
-            <button onClick={() => go('/search')} className={`${nav} ${idle}`}>
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              Map
-            </button>
-            <button onClick={() => go('/crm')} className={`${nav} ${idle}`}>
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-              CRM
-            </button>
-            <button onClick={() => go('/me/session')} className={`${nav} ${idle}`}>
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              My Session
-            </button>
-            <button onClick={() => go(isAdmin ? '/admin/team' : '/team/members')} className={`${nav} ${idle}`}>
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              My Team
-            </button>
-            <button onClick={() => go('/subscription')} className={`${nav} ${idle}`}>
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              Subscription
-            </button>
-            <button onClick={() => go('/settings')} className={`${nav} ${idle}`}>
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Settings
-            </button>
+          {/* Tools */}
+          <div className="p-2 pb-1">
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Tools</p>
+            <div className="space-y-0.5">
+              <button onClick={() => go('/search')} className={`${nav} ${idle}`}>
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                Map
+              </button>
+              <button onClick={() => go('/crm')} className={`${nav} ${idle}`}>
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                </svg>
+                CRM
+              </button>
+            </div>
+          </div>
+
+          {/* Work */}
+          <div className="border-t border-gray-100 p-2 pb-1">
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Work</p>
+            <div className="space-y-0.5">
+              <button onClick={() => go('/me/session')} className={`${nav} ${idle}`}>
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                My Session
+              </button>
+              <button onClick={() => go(isAdmin ? '/admin/team' : '/team/members')} className={`${nav} ${idle}`}>
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                My Team
+              </button>
+            </div>
+          </div>
+
+          {/* Account */}
+          <div className="border-t border-gray-100 p-2 pb-1">
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Account</p>
+            <div className="space-y-0.5">
+              <button onClick={() => go('/subscription')} className={`${nav} ${idle}`}>
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Subscription
+              </button>
+              <button onClick={() => go('/settings')} className={`${nav} ${idle}`}>
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
+              </button>
+            </div>
           </div>
 
           {/* Logout */}
@@ -228,19 +275,21 @@ export default function AppShell() {
           <img src={proviaxxLogo} alt="Proviaxx" className="h-36 w-auto mt-2" />
         </Link>
         <div className="flex items-center gap-3">
-          {/* Wallet */}
+          {/* Skip Traces */}
           <button
             type="button"
             onClick={() => setWalletOpen(true)}
             className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            aria-label="Open wallet"
+            aria-label="Open skip traces"
+            title="Skip traces remaining"
           >
             <svg className="h-4 w-4 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-5m0 0h-4a2 2 0 000 4h4" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
             </svg>
             <span className="text-sm font-semibold text-gray-800">
-              ${Number(user?.balance ?? 0).toFixed(2)}
+              {Math.floor(Number(user?.balance ?? 0) / 0.20).toLocaleString()}
             </span>
+            <span className="text-xs font-medium text-gray-500">skip traces</span>
           </button>
           <SessionTimerPill />
           <AccountMenu user={user} tenant={tenant} isAdmin={isAdmin} logout={logout} />

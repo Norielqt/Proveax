@@ -14,6 +14,7 @@ class Tenant extends Model
         'subscription_ends_at',
         'subscription_canceled_at',
         'stripe_customer_id', 'stripe_subscription_id',
+        'card_brand', 'card_last4', 'card_exp_month', 'card_exp_year',
     ];
 
     protected $casts = [
@@ -48,6 +49,18 @@ class Tenant extends Model
     public function hasFeatureAccess(): bool
     {
         return $this->isOnTrial() || $this->hasActiveSubscription() || $this->isCanceled();
+    }
+
+    /**
+     * True for fresh signups that have not picked a plan + entered a card yet.
+     * Existing tenants (already in trialing/active/etc.) are NOT forced through
+     * onboarding — they keep their grandfathered status.
+     */
+    public function needsBillingOnboarding(): bool
+    {
+        return $this->subscription_status === null
+            && $this->subscription_plan === null
+            && $this->stripe_subscription_id === null;
     }
 
     /**
