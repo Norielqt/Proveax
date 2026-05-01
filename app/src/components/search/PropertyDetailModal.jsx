@@ -1,15 +1,22 @@
 ﻿import { useEffect, useState, createContext, useContext } from 'react';
 
 const LoadingCtx = createContext(false);
-import { runSkipTrace } from '../../api/properties';
+import { runSkipTrace, getSkipTrace } from '../../api/properties';
 import { rentcastFullDetail, rentcastAvm } from '../../api/rentcast';
+import { createLead, SOURCE_TYPES, SOURCE_TYPE_LABELS } from '../../api/leads';
 import { useSubscription } from '../../hooks/useSubscription';
+import { useAuth } from '../../context/AuthContext';
+
+const SKIP_TRACE_COST = 0.20;
 
 const isRentcastId = (id) => !!id && String(id).length > 5 && /[a-zA-Z]/.test(String(id));
 const fmt$  = (v) => (v != null && v !== '') ? `$${Number(v).toLocaleString()}` : null;
 
 export default function PropertyDetailModal({ property, onClose }) {
   const sub = useSubscription();
+  const { user, refresh: refreshAuth } = useAuth();
+  const balance     = Number(user?.balance ?? 0);
+  const hasCredits  = balance >= SKIP_TRACE_COST;
 
   const [p,        setP]        = useState(property);
   const [report,   setReport]   = useState(null);
@@ -18,6 +25,11 @@ export default function PropertyDetailModal({ property, onClose }) {
   const [trace,    setTrace]    = useState(null);
   const [tracing,  setTracing]  = useState(false);
   const [traceErr, setTraceErr] = useState('');
+
+  const [crmSaving,    setCrmSaving]    = useState(false);
+  const [crmToast,     setCrmToast]     = useState(null);  // 'saved' | 'error'
+  const [crmPanel,     setCrmPanel]     = useState(false); // show confirmation panel
+  const [crmSourceType,setCrmSourceType] = useState('');
   const [tab,      setTab]      = useState('property');
 
   // ── On-demand AVM (one billable /avm/value call per property) ──
@@ -83,6 +95,17 @@ export default function PropertyDetailModal({ property, onClose }) {
     }
   }, [report]); // eslint-disable-line
 
+  // Pre-load any previously-run skip trace for this property (no charge).
+  // Uses the Rentcast slug (attom_id) when coming from map search, or numeric
+  // CRM id when coming from the properties list page.
+  useEffect(() => {
+    const propId = property.attom_id ?? property.id;
+    if (!propId) return;
+    getSkipTrace(propId)
+      .then((data) => { if (data?.hit) setTrace(data); })
+      .catch(() => {}); // silently ignore — trace just won't pre-fill
+  }, []); // eslint-disable-line
+
   // Close on Escape key
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -96,10 +119,96 @@ export default function PropertyDetailModal({ property, onClose }) {
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  // ── Source-type auto-detection ────────────────────────────────────────
+  const detectSourceType = () => {
+    const status = (p.listing_status ?? '').toLowerCase();
+    if (status === 'active')    return 'mls_active';
+    if (status === 'pending')   return 'mls_pending';
+    if (status === 'sold')      return 'mls_sold';
+    if (status === 'withdrawn') return 'mls_withdrawn';
+
+    const ownerState   = report?.owner?.mail_state?.toUpperCase() ?? null;
+    const propState    = (p.state ?? '').toUpperCase();
+    const isAbsentee   = p.owner_occupied === false;
+    const isOutOfState = ownerState && propState && ownerState !== propState;
+    const isVacantLot  = (p.property_type ?? '').toLowerCase() === 'land';
+
+    const lastSale     = report?.transactions?.[0]?.sale_price;
+    const estVal       = p.estimated_value;
+    const isHighEquity = lastSale && estVal && Number(estVal) >= Number(lastSale) * 1.4;
+
+    if (isVacantLot)  return 'vacant_lots';
+    if (isHighEquity) return 'high_equity';
+    if (isOutOfState) return 'out_of_state_owner';
+    if (isAbsentee)   return 'absentee_owner';
+    return '';
+  };
+
+  const openCrmPanel = () => {
+    setCrmSourceType(detectSourceType());
+    setCrmPanel(true);
+    setCrmToast(null);
+  };
+
+  // All phones/emails extracted from skip-trace result (used in panel + save)
+  const allPhonesMeta = trace?.phones_meta?.length
+    ? trace.phones_meta
+    : (trace?.phones?.length ? trace.phones.map((n) => ({ number: n })) : []);
+  const allEmails = trace?.emails ?? [];
+
+  const doAddToCrm = async () => {
+    setCrmSaving(true); setCrmToast(null);
+    try {
+      const addr     = [p.address || p.street, p.city, p.state, p.zip].filter(Boolean).join(', ');
+      // Use the actual Proveax AVM value; only fall back to estimated_value if AVM hasn't loaded
+      const priceNum = avm?.avm_value != null
+        ? Number(avm.avm_value)
+        : (p.estimated_value != null ? Number(p.estimated_value) : null);
+
+      const primaryPhone = allPhonesMeta[0]?.number ?? p.phone ?? null;
+      const primaryEmail = allEmails[0] ?? p.email ?? null;
+
+      await createLead({
+        name:        p.owner_name || addr,
+        address:     addr,
+        phone:       primaryPhone,
+        phones:      allPhonesMeta.length ? allPhonesMeta : undefined,
+        email:       primaryEmail,
+        home_price:  priceNum,
+        source_type: crmSourceType || undefined,
+      });
+      setCrmPanel(false);
+      setCrmToast('saved');
+    } catch {
+      setCrmToast('error');
+    } finally {
+      setCrmSaving(false);
+      setTimeout(() => setCrmToast(null), 3500);
+    }
+  };
+
   const doSkipTrace = async () => {
+    if (!hasCredits) {
+      setTraceErr(`Not enough credits. Skip trace costs $${SKIP_TRACE_COST.toFixed(2)} — top up your wallet to continue.`);
+      return;
+    }
     setTracing(true); setTraceErr('');
-    try { setTrace(await runSkipTrace(p.attom_id ?? p.id)); }
-    catch (e) { setTraceErr(e.response?.data?.message || 'Failed.'); }
+    try {
+      const res = await runSkipTrace(p.attom_id ?? p.id);
+      setTrace(res);
+      // Refresh user balance so the header pill / wallet reflect the charge or refund.
+      refreshAuth?.();
+    }
+    catch (e) {
+      const status = e.response?.status;
+      if (status === 402) {
+        setTraceErr(e.response?.data?.message || `Not enough credits. Skip trace costs $${SKIP_TRACE_COST.toFixed(2)} — top up your wallet to continue.`);
+      } else {
+        setTraceErr(e.response?.data?.message || 'Skip trace failed. Please try again.');
+      }
+      // Balance may have been refunded by the backend on provider failure — re-sync.
+      refreshAuth?.();
+    }
     finally { setTracing(false); }
   };
 
@@ -122,16 +231,123 @@ export default function PropertyDetailModal({ property, onClose }) {
       {/* Panel */}
       <div className="relative w-full max-w-4xl my-6 bg-white rounded-xl shadow-2xl overflow-hidden">
 
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-white hover:bg-white/20 transition-colors"
-          aria-label="Close"
-        >
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        {/* Top-right actions */}
+        <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5">
+          <button
+            onClick={openCrmPanel}
+            disabled={crmSaving}
+            className="flex items-center gap-1.5 rounded-md bg-white/15 hover:bg-white/25 disabled:opacity-50 px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors"
+            title="Add this property to CRM"
+          >
+            {crmSaving ? (
+              <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+            ) : (
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+            )}
+            Add to CRM
+          </button>
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-white hover:bg-white/20 transition-colors"
+            aria-label="Close"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* CRM confirmation panel */}
+        {crmPanel && (
+          <div className="absolute right-3 top-[3.25rem] z-30 w-72 rounded-xl border border-gray-200 bg-white shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2.5">
+              <span className="text-sm font-semibold text-gray-800">Add to CRM</span>
+              <button onClick={() => setCrmPanel(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            {/* Contact preview */}
+            <div className="px-4 py-3 space-y-2">
+              {p.owner_name && (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Owner</p>
+                  <p className="text-xs font-medium text-gray-700">{p.owner_name}</p>
+                </div>
+              )}
+              {allPhonesMeta.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Phones</p>
+                  {allPhonesMeta.map((ph, i) => (
+                    <p key={i} className="text-xs text-gray-700">
+                      {ph.number}
+                      {ph.type && <span className="ml-1.5 text-gray-400">({ph.type})</span>}
+                      {ph.dnc && <span className="ml-1.5 rounded bg-red-100 px-1 text-[9px] font-semibold text-red-600">DNC</span>}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {allEmails.length > 0 ? (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Emails</p>
+                  {allEmails.map((em, i) => (
+                    <p key={i} className="truncate text-xs text-gray-700">{em}</p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">No email found</p>
+              )}
+              {allPhonesMeta.length === 0 && allEmails.length === 0 && (
+                <p className="text-xs text-gray-400 italic">No contacts — run skip trace first for best results</p>
+              )}
+            </div>
+
+            {/* Lead type (source) */}
+            <div className="border-t border-gray-100 px-4 py-3">
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Lead Type</label>
+                <select
+                  value={crmSourceType}
+                  onChange={(e) => setCrmSourceType(e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="">— Not set —</option>
+                  {SOURCE_TYPES.map((t) => (
+                    <option key={t} value={t}>{SOURCE_TYPE_LABELS[t] ?? t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="border-t border-gray-100 px-4 py-3 flex gap-2">
+              <button
+                onClick={doAddToCrm}
+                disabled={crmSaving}
+                className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 py-1.5 text-xs font-semibold text-white transition-colors"
+              >
+                {crmSaving ? 'Saving…' : 'Save to CRM'}
+              </button>
+              <button
+                onClick={() => setCrmPanel(false)}
+                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* CRM toast */}
+        {crmToast && (
+          <div className={`absolute right-3 top-14 z-20 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold shadow-lg ${
+            crmToast === 'saved' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          }`}>
+            {crmToast === 'saved' && <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+            {crmToast === 'saved' ? 'Added to CRM' : 'Failed to add — try again'}
+          </div>
+        )}
 
         {/* ── Hero ── */}
         <div className="relative bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-5">
@@ -341,36 +557,67 @@ export default function PropertyDetailModal({ property, onClose }) {
                     </FieldGroup>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Skip Trace</p>
-                    <button
-                      onClick={doSkipTrace}
-                      disabled={tracing}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      {tracing
-                        ? <><svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Running…</>
-                        : <><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg> Run skip trace</>
-                      }
-                    </button>
-                    {traceErr && <p className="mt-2 text-sm text-red-600">{traceErr}</p>}
-                    {trace && (
-                      <div className="mt-4 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 p-4 space-y-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1">Phones</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {sub.isActive
-                              ? (trace.phones?.join(', ') || '—')
-                              : <><span className="blur-sm select-none pointer-events-none">{trace.phones?.map(() => '●●●-●●●-●●●●').join(', ') || '●●●-●●●-●●●●'}</span><span className="ml-2 text-xs text-indigo-600 font-semibold">Upgrade to reveal</span></>
-                            }
-                          </p>
-                        </div>
-                        {trace.emails?.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1">Emails</p>
-                            <p className="text-sm font-medium text-gray-900">{trace.emails.join(', ')}</p>
+                    {trace ? (
+                      /* ── Results: same FieldGroup/StatRow style as Ownership ── */
+                      <FieldGroup heading="Skip Trace">
+                        {trace.owner_name && <StatRow label="Owner" value={trace.owner_name} />}
+                        {(trace.phones?.length > 0) && (
+                          trace.phones.map((ph, i) => (
+                            <StatRow
+                              key={i}
+                              label={i === 0 ? 'Phone' : `Phone ${i + 1}`}
+                              value={
+                                sub.isActive
+                                  ? ph
+                                  : <span className="blur-sm select-none pointer-events-none text-gray-400">●●●-●●●-●●●●</span>
+                              }
+                            />
+                          ))
+                        )}
+                        {(trace.emails?.length > 0) ? (
+                          trace.emails.map((em, i) => (
+                            <StatRow
+                              key={i}
+                              label={i === 0 ? 'Email' : `Email ${i + 1}`}
+                              value={
+                                sub.isActive
+                                  ? em
+                                  : <span className="blur-sm select-none pointer-events-none text-gray-400">●●●●●@●●●.com</span>
+                              }
+                            />
+                          ))
+                        ) : (
+                          <StatRow label="Email" value="No data found" />
+                        )}
+                        {!trace.hit && (
+                          <p className="text-xs text-gray-400 mt-1">No contact info found for this address.</p>
+                        )}
+                      </FieldGroup>
+                    ) : (
+                      /* ── Pre-trace: button + warnings ── */
+                      <FieldGroup heading="Skip Trace">
+                        {!hasCredits && !tracing && (
+                          <div className="mb-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2">
+                            <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+                            <p className="text-xs text-amber-700">Balance {`$${balance.toFixed(2)}`} — need {`$${SKIP_TRACE_COST.toFixed(2)}`}. Top up your wallet.</p>
                           </div>
                         )}
-                      </div>
+                        {traceErr && (
+                          <p className="mb-2 text-xs text-red-500">{traceErr}</p>
+                        )}
+                        <button
+                          onClick={doSkipTrace}
+                          disabled={tracing || !hasCredits}
+                          title={!hasCredits ? `Not enough credits — $${SKIP_TRACE_COST.toFixed(2)} required` : undefined}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
+                        >
+                          {tracing ? (
+                            <><svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Running…</>
+                          ) : (
+                            <><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg> Run skip trace · {`$${SKIP_TRACE_COST.toFixed(2)}`}</>
+                          )}
+                        </button>
+                      </FieldGroup>
                     )}
                   </div>
                 </div>

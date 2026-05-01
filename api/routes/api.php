@@ -115,6 +115,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Paid-only
     Route::middleware('feature.access:paid')->group(function () {
+        Route::get ('/properties/{id}/skip-trace', [SkipTraceController::class, 'fetch']);
         Route::post('/properties/{id}/skip-trace', [SkipTraceController::class, 'run']);
     });
 

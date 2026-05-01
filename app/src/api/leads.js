@@ -31,7 +31,10 @@ export const SOURCE_TYPES = [
   'high_equity',
   'cash_buyers',
   'vacant_lots',
+  'mls_active',
+  'mls_pending',
   'mls_withdrawn',
+  'mls_sold',
 ];
 
 export const SOURCE_TYPE_LABELS = {
@@ -40,5 +43,8 @@ export const SOURCE_TYPE_LABELS = {
   high_equity:       'High Equity',
   cash_buyers:       'Cash Buyers',
   vacant_lots:       'Vacant Lots',
+  mls_active:        'MLS Active',
+  mls_pending:       'MLS Pending',
   mls_withdrawn:     'MLS Withdrawn',
+  mls_sold:          'MLS Sold',
 };

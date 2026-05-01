@@ -3,6 +3,9 @@ import { useParams, useLocation } from 'react-router-dom';
 import { getProperty, runSkipTrace } from '../api/properties';
 import { rentcastFullDetail } from '../api/rentcast';
 import { useSubscription } from '../hooks/useSubscription';
+import { useAuth } from '../context/AuthContext';
+
+const SKIP_TRACE_COST = 0.20;
 
 // Rentcast IDs are non-numeric strings (e.g. '123-Main-St-Miami-FL-33139')
 const isRentcastId = (id) => id && String(id).length > 5 && /[a-zA-Z]/.test(String(id));
@@ -13,6 +16,9 @@ export default function PropertyDetail() {
   const { id }    = useParams();
   const { state } = useLocation();
   const sub       = useSubscription();
+  const { user, refresh: refreshAuth } = useAuth();
+  const balance     = Number(user?.balance ?? 0);
+  const hasCredits  = balance >= SKIP_TRACE_COST;
 
   const [p,        setP]        = useState(state?.property ?? null);
   const [report,   setReport]   = useState(null);   // fullDetail data
@@ -70,9 +76,24 @@ export default function PropertyDetail() {
   }, [report]); // eslint-disable-line
 
   const doSkipTrace = async () => {
+    if (!hasCredits) {
+      setTraceErr(`Not enough credits. Skip trace costs $${SKIP_TRACE_COST.toFixed(2)} — top up your wallet to continue.`);
+      return;
+    }
     setTracing(true); setTraceErr('');
-    try { setTrace(await runSkipTrace(id)); }
-    catch (e) { setTraceErr(e.response?.data?.message || 'Failed.'); }
+    try {
+      setTrace(await runSkipTrace(id));
+      refreshAuth?.();
+    }
+    catch (e) {
+      const status = e.response?.status;
+      if (status === 402) {
+        setTraceErr(e.response?.data?.message || `Not enough credits. Skip trace costs $${SKIP_TRACE_COST.toFixed(2)} — top up your wallet to continue.`);
+      } else {
+        setTraceErr(e.response?.data?.message || 'Skip trace failed. Please try again.');
+      }
+      refreshAuth?.();
+    }
     finally { setTracing(false); }
   };
 
@@ -183,10 +204,20 @@ export default function PropertyDetail() {
               <RowFixed label="Mailing address" value={own.mail_addr ?? p.owner_mailing_address} />
             </dl>
             <div className="mt-4 border-t pt-3">
-              <button onClick={doSkipTrace} disabled={tracing}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white disabled:opacity-50 hover:bg-blue-700">
-                {tracing ? 'Running…' : 'Run skip trace'}
+              <button onClick={doSkipTrace} disabled={tracing || !hasCredits}
+                title={!hasCredits ? `Not enough credits — $${SKIP_TRACE_COST.toFixed(2)} required` : undefined}
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white disabled:cursor-not-allowed disabled:bg-gray-300 hover:bg-blue-700">
+                {tracing ? 'Running…' : <>Run skip trace · {`$${SKIP_TRACE_COST.toFixed(2)}`}</>}
               </button>
+              {!hasCredits && !tracing && (
+                <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2.5 text-sm text-amber-800">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+                  <div>
+                    <p className="font-semibold">Not enough credits</p>
+                    <p className="text-xs text-amber-700">Skip trace costs {`$${SKIP_TRACE_COST.toFixed(2)}`}. Your balance is {`$${balance.toFixed(2)}`}. Top up your wallet to continue.</p>
+                  </div>
+                </div>
+              )}
               {traceErr && <p className="mt-2 text-sm text-red-600">{traceErr}</p>}
               {trace && (
                 <div className="mt-3 rounded-md bg-gray-50 p-3 text-sm space-y-1">

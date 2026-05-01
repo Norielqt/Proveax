@@ -64,14 +64,19 @@ class LeadController extends Controller
     private function validated(Request $request, bool $creating): array
     {
         $rules = [
-            'name'       => ['sometimes', 'nullable', 'string', 'max:200'],
-            'address'    => ['sometimes', 'nullable', 'string', 'max:500'],
-            'phone'      => ['sometimes', 'nullable', 'string', 'max:50'],
+            'name'        => ['sometimes', 'nullable', 'string', 'max:200'],
+            'address'     => ['sometimes', 'nullable', 'string', 'max:500'],
+            'phone'       => ['sometimes', 'nullable', 'string', 'max:50'],
+            'phones'      => ['sometimes', 'nullable', 'array'],
+            'phones.*.number'  => ['required_with:phones', 'string', 'max:50'],
+            'phones.*.type'    => ['nullable', 'string', 'max:50'],
+            'phones.*.dnc'     => ['nullable', 'boolean'],
+            'phones.*.carrier' => ['nullable', 'string', 'max:100'],
             'lead_type'   => ['sometimes', 'nullable', 'string', 'in:' . implode(',', self::LEAD_TYPES)],
             'source_type' => ['sometimes', 'nullable', 'string', 'in:' . implode(',', self::SOURCE_TYPES)],
-            'home_price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:1000000000'], // dollars (up to $1B)
-            'email'      => ['sometimes', 'nullable', 'email', 'max:200'],
-            'notes'      => ['sometimes', 'nullable', 'string', 'max:10000'],
+            'home_price'  => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:1000000000'],
+            'email'       => ['sometimes', 'nullable', 'email', 'max:200'],
+            'notes'       => ['sometimes', 'nullable', 'string', 'max:10000'],
         ];
 
         $validated = Validator::make($request->all(), $rules)->validate();
@@ -94,6 +99,7 @@ class LeadController extends Controller
             'name'               => $lead->name,
             'address'            => $lead->address,
             'phone'              => $lead->phone,
+            'phones'             => $lead->phones ?? [],
             'lead_type'          => $lead->lead_type,
             'source_type'        => $lead->source_type,
             'home_price'         => $lead->home_price_cents !== null ? $lead->home_price_cents / 100 : null,

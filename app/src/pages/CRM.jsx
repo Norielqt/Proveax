@@ -83,7 +83,7 @@ function PriceCell({ value, onCommit }) {
   return (
     <input
       value={display ?? ''}
-      placeholder="No Data"
+      placeholder=""
       onFocus={() => { setFocused(true); setDraft(value ?? ''); }}
       onChange={(e) => { dirty.current = true; setDraft(e.target.value); }}
       onBlur={commit}
@@ -129,6 +129,28 @@ function SourceTypeCell({ value, onCommit }) {
       </div>
     </div>
   );
+}
+
+// ── Phones cell — shows all skip-traced phones with DNC badge, falls back to plain TextCell ──
+function PhonesCell({ phones, phone, onCommitPhone }) {
+  if (phones && phones.length > 0) {
+    return (
+      <div className="px-3 py-2.5 space-y-1.5 min-w-[160px]">
+        {phones.map((ph, i) => (
+          <div key={i} className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm text-gray-800 tabular-nums">{ph.number}</span>
+            {ph.dnc && (
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-600">DNC</span>
+            )}
+            {ph.type && (
+              <span className="text-[10px] text-gray-400 capitalize">{ph.type}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <TextCell value={phone} onCommit={onCommitPhone} placeholder="No Data" />;
 }
 
 // ── File attachment cell (multi-file) ──────────────────────────────────
@@ -409,7 +431,7 @@ export default function CRM() {
                 <SortableTh sortKey="address"     sort={sort} onSort={toggleSort}>Address</SortableTh>
                 <SortableTh sortKey="phone"       sort={sort} onSort={toggleSort}>Phone</SortableTh>
                 <SortableTh sortKey="source_type" sort={sort} onSort={toggleSort}>Lead</SortableTh>
-                <SortableTh sortKey="home_price"  sort={sort} onSort={toggleSort}>Price</SortableTh>
+                <SortableTh sortKey="home_price"  sort={sort} onSort={toggleSort}>Proveax AVM</SortableTh>
                 <SortableTh sortKey="email"       sort={sort} onSort={toggleSort}>Email</SortableTh>
                 <Th>Notes</Th>
                 <Th>File</Th>
@@ -435,7 +457,13 @@ export default function CRM() {
                     </div>
                   </Td>
                   <Td><TextCell value={r.address} onCommit={(v) => patchRow(r.id, { address: v })} placeholder="No Data" /></Td>
-                  <Td><TextCell value={r.phone}   onCommit={(v) => patchRow(r.id, { phone: v })}   placeholder="No Data" /></Td>
+                  <Td>
+                    <PhonesCell
+                      phones={r.phones}
+                      phone={r.phone}
+                      onCommitPhone={(v) => patchRow(r.id, { phone: v })}
+                    />
+                  </Td>
                   <Td><SourceTypeCell value={r.source_type} onCommit={(v) => patchRow(r.id, { source_type: v })} /></Td>
                   <Td><PriceCell value={r.home_price} onCommit={(v) => patchRow(r.id, { home_price: v })} /></Td>
                   <Td><TextCell value={r.email}   onCommit={(v) => patchRow(r.id, { email: v })}   placeholder="No Data" type="email" /></Td>
