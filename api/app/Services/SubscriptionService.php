@@ -29,7 +29,11 @@ class SubscriptionService
     {
         $secret = config('services.stripe.secret');
         if (! $secret) {
-            abort(503, 'Stripe is not configured.');
+            abort(503, 'Stripe is not configured. Set STRIPE_SECRET on the server.');
+        }
+        if (str_starts_with($secret, 'pk_')) {
+            \Illuminate\Support\Facades\Log::error('STRIPE_SECRET is set to a publishable key (pk_...). Set it to the secret key (sk_...).');
+            abort(503, 'Stripe secret key is misconfigured. Contact support.');
         }
         return new StripeClient($secret);
     }

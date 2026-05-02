@@ -11,7 +11,10 @@ import {
 } from '../api/onboarding';
 
 const stripeKey     = import.meta.env.VITE_STRIPE_KEY;
-const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+if (stripeKey && !stripeKey.startsWith('pk_')) {
+  console.error('[Stripe] VITE_STRIPE_KEY looks like a secret key (sk_...). Set the publishable key (pk_...) instead.');
+}
+const stripePromise = (stripeKey && stripeKey.startsWith('pk_')) ? loadStripe(stripeKey) : null;
 
 const PLANS = [
   {

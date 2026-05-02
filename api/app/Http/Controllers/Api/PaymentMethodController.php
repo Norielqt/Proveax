@@ -13,7 +13,13 @@ class PaymentMethodController extends Controller
     private function stripe(): ?StripeClient
     {
         $secret = config('services.stripe.secret');
-        return $secret ? new StripeClient($secret) : null;
+        if (! $secret) return null;
+        // Guard: publishable key accidentally set as secret key
+        if (str_starts_with($secret, 'pk_')) {
+            Log::error('STRIPE_SECRET is set to a publishable key (pk_...). Set it to the secret key (sk_...).');
+            return null;
+        }
+        return new StripeClient($secret);
     }
 
     /**
@@ -88,27 +94,35 @@ class PaymentMethodController extends Controller
     {
         $stripe = $this->stripe();
         if (!$stripe) {
-            return response()->json(['message' => 'Payments are not configured.'], 503);
+            return response()->json(['message' => 'Payments are not configured. Check STRIPE_SECRET on the server.'], 503);
         }
 
-        $user   = $request->user();
-        $tenant = $user->tenant;
-        $customerId = $this->ensureCustomer($tenant, $user, $stripe);
+        try {
+            $user   = $request->user();
+            $tenant = $user->tenant;
+            $customerId = $this->ensureCustomer($tenant, $user, $stripe);
 
-        $intent = $stripe->setupIntents->create([
-            'customer'             => $customerId,
-            'payment_method_types' => ['card'],
-            'usage'                => 'off_session',
-            'metadata' => [
-                'tenant_id' => (string) $tenant->id,
-                'user_id'   => (string) $user->id,
-                'purpose'   => 'add_payment_method',
-            ],
-        ]);
+            $intent = $stripe->setupIntents->create([
+                'customer'             => $customerId,
+                'payment_method_types' => ['card'],
+                'usage'                => 'off_session',
+                'metadata' => [
+                    'tenant_id' => (string) $tenant->id,
+                    'user_id'   => (string) $user->id,
+                    'purpose'   => 'add_payment_method',
+                ],
+            ]);
 
-        return response()->json([
-            'client_secret' => $intent->client_secret,
-        ]);
+            return response()->json([
+                'client_secret' => $intent->client_secret,
+            ]);
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::error('Stripe authentication failed — check STRIPE_SECRET', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Stripe authentication failed. Check STRIPE_SECRET on the server.'], 503);
+        } catch (\Throwable $e) {
+            Log::error('setup-intent creation failed', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Could not create setup intent. Please try again.'], 500);
+        }
     }
 
     /**
