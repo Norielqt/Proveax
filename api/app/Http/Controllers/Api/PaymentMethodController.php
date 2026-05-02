@@ -117,11 +117,25 @@ class PaymentMethodController extends Controller
                 'client_secret' => $intent->client_secret,
             ]);
         } catch (\Stripe\Exception\AuthenticationException $e) {
-            Log::error('Stripe authentication failed — check STRIPE_SECRET', ['error' => $e->getMessage()]);
+            Log::error('Stripe authentication failed — check STRIPE_SECRET', [
+                'error'     => $e->getMessage(),
+                'stripe_key_prefix' => substr(config('services.stripe.secret') ?? '', 0, 7),
+            ]);
             return response()->json(['message' => 'Stripe authentication failed. Check STRIPE_SECRET on the server.'], 503);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Stripe API error on setup-intent', [
+                'error'     => $e->getMessage(),
+                'http_status' => $e->getHttpStatus(),
+                'stripe_code' => $e->getStripeCode(),
+            ]);
+            return response()->json(['message' => 'Stripe error: ' . $e->getMessage()], 502);
         } catch (\Throwable $e) {
-            Log::error('setup-intent creation failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Could not create setup intent. Please try again.'], 500);
+            Log::error('setup-intent creation failed', [
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['message' => 'Could not create setup intent: ' . $e->getMessage()], 500);
         }
     }
 
