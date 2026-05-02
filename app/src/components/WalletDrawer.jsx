@@ -584,7 +584,7 @@ function ElementsForm({ traces, onSuccess }) {
       <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
         <PaymentElement
           options={{
-            layout: { type: 'accordion', defaultCollapsed: false, radios: true, spacedAccordionItems: true },
+            layout: { type: 'accordion', defaultCollapsed: false, radios: 'auto', spacedAccordionItems: true },
             fields: { billingDetails: 'auto' },
             terms: { card: 'never', usBankAccount: 'never', link: 'never' },
           }}
