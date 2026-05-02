@@ -157,7 +157,7 @@ class WalletController extends Controller
             'amount'               => (int) round($amount * 100),
             'currency'             => 'usd',
             'customer'             => $tenant->stripe_customer_id,
-            'payment_method_types' => ['card', 'link', 'us_bank_account'],
+            'payment_method_types' => ['card'],
             'setup_future_usage'   => 'off_session',
             'metadata' => [
                 'user_id'   => (string) $user->id,

@@ -381,7 +381,8 @@ function CardForm({ plan, canStartTrial, onSuccess }) {
           layout: 'tabs',
           paymentMethodOrder: ['card'],
           fields: { billingDetails: 'auto' },
-          terms: { card: 'never' },
+          wallets: { googlePay: 'never', applePay: 'never' },
+          terms: { card: 'never', usBankAccount: 'never', link: 'never' },
         }}
       />
 

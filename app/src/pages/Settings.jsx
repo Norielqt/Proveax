@@ -364,7 +364,15 @@ function AddCardForm({ onAdded, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement options={{ layout: 'tabs' }} />
+      <PaymentElement
+        options={{
+          layout: 'tabs',
+          paymentMethodOrder: ['card'],
+          fields: { billingDetails: 'auto' },
+          wallets: { googlePay: 'never', applePay: 'never' },
+          terms: { card: 'never', usBankAccount: 'never', link: 'never' },
+        }}
+      />
       {err && <p className="text-sm text-red-600">{err}</p>}
       <div className="flex items-center justify-end gap-3 pt-2">
         <button

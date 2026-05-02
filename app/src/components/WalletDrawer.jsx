@@ -586,6 +586,7 @@ function ElementsForm({ traces, onSuccess }) {
           options={{
             layout: { type: 'accordion', defaultCollapsed: false, radios: 'auto', spacedAccordionItems: true },
             fields: { billingDetails: 'auto' },
+            wallets: { googlePay: 'never', applePay: 'never' },
             terms: { card: 'never', usBankAccount: 'never', link: 'never' },
           }}
         />
