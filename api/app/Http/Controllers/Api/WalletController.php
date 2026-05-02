@@ -28,18 +28,72 @@ class WalletController extends Controller
 
     /**
      * Return current balance, traces remaining, and saved card (if any).
+     * Always live-fetches the default payment method from Stripe so the
+     * confirm-purchase screen never shows a stale card.
      */
     public function summary(Request $request)
     {
         $user   = $request->user();
         $tenant = $user->tenant;
 
-        $card = $tenant && $tenant->card_last4 ? [
-            'brand'     => $tenant->card_brand,
-            'last4'     => $tenant->card_last4,
-            'exp_month' => $tenant->card_exp_month,
-            'exp_year'  => $tenant->card_exp_year,
-        ] : null;
+        $card = null;
+
+        // Live-fetch from Stripe when we have a customer ID, so the card
+        // shown in "Confirm purchase" always matches what will be charged.
+        if ($tenant && $tenant->stripe_customer_id) {
+            $secret = config('services.stripe.secret');
+            if ($secret && !str_starts_with($secret, 'pk_')) {
+                try {
+                    $stripe   = new StripeClient($secret);
+                    $customer = $stripe->customers->retrieve($tenant->stripe_customer_id);
+                    $defaultPmId = $customer->invoice_settings->default_payment_method ?? null;
+
+                    if ($defaultPmId) {
+                        $pm = $stripe->paymentMethods->retrieve($defaultPmId);
+                        if (!empty($pm->card)) {
+                            $card = [
+                                'brand'     => $pm->card->brand,
+                                'last4'     => $pm->card->last4,
+                                'exp_month' => $pm->card->exp_month,
+                                'exp_year'  => $pm->card->exp_year,
+                            ];
+                            // Write-through: keep tenant cache in sync.
+                            $tenant->forceFill([
+                                'card_brand'     => $pm->card->brand,
+                                'card_last4'     => $pm->card->last4,
+                                'card_exp_month' => $pm->card->exp_month,
+                                'card_exp_year'  => $pm->card->exp_year,
+                            ])->save();
+                        }
+                    } elseif ($tenant->card_last4) {
+                        // No Stripe default set yet — fall back to cached value.
+                        $card = [
+                            'brand'     => $tenant->card_brand,
+                            'last4'     => $tenant->card_last4,
+                            'exp_month' => $tenant->card_exp_month,
+                            'exp_year'  => $tenant->card_exp_year,
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    // Stripe unreachable — fall back to cached columns.
+                    if ($tenant->card_last4) {
+                        $card = [
+                            'brand'     => $tenant->card_brand,
+                            'last4'     => $tenant->card_last4,
+                            'exp_month' => $tenant->card_exp_month,
+                            'exp_year'  => $tenant->card_exp_year,
+                        ];
+                    }
+                }
+            }
+        } elseif ($tenant && $tenant->card_last4) {
+            $card = [
+                'brand'     => $tenant->card_brand,
+                'last4'     => $tenant->card_last4,
+                'exp_month' => $tenant->card_exp_month,
+                'exp_year'  => $tenant->card_exp_year,
+            ];
+        }
 
         return response()->json([
             'balance'        => (float) $user->balance,

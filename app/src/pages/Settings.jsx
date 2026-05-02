@@ -338,7 +338,7 @@ function AddCardForm({ onAdded, onCancel }) {
     if (!stripe || !elements) return;
     setBusy(true);
     setErr('');
-    const { error } = await stripe.confirmSetup({
+    const { error, setupIntent } = await stripe.confirmSetup({
       elements,
       confirmParams: { return_url: window.location.origin + '/settings' },
       redirect: 'if_required',
@@ -347,6 +347,16 @@ function AddCardForm({ onAdded, onCancel }) {
       setErr(error.message || 'Could not save card.');
       setBusy(false);
       return;
+    }
+    // Auto-set the newly added card as the default so wallet and
+    // confirm-purchase always reflect the current card immediately.
+    const newPmId = setupIntent?.payment_method?.id ?? setupIntent?.payment_method;
+    if (newPmId) {
+      try {
+        await setDefaultPaymentMethod(newPmId);
+      } catch {
+        // Non-fatal — card was saved, default update can be done manually.
+      }
     }
     setBusy(false);
     onAdded?.();
