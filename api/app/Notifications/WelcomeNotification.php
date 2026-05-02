@@ -27,8 +27,8 @@ class WelcomeNotification extends Notification
             ->subject("Welcome to {$appName}!")
             ->greeting("Hi {$this->user->name}!")
             ->line("Thanks for signing up. Your account for **{$this->user->tenant->name}** is ready.")
-            ->line("You're now on a free trial — explore all features and see what {$appName} can do for your team.")
-            ->action('Get Started', $frontendUrl)
+            ->line("To get started, pick a plan and add a card — you'll get a 7-day free trial and won't be charged until it ends. Cancel anytime.")
+            ->action('Pick Your Plan', rtrim($frontendUrl, '/') . '/onboarding/plan')
             ->line('If you have any questions, just reply to this email — we\'re happy to help.')
             ->salutation("The {$appName} Team");
     }

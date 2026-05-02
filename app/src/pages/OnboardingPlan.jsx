@@ -7,6 +7,7 @@ import LoadingScreen from '../components/layout/LoadingScreen';
 import {
   createOnboardingSetupIntent,
   subscribeWithTrial,
+  getOnboardingState,
 } from '../api/onboarding';
 
 const stripeKey     = import.meta.env.VITE_STRIPE_KEY;
@@ -68,11 +69,24 @@ export default function OnboardingPlan() {
   const [clientSecret, setClientSecret] = useState(null);
   const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState('');
+  // True for first-time signups; false on resubscribe after expiration.
+  // Trial is one-time per tenant.
+  const [canStartTrial, setCanStartTrial] = useState(true);
 
   // Non-admins shouldn't be here
   useEffect(() => {
     if (user && !isAdmin) navigate('/search', { replace: true });
   }, [user, isAdmin, navigate]);
+
+  // Load whether this tenant is still trial-eligible
+  useEffect(() => {
+    if (!isAdmin) return;
+    let mounted = true;
+    getOnboardingState()
+      .then((data) => { if (mounted) setCanStartTrial(!!data.can_start_trial); })
+      .catch(() => { /* default true — backend is final source of truth */ });
+    return () => { mounted = false; };
+  }, [isAdmin]);
 
   const handleSelect = async (plan) => {
     setError('');
@@ -108,14 +122,20 @@ export default function OnboardingPlan() {
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900 md:text-[36px]">
             {step === 'done'
               ? 'Welcome aboard!'
-              : 'Choose a plan to start your 7-day free trial'}
+              : canStartTrial
+              ? 'Choose a plan to start your 7-day free trial'
+              : 'Choose a plan to resubscribe'}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-[15px] text-gray-600">
             {step === 'card'
-              ? 'Add a card to start your 7 days free. You won’t be charged until your trial ends — cancel anytime from Settings.'
+              ? canStartTrial
+                ? 'Add a card to start your 7 days free. You won’t be charged until your trial ends — cancel anytime from Settings.'
+                : 'Add a card to reactivate your subscription. You’ll be charged today — the free trial was already used on this account.'
               : step === 'done'
-              ? 'Your trial is active. Redirecting…'
-              : 'Pick the plan that fits your team. We’ll save your card to charge automatically when the trial ends.'}
+              ? canStartTrial ? 'Your trial is active. Redirecting…' : 'Your subscription is active. Redirecting…'
+              : canStartTrial
+              ? 'Pick the plan that fits your team. We’ll save your card to charge automatically when the trial ends.'
+              : 'The free trial has already been used on this workspace. Pick a plan to reactivate — billing starts immediately.'}
           </p>
         </div>
 
@@ -133,6 +153,7 @@ export default function OnboardingPlan() {
                 plan={plan}
                 disabled={preparing}
                 loading={preparing && selectedPlan?.id === plan.id}
+                canStartTrial={canStartTrial}
                 onSelect={() => handleSelect(plan)}
               />
             ))}
@@ -143,6 +164,7 @@ export default function OnboardingPlan() {
           <CardStep
             plan={selectedPlan}
             clientSecret={clientSecret}
+            canStartTrial={canStartTrial}
             onBack={() => { setStep('plan'); setSelectedPlan(null); setClientSecret(null); }}
             onSuccess={handleSubscribed}
           />
@@ -155,9 +177,12 @@ export default function OnboardingPlan() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="mt-4 text-lg font-semibold text-gray-900">Trial activated</h2>
+            <h2 className="mt-4 text-lg font-semibold text-gray-900">
+              {canStartTrial ? 'Trial activated' : 'Subscription activated'}
+            </h2>
             <p className="mt-1 text-sm text-gray-600">
-              You're on the <span className="font-semibold">{selectedPlan?.name}</span> plan. Enjoy 7 days free.
+              You're on the <span className="font-semibold">{selectedPlan?.name}</span> plan.
+              {canStartTrial ? ' Enjoy 7 days free.' : ''}
             </p>
           </div>
         )}
@@ -166,7 +191,7 @@ export default function OnboardingPlan() {
   );
 }
 
-function PlanCard({ plan, disabled, loading, onSelect }) {
+function PlanCard({ plan, disabled, loading, canStartTrial, onSelect }) {
   return (
     <div
       className={`relative flex flex-col rounded-2xl bg-white p-8 transition-all duration-300 ${
@@ -215,13 +240,13 @@ function PlanCard({ plan, disabled, loading, onSelect }) {
             : 'border border-[#185FA5] text-[#185FA5] hover:bg-[#E6F1FB]'
         }`}
       >
-        {loading ? 'Preparing…' : 'Start 7-day free trial'}
+        {loading ? 'Preparing…' : (canStartTrial ? 'Start 7-day free trial' : `Subscribe · $${plan.price}/mo`)}
       </button>
     </div>
   );
 }
 
-function CardStep({ plan, clientSecret, onBack, onSuccess }) {
+function CardStep({ plan, clientSecret, canStartTrial, onBack, onSuccess }) {
   const appearance = useMemo(() => ({
     theme: 'stripe',
     variables: {
@@ -257,11 +282,13 @@ function CardStep({ plan, clientSecret, onBack, onSuccess }) {
         </button>
         <h3 className="mt-4 text-lg font-semibold text-gray-900">Payment details</h3>
         <p className="mt-1 text-sm text-gray-500">
-          We'll save this card and charge it automatically when your trial ends.
+          {canStartTrial
+            ? "We'll save this card and charge it automatically when your trial ends."
+            : "You'll be charged today to reactivate your subscription."}
         </p>
         <div className="mt-5">
           <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-            <CardForm plan={plan} onSuccess={onSuccess} />
+            <CardForm plan={plan} canStartTrial={canStartTrial} onSuccess={onSuccess} />
           </Elements>
         </div>
       </div>
@@ -279,18 +306,30 @@ function CardStep({ plan, clientSecret, onBack, onSuccess }) {
           </span>
         </div>
         <div className="mt-4 rounded-lg bg-blue-50 p-3 text-xs text-blue-900">
-          <p className="font-semibold">Today: $0.00</p>
-          <p className="mt-1 text-blue-800">
-            Free for 7 days. We'll charge ${plan.price.toFixed(2)}/mo when your trial ends.
-            Cancel anytime from Settings.
-          </p>
+          {canStartTrial ? (
+            <>
+              <p className="font-semibold">Today: $0.00</p>
+              <p className="mt-1 text-blue-800">
+                Free for 7 days. We'll charge ${plan.price.toFixed(2)}/mo when your trial ends.
+                Cancel anytime from Settings.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold">Today: ${plan.price.toFixed(2)}</p>
+              <p className="mt-1 text-blue-800">
+                Reactivating your subscription. The 7-day free trial was already used on this account.
+                Cancel anytime from Settings.
+              </p>
+            </>
+          )}
         </div>
       </aside>
     </div>
   );
 }
 
-function CardForm({ plan, onSuccess }) {
+function CardForm({ plan, canStartTrial, onSuccess }) {
   const stripe = useStripe();
   const elements = useElements();
   const [busy, setBusy] = useState(false);
@@ -357,7 +396,7 @@ function CardForm({ plan, onSuccess }) {
         disabled={!stripe || busy}
         className="mt-6 w-full rounded-lg bg-gradient-to-r from-[#185FA5] to-[#0C447C] py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
       >
-        {busy ? 'Setting up…' : `Start free trial · $0.00 today`}
+        {busy ? 'Setting up…' : (canStartTrial ? `Start free trial · $0.00 today` : `Subscribe · $${plan.price.toFixed(2)} today`)}
       </button>
       <p className="mt-3 text-center text-xs text-gray-400">
         Payments secured by <span className="font-semibold text-gray-500">Stripe</span> · You won't be charged today

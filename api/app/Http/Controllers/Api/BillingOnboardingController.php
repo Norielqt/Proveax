@@ -26,6 +26,7 @@ class BillingOnboardingController extends Controller
         return response()->json([
             'needs_onboarding' => $tenant->needsBillingOnboarding(),
             'is_admin'         => $user->isAdmin(),
+            'can_start_trial'  => $tenant->canStartTrial(),
         ]);
     }
 

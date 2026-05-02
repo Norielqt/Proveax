@@ -9,6 +9,7 @@ class Tenant extends Model
     protected $fillable = [
         'name', 'slug', 'industry', 'phone', 'address',
         'trial_ends_at',
+        'trial_used_at',
         'subscription_status',
         'subscription_plan',
         'subscription_ends_at',
@@ -19,6 +20,7 @@ class Tenant extends Model
 
     protected $casts = [
         'trial_ends_at'            => 'datetime',
+        'trial_used_at'            => 'datetime',
         'subscription_ends_at'     => 'datetime',
         'subscription_canceled_at' => 'datetime',
         'subscription_status'      => SubscriptionStatus::class,
@@ -52,15 +54,28 @@ class Tenant extends Model
     }
 
     /**
-     * True for fresh signups that have not picked a plan + entered a card yet.
-     * Existing tenants (already in trialing/active/etc.) are NOT forced through
-     * onboarding — they keep their grandfathered status.
+     * True for any tenant that does not currently have access. Fresh signups
+     * (no Stripe sub) AND tenants whose subscription has expired both need to
+     * pick a plan before getting access. The 7-day trial is only granted on
+     * the FIRST subscription — see Tenant::canStartTrial().
      */
     public function needsBillingOnboarding(): bool
     {
-        return $this->subscription_status === null
-            && $this->subscription_plan === null
-            && $this->stripe_subscription_id === null;
+        if ($this->stripe_subscription_id === null) {
+            return true;
+        }
+        // Has a stripe sub but it's already expired — must resubscribe.
+        return $this->subscription_status === SubscriptionStatus::Expired;
+    }
+
+    /**
+     * A tenant is eligible for the 7-day free trial only on their FIRST paid
+     * subscription. Once trial_used_at is set, every future subscription
+     * (after expiration / re-signup) starts billing immediately.
+     */
+    public function canStartTrial(): bool
+    {
+        return $this->trial_used_at === null;
     }
 
     /**

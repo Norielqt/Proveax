@@ -43,12 +43,11 @@ function RequireAuth() {
 function RequireBillingOnboarded() {
   const { user, tenant } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const needsOnboarding =
-    isAdmin
-    && tenant
-    && !tenant.subscription_status
-    && !tenant.subscription_plan
-    && !tenant.stripe_subscription_id;
+  // Onboarding is only complete once a real Stripe subscription is attached.
+  // This catches both fresh signups AND legacy tenants stuck in "trialing"
+  // without a Stripe sub (older Google signups), forcing them to pick a plan
+  // and add a card before getting access.
+  const needsOnboarding = isAdmin && tenant && !tenant.stripe_subscription_id;
   if (needsOnboarding) return <Navigate to="/onboarding/plan" replace />;
   return <Outlet />;
 }

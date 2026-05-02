@@ -103,8 +103,10 @@ class SubscriptionService
             abort(422, 'Invalid plan.');
         }
 
-        // Refuse if already onboarded
-        if ($tenant->stripe_subscription_id) {
+        // Refuse if a live subscription is already attached. Expired subs are
+        // OK to overwrite — that's a re-subscribe after cancellation/lapse.
+        if ($tenant->stripe_subscription_id
+            && $tenant->subscription_status !== SubscriptionStatus::Expired) {
             abort(409, 'A subscription is already attached to this workspace.');
         }
 
@@ -118,11 +120,13 @@ class SubscriptionService
             'invoice_settings' => ['default_payment_method' => $paymentMethodId],
         ]);
 
-        // Create subscription with 7-day trial
-        $subscription = $stripe->subscriptions->create([
+        // Free trial is one-time per tenant. Returning customers (whose prior
+        // subscription has expired) start billing immediately on resubscribe.
+        $eligibleForTrial = $tenant->canStartTrial();
+
+        $subParams = [
             'customer'           => $customerId,
             'items'              => [['price' => $priceId]],
-            'trial_period_days'  => self::TRIAL_DAYS,
             'default_payment_method' => $paymentMethodId,
             'payment_behavior'   => 'default_incomplete',
             'payment_settings'   => [
@@ -133,8 +137,14 @@ class SubscriptionService
             'metadata'           => [
                 'tenant_id' => (string) $tenant->id,
                 'plan'      => $plan,
+                'trial'     => $eligibleForTrial ? 'true' : 'false',
             ],
-        ]);
+        ];
+        if ($eligibleForTrial) {
+            $subParams['trial_period_days'] = self::TRIAL_DAYS;
+        }
+
+        $subscription = $stripe->subscriptions->create($subParams);
 
         // Capture card details for /settings display
         $card = null;
@@ -147,15 +157,32 @@ class SubscriptionService
 
         $trialEnd = $subscription->trial_end
             ? Carbon::createFromTimestamp($subscription->trial_end)
-            : now()->addDays(self::TRIAL_DAYS);
+            : null;
+
+        // Map Stripe's actual status into our enum. Trialing only when Stripe
+        // confirms a trial_end was set (i.e. eligibleForTrial was true and
+        // Stripe accepted it). Otherwise it's incomplete pending first payment
+        // — webhook will flip to Active once the invoice is paid.
+        $localStatus = match ($subscription->status) {
+            'trialing' => SubscriptionStatus::Trialing,
+            'active'   => SubscriptionStatus::Active,
+            default    => SubscriptionStatus::Trialing, // incomplete -> shows as trialing until webhook
+        };
+        if (! $eligibleForTrial && $subscription->status !== 'active') {
+            // Returning customer, no trial — surface as Active optimistically
+            // (webhook will correct to PastDue if first invoice fails).
+            $localStatus = SubscriptionStatus::Active;
+        }
 
         $tenant->forceFill([
-            'subscription_status'    => SubscriptionStatus::Trialing->value,
+            'subscription_status'    => $localStatus->value,
             'subscription_plan'      => $plan,
             'trial_ends_at'          => $trialEnd,
+            'trial_used_at'          => $tenant->trial_used_at ?? ($eligibleForTrial ? now() : null),
             'subscription_ends_at'   => $subscription->current_period_end
                 ? Carbon::createFromTimestamp($subscription->current_period_end)
                 : null,
+            'subscription_canceled_at' => null,
             'stripe_subscription_id' => $subscription->id,
             'card_brand'     => $card->brand     ?? null,
             'card_last4'     => $card->last4     ?? null,
@@ -166,7 +193,8 @@ class SubscriptionService
         return [
             'subscription_id' => $subscription->id,
             'status'          => $subscription->status,
-            'trial_end'       => $trialEnd->toIso8601String(),
+            'trial_end'       => $trialEnd?->toIso8601String(),
+            'trial_granted'   => $eligibleForTrial,
         ];
     }
 
