@@ -28,7 +28,19 @@ class PaymentMethodController extends Controller
     private function ensureCustomer(Tenant $tenant, $user, StripeClient $stripe): string
     {
         if ($tenant->stripe_customer_id) {
-            return $tenant->stripe_customer_id;
+            // Verify the customer exists in this Stripe account. Guards against
+            // test/live key mismatch where the stored ID is from the wrong env.
+            try {
+                $stripe->customers->retrieve($tenant->stripe_customer_id);
+                return $tenant->stripe_customer_id;
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                Log::warning('Stripe customer not found, recreating', [
+                    'tenant_id'    => $tenant->id,
+                    'old_cus_id'   => $tenant->stripe_customer_id,
+                    'stripe_error' => $e->getMessage(),
+                ]);
+                $tenant->forceFill(['stripe_customer_id' => null])->save();
+            }
         }
 
         $customer = $stripe->customers->create([

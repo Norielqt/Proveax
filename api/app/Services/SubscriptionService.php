@@ -53,7 +53,21 @@ class SubscriptionService
     public function ensureCustomer(Tenant $tenant, ?User $user = null): string
     {
         if ($tenant->stripe_customer_id) {
-            return $tenant->stripe_customer_id;
+            // Verify the customer still exists in this Stripe account (guards
+            // against test/live key mismatch where the stored ID is from the
+            // other environment). If not found, fall through and recreate.
+            try {
+                $this->stripe()->customers->retrieve($tenant->stripe_customer_id);
+                return $tenant->stripe_customer_id;
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                // "No such customer" — stale ID from wrong Stripe env. Clear it.
+                Log::warning('Stripe customer not found, recreating', [
+                    'tenant_id'   => $tenant->id,
+                    'old_cus_id'  => $tenant->stripe_customer_id,
+                    'stripe_error' => $e->getMessage(),
+                ]);
+                $tenant->forceFill(['stripe_customer_id' => null])->save();
+            }
         }
 
         $email = $user?->email ?? $tenant->users()->first()?->email;
