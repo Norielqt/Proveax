@@ -65,14 +65,18 @@ class WalletController extends Controller
                                 'card_exp_year'  => $pm->card->exp_year,
                             ])->save();
                         }
-                    } elseif ($tenant->card_last4) {
-                        // No Stripe default set yet — fall back to cached value.
-                        $card = [
-                            'brand'     => $tenant->card_brand,
-                            'last4'     => $tenant->card_last4,
-                            'exp_month' => $tenant->card_exp_month,
-                            'exp_year'  => $tenant->card_exp_year,
-                        ];
+                    } else {
+                        // Stripe is reachable and says no default PM exists.
+                        // Clear any stale cache so the UI shows no card.
+                        if ($tenant->card_last4) {
+                            $tenant->forceFill([
+                                'card_brand'     => null,
+                                'card_last4'     => null,
+                                'card_exp_month' => null,
+                                'card_exp_year'  => null,
+                            ])->save();
+                        }
+                        // $card stays null
                     }
                 } catch (\Throwable $e) {
                     // Stripe unreachable — fall back to cached columns.

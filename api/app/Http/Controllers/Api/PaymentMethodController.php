@@ -222,6 +222,40 @@ class PaymentMethodController extends Controller
         }
 
         $stripe->paymentMethods->detach($id);
+
+        // Clear tenant card cache if no default PM remains after deletion.
+        // This ensures the wallet summary never shows a removed card.
+        if ($tenant->card_last4) {
+            try {
+                $customer   = $stripe->customers->retrieve($tenant->stripe_customer_id);
+                $newDefault = $customer->invoice_settings->default_payment_method ?? null;
+
+                if (! $newDefault) {
+                    // No default card left — wipe the cache.
+                    $tenant->forceFill([
+                        'card_brand'     => null,
+                        'card_last4'     => null,
+                        'card_exp_month' => null,
+                        'card_exp_year'  => null,
+                    ])->save();
+                } elseif ($newDefault !== $id) {
+                    // A different card is now the default — refresh the cache.
+                    $newPm = $stripe->paymentMethods->retrieve($newDefault);
+                    if (! empty($newPm->card)) {
+                        $tenant->forceFill([
+                            'card_brand'     => $newPm->card->brand,
+                            'card_last4'     => $newPm->card->last4,
+                            'card_exp_month' => $newPm->card->exp_month,
+                            'card_exp_year'  => $newPm->card->exp_year,
+                        ])->save();
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal — summary() will self-correct on next load.
+                Log::warning('Could not refresh card cache after detach', ['error' => $e->getMessage()]);
+            }
+        }
+
         return response()->noContent();
     }
 }
