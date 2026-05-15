@@ -20,11 +20,10 @@ export default function GoogleAuthButton({
   const handleClick = async () => {
     setBusy(true);
     try {
-      const result = await loginWithGoogle();
-      onSuccess?.(result);
+      await loginWithGoogle();
+      // Page navigates away on success — busy stays true (shows "Redirecting…")
     } catch (err) {
-      onError?.(err.message ?? 'Google sign-in failed.');
-    } finally {
+      onError?.(err.message ?? 'Could not connect to Google. Please try again.');
       setBusy(false);
     }
   };

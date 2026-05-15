@@ -256,6 +256,7 @@ export default function AppShell() {
   const isAdmin = user?.role === 'admin';
   const [walletOpen, setWalletOpen] = useState(false);
   const [welcomeToast, setWelcomeToast] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Show welcome toast once after login
   useEffect(() => {
@@ -270,16 +271,31 @@ export default function AppShell() {
   return (
     <WorkSessionProvider>
     <div className="flex h-screen flex-col overflow-hidden">
-      <header className="relative z-[1100] flex h-16 items-center justify-between border-b bg-white pr-4">
-        <Link to="/search" className="flex items-center gap-2">
-          <img src={proviaxxLogo} alt="Proviaxx" className="h-36 w-auto mt-2" />
-        </Link>
-        <div className="flex items-center gap-3">
-          {/* Skip Traces */}
+      <header className="relative z-[1100] flex h-16 items-center justify-between border-b bg-white pr-2 md:pr-4">
+        {/* Left: hamburger (mobile) + logo */}
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 md:hidden"
+            aria-label="Open menu"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <Link to="/search" className="flex items-center gap-2">
+            <img src={proviaxxLogo} alt="Proviaxx" className="h-24 w-auto md:h-36 md:mt-2" />
+          </Link>
+        </div>
+
+        {/* Right: pills (hidden on mobile) + wallet icon-only on mobile */}
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Skip Traces — full pill on desktop, icon-only on mobile */}
           <button
             type="button"
             onClick={() => setWalletOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2 py-1.5 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 md:px-3"
             aria-label="Open skip traces"
             title="Skip traces remaining"
           >
@@ -289,10 +305,10 @@ export default function AppShell() {
             <span className="text-sm font-semibold text-gray-800">
               {Math.floor(Number(user?.balance ?? 0) / 0.20).toLocaleString()}
             </span>
-            <span className="text-xs font-medium text-gray-500">skip traces</span>
+            <span className="hidden text-xs font-medium text-gray-500 sm:inline">skip traces</span>
           </button>
-          <SessionTimerPill />
-          <AccountMenu user={user} tenant={tenant} isAdmin={isAdmin} logout={logout} />
+          <div className="hidden md:block"><SessionTimerPill /></div>
+          <div className="hidden md:block"><AccountMenu user={user} tenant={tenant} isAdmin={isAdmin} logout={logout} /></div>
         </div>
       </header>
 
@@ -302,9 +318,19 @@ export default function AppShell() {
 
       <WalletDrawer open={walletOpen} onClose={() => setWalletOpen(false)} />
 
+      {/* Mobile slide-in drawer */}
+      <MobileNavDrawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        user={user}
+        tenant={tenant}
+        isAdmin={isAdmin}
+        logout={logout}
+      />
+
       {/* Welcome toast */}
       {welcomeToast !== null && (
-        <div className="pointer-events-none fixed top-16 right-6 z-[9999]">
+        <div className="pointer-events-none fixed top-16 right-2 z-[9999] md:right-6">
           <div className="pointer-events-auto flex items-center gap-3 rounded-xl bg-blue-700 px-5 py-3.5 shadow-2xl ring-1 ring-blue-600/40">
             <svg className="h-5 w-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -325,5 +351,127 @@ export default function AppShell() {
       )}
     </div>
     </WorkSessionProvider>
+  );
+}
+
+/**
+ * Slide-in drawer shown on mobile (< md). Mirrors all desktop nav + account
+ * actions in one place.
+ */
+function MobileNavDrawer({ open, onClose, user, tenant, isAdmin, logout }) {
+  const navigate = useNavigate();
+  const go = (path) => { onClose(); navigate(path); };
+
+  // Close on escape
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const item = 'flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-[15px] font-medium text-gray-800 hover:bg-gray-100';
+
+  return (
+    <div className="fixed inset-0 z-[9998] md:hidden">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+
+      {/* Drawer */}
+      <aside className="absolute left-0 top-0 flex h-full w-[85%] max-w-sm flex-col overflow-y-auto bg-white shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+              {user?.name?.[0]?.toUpperCase() ?? '?'}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-gray-900">{user?.name ?? '—'}</p>
+              <p className="truncate text-[11px] text-gray-500">{user?.email}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100" aria-label="Close menu">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Session pill (mobile-friendly) */}
+        <div className="border-b border-gray-100 px-4 py-3">
+          <SessionTimerPill />
+        </div>
+
+        {/* Tools */}
+        <div className="p-3">
+          <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Tools</p>
+          <button onClick={() => go('/search')} className={item}>
+            <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            Map
+          </button>
+          <button onClick={() => go('/crm')} className={item}>
+            <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198a6 6 0 01-7.4 0m7.4 0a5.971 5.971 0 00-.94-3.197M12 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+            CRM
+          </button>
+        </div>
+
+        {/* Work */}
+        <div className="border-t border-gray-100 p-3">
+          <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Work</p>
+          <button onClick={() => go('/me/session')} className={item}>
+            <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            My Session
+          </button>
+          <button onClick={() => go(isAdmin ? '/admin/team' : '/team/members')} className={item}>
+            <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            My Team
+          </button>
+        </div>
+
+        {/* Account */}
+        <div className="border-t border-gray-100 p-3">
+          <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Account</p>
+          <button onClick={() => go('/subscription')} className={item}>
+            <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            Subscription
+          </button>
+          <button onClick={() => go('/settings')} className={item}>
+            <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Settings
+          </button>
+        </div>
+
+        {/* Logout */}
+        <div className="mt-auto border-t border-gray-100 p-3">
+          <button
+            onClick={() => { onClose(); logout().then(() => navigate('/login')); }}
+            className={`${item} text-red-600 hover:bg-red-50`}
+          >
+            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h5a2 2 0 012 2v1" />
+            </svg>
+            Logout
+          </button>
+        </div>
+      </aside>
+    </div>
   );
 }

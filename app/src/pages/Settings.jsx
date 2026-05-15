@@ -189,7 +189,7 @@ export default function Settings() {
           ) : (
             <ul className="divide-y divide-gray-100">
               {methods.map((m) => (
-                <li key={m.id} className="flex items-center gap-4 px-6 py-4">
+                <li key={m.id} className="flex flex-wrap items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6">
                   <CardBrandIcon brand={m.brand} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export default function Settings() {
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-auto sm:ml-0">
                     {!m.is_default && (
                       <button
                         onClick={() => handleSetDefault(m.id)}

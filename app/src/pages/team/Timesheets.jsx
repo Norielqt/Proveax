@@ -65,7 +65,7 @@ export default function Timesheets() {
             <p className="mt-1 text-sm text-gray-500">Daily breakdown of your logged time.</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {isAdmin && (
               <select
                 value={memberFilter}

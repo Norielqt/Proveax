@@ -9,6 +9,7 @@ import PropertyDetail from './pages/PropertyDetail';
 import Subscription from './pages/Subscription';
 import AdminActivity from './pages/AdminActivity';
 import GoogleOnboarding from './pages/GoogleOnboarding';
+import GoogleCallback from './pages/GoogleCallback';
 import CRM from './pages/CRM';
 import MySession from './pages/MySession';
 import Settings from './pages/Settings';
@@ -66,6 +67,7 @@ export default function Router() {
         <Route path="/register" element={<Register />} />
         <Route path="/invite/:token" element={<InviteAccept />} />
         <Route path="/google/onboarding" element={<GoogleOnboarding />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
         <Route element={<RequireAuth />}>
           {/* Onboarding stands alone — no AppShell, no billing gate */}

@@ -23,12 +23,29 @@ class GoogleAuthController extends Controller
     ) {}
 
     /**
-     * Return a Google OAuth redirect URL for the frontend to open in a popup.
+     * Return a Google OAuth redirect URL.
+     * We store the caller's frontend origin in a short-lived cache entry and
+     * pass the cache key as the OAuth `state`. Google returns the state unchanged
+     * in the callback, so we can look up the correct frontend host to redirect to.
+     * This means desktop (localhost:5173) and phone (192.168.x.x:5173) both
+     * land back on the host they started from.
      */
-    public function redirectUrl(): \Illuminate\Http\JsonResponse
+    public function redirectUrl(Request $request): \Illuminate\Http\JsonResponse
     {
+        // Determine the frontend origin from the Origin header (most reliable).
+        // Falls back to FRONTEND_URL for non-browser callers.
+        $rawOrigin = $request->header('Origin') ?? env('FRONTEND_URL', 'http://localhost:5173');
+        $parsed    = parse_url(rtrim($rawOrigin, '/'));
+        $frontendOrigin = ($parsed['scheme'] ?? 'http') . '://' . ($parsed['host'] ?? 'localhost')
+            . (isset($parsed['port']) ? ':' . $parsed['port'] : '');
+
+        // Store origin in cache; pass the opaque key as the OAuth state.
+        $stateKey = Str::random(40);
+        Cache::put('google_origin:' . $stateKey, $frontendOrigin, now()->addMinutes(15));
+
         $url = Socialite::driver('google')
             ->stateless()
+            ->with(['state' => $stateKey])
             ->redirect()
             ->getTargetUrl();
 
@@ -36,11 +53,20 @@ class GoogleAuthController extends Controller
     }
 
     /**
-     * Google redirects the popup here after the user consents.
-     * We authenticate or stage the user, then close the popup with postMessage.
+     * Google redirects here after the user consents.
+     * We authenticate or stage the user, then redirect back to the frontend
+     * callback page. This works for both desktop and mobile (no popup needed).
      */
-    public function callback(Request $request): \Illuminate\Http\Response
+    public function callback(Request $request)
     {
+        // Recover the frontend origin from cache using the state key Google
+        // passes back unchanged. Falls back to FRONTEND_URL if missing.
+        $stateKey      = $request->query('state', '');
+        $frontendOrigin = rtrim(
+            Cache::pull('google_origin:' . $stateKey) ?? env('FRONTEND_URL', 'http://localhost:5173'),
+            '/'
+        );
+
         try {
             $driver = Socialite::driver('google')->stateless();
 
@@ -56,7 +82,7 @@ class GoogleAuthController extends Controller
                 'error'   => $e->getMessage(),
                 'class'   => get_class($e),
             ]);
-            return $this->popupClose('google_error', 'OAuth failed.');
+            return $this->popupClose('google_error', 'OAuth failed.', $frontendOrigin);
         }
 
         // --- Existing user: login immediately ---
@@ -71,7 +97,7 @@ class GoogleAuthController extends Controller
 
             $this->logger->log($user, 'user.login.google');
             $token = $user->createToken('api')->plainTextToken;
-            return $this->popupClose('google_login_ok', $token);
+            return $this->popupClose('google_login_ok', $token, $frontendOrigin);
         }
 
         // --- New user: issue a short-lived staging token ---
@@ -84,7 +110,7 @@ class GoogleAuthController extends Controller
             'avatar'    => $googleUser->getAvatar(),
         ], now()->addMinutes(15));
 
-        return $this->popupClose('google_onboard', $stagingToken);
+        return $this->popupClose('google_onboard', $stagingToken, $frontendOrigin);
     }
 
     /**
@@ -144,35 +170,19 @@ class GoogleAuthController extends Controller
 
     // -------------------------------------------------------------------------
 
-    private function popupClose(string $status, string $payload = ''): \Illuminate\Http\Response
+    /**
+     * Redirect the browser back to the frontend callback page with the result
+     * encoded as query parameters. Works for both desktop and mobile — no popup.
+     */
+    private function popupClose(string $status, string $payload = '', string $frontendOrigin = '')
     {
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
-
-        // JSON-encode the message data and target origin so any characters
-        // (including the | in Sanctum tokens) are safely embedded in HTML.
-        $data   = json_encode(
-            ['type' => $status, 'payload' => $payload],
-            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-        );
-        $origin = json_encode($frontendUrl);
-
-        $html = <<<HTML
-        <!doctype html>
-        <html>
-        <head><meta charset="utf-8"></head>
-        <body>
-        <script>
-          if (window.opener) {
-            window.opener.postMessage({$data}, {$origin});
-          }
-          window.close();
-        </script>
-        </body>
-        </html>
-        HTML;
-
-        return response($html, 200)
-            ->header('Content-Type', 'text/html')
-            ->header('Cross-Origin-Opener-Policy', 'unsafe-none');
+        if (!$frontendOrigin) {
+            $frontendOrigin = rtrim(env('FRONTEND_URL', 'http://localhost:5173'), '/');
+        }
+        $url = $frontendOrigin . '/auth/google/callback?' . http_build_query([
+            'type'    => $status,
+            'payload' => $payload,
+        ]);
+        return redirect()->away($url);
     }
 }

@@ -19,9 +19,16 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')],
+    'allowed_origins' => array_filter([
+        env('FRONTEND_URL', 'http://localhost:5173'),
+    ]),
 
-    'allowed_origins_patterns' => ['#^https://.*\.vercel\.app$#'],
+    'allowed_origins_patterns' => [
+        '#^https://.*\.vercel\.app$#',
+        // Allow any local IPv4 address (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+        // on any port — covers phones and other devices on the same LAN.
+        '#^http://(\d+\.){3}\d+(:\d+)?$#',
+    ],
 
     'allowed_headers' => ['*'],
 
