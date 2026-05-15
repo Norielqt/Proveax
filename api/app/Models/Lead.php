@@ -16,6 +16,7 @@ class Lead extends Model
         'name',
         'address',
         'phone',
+        'phones',
         'lead_type',
         'source_type',
         'home_price_cents',
@@ -25,6 +26,7 @@ class Lead extends Model
 
     protected $casts = [
         'home_price_cents' => 'integer',
+        'phones'           => 'array',
     ];
 
     protected static function booted(): void

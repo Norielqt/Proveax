@@ -11,7 +11,10 @@ import {
 } from '../api/paymentMethods';
 
 const stripeKey     = import.meta.env.VITE_STRIPE_KEY;
-const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+if (stripeKey && !stripeKey.startsWith('pk_')) {
+  console.error('[Stripe] VITE_STRIPE_KEY looks like a secret key (sk_...). Set the publishable key (pk_...) instead.');
+}
+const stripePromise = (stripeKey && stripeKey.startsWith('pk_')) ? loadStripe(stripeKey) : null;
 
 export default function Settings() {
   const { user, refresh } = useAuth();
@@ -335,7 +338,7 @@ function AddCardForm({ onAdded, onCancel }) {
     if (!stripe || !elements) return;
     setBusy(true);
     setErr('');
-    const { error } = await stripe.confirmSetup({
+    const { error, setupIntent } = await stripe.confirmSetup({
       elements,
       confirmParams: { return_url: window.location.origin + '/settings' },
       redirect: 'if_required',
@@ -345,13 +348,31 @@ function AddCardForm({ onAdded, onCancel }) {
       setBusy(false);
       return;
     }
+    // Auto-set the newly added card as the default so wallet and
+    // confirm-purchase always reflect the current card immediately.
+    const newPmId = setupIntent?.payment_method?.id ?? setupIntent?.payment_method;
+    if (newPmId) {
+      try {
+        await setDefaultPaymentMethod(newPmId);
+      } catch {
+        // Non-fatal — card was saved, default update can be done manually.
+      }
+    }
     setBusy(false);
     onAdded?.();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement options={{ layout: 'tabs' }} />
+      <PaymentElement
+        options={{
+          layout: 'tabs',
+          paymentMethodOrder: ['card'],
+          fields: { billingDetails: 'auto' },
+          wallets: { googlePay: 'never', applePay: 'never' },
+          terms: { card: 'never', usBankAccount: 'never', link: 'never' },
+        }}
+      />
       {err && <p className="text-sm text-red-600">{err}</p>}
       <div className="flex items-center justify-end gap-3 pt-2">
         <button

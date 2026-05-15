@@ -37,8 +37,9 @@ class AuthController extends Controller
                 'slug' => Str::slug($data['company_name']) . '-' . Str::random(6),
             ]);
 
-            $this->subscriptions->startTrial($tenant);
-
+            // NOTE: Trial is no longer auto-started here. The admin must pick a
+            // plan and enter a card via the /onboarding/plan flow, which then
+            // creates a real Stripe Subscription with trial_period_days=7.
             return User::create([
                 'tenant_id' => $tenant->id,
                 'name'      => $data['name'],

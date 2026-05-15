@@ -42,7 +42,8 @@ class WorkSessionController extends Controller
                 'end_reason' => 'orphaned',
             ]);
 
-        $session = WorkSession::where('user_id', $user->id)
+        $session = WorkSession::withCount('screenshots')
+            ->where('user_id', $user->id)
             ->whereNull('ended_at')
             ->latest('started_at')
             ->first();
@@ -89,7 +90,8 @@ class WorkSessionController extends Controller
         }
 
         // Refuse if one is already active
-        $existing = WorkSession::where('user_id', $user->id)->whereNull('ended_at')->first();
+        $existing = WorkSession::withCount('screenshots')
+            ->where('user_id', $user->id)->whereNull('ended_at')->first();
         if ($existing) {
             return response()->json(['session' => $existing], 200);
         }
@@ -166,7 +168,7 @@ class WorkSessionController extends Controller
         $data = $request->validate([
             'active_seconds' => ['nullable', 'integer', 'min:0'],
             'idle_seconds'   => ['nullable', 'integer', 'min:0'],
-            'reason'         => ['nullable', 'in:manual,paused,idle_timeout,share_stopped,stream_black,stale,unload'],
+            'reason'         => ['nullable', 'in:manual,paused,idle_timeout,share_stopped,stream_black,stale,unload,auto_paused'],
         ]);
 
         $user    = $request->user();

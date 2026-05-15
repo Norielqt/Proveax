@@ -13,7 +13,13 @@ class PaymentMethodController extends Controller
     private function stripe(): ?StripeClient
     {
         $secret = config('services.stripe.secret');
-        return $secret ? new StripeClient($secret) : null;
+        if (! $secret) return null;
+        // Guard: publishable key accidentally set as secret key
+        if (str_starts_with($secret, 'pk_')) {
+            Log::error('STRIPE_SECRET is set to a publishable key (pk_...). Set it to the secret key (sk_...).');
+            return null;
+        }
+        return new StripeClient($secret);
     }
 
     /**
@@ -22,7 +28,19 @@ class PaymentMethodController extends Controller
     private function ensureCustomer(Tenant $tenant, $user, StripeClient $stripe): string
     {
         if ($tenant->stripe_customer_id) {
-            return $tenant->stripe_customer_id;
+            // Verify the customer exists in this Stripe account. Guards against
+            // test/live key mismatch where the stored ID is from the wrong env.
+            try {
+                $stripe->customers->retrieve($tenant->stripe_customer_id);
+                return $tenant->stripe_customer_id;
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                Log::warning('Stripe customer not found, recreating', [
+                    'tenant_id'    => $tenant->id,
+                    'old_cus_id'   => $tenant->stripe_customer_id,
+                    'stripe_error' => $e->getMessage(),
+                ]);
+                $tenant->forceFill(['stripe_customer_id' => null])->save();
+            }
         }
 
         $customer = $stripe->customers->create([
@@ -88,27 +106,49 @@ class PaymentMethodController extends Controller
     {
         $stripe = $this->stripe();
         if (!$stripe) {
-            return response()->json(['message' => 'Payments are not configured.'], 503);
+            return response()->json(['message' => 'Payments are not configured. Check STRIPE_SECRET on the server.'], 503);
         }
 
-        $user   = $request->user();
-        $tenant = $user->tenant;
-        $customerId = $this->ensureCustomer($tenant, $user, $stripe);
+        try {
+            $user   = $request->user();
+            $tenant = $user->tenant;
+            $customerId = $this->ensureCustomer($tenant, $user, $stripe);
 
-        $intent = $stripe->setupIntents->create([
-            'customer'             => $customerId,
-            'payment_method_types' => ['card'],
-            'usage'                => 'off_session',
-            'metadata' => [
-                'tenant_id' => (string) $tenant->id,
-                'user_id'   => (string) $user->id,
-                'purpose'   => 'add_payment_method',
-            ],
-        ]);
+            $intent = $stripe->setupIntents->create([
+                'customer'             => $customerId,
+                'payment_method_types' => ['card'],
+                'usage'                => 'off_session',
+                'metadata' => [
+                    'tenant_id' => (string) $tenant->id,
+                    'user_id'   => (string) $user->id,
+                    'purpose'   => 'add_payment_method',
+                ],
+            ]);
 
-        return response()->json([
-            'client_secret' => $intent->client_secret,
-        ]);
+            return response()->json([
+                'client_secret' => $intent->client_secret,
+            ]);
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::error('Stripe authentication failed — check STRIPE_SECRET', [
+                'error'     => $e->getMessage(),
+                'stripe_key_prefix' => substr(config('services.stripe.secret') ?? '', 0, 7),
+            ]);
+            return response()->json(['message' => 'Stripe authentication failed. Check STRIPE_SECRET on the server.'], 503);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Stripe API error on setup-intent', [
+                'error'     => $e->getMessage(),
+                'http_status' => $e->getHttpStatus(),
+                'stripe_code' => $e->getStripeCode(),
+            ]);
+            return response()->json(['message' => 'Stripe error: ' . $e->getMessage()], 502);
+        } catch (\Throwable $e) {
+            Log::error('setup-intent creation failed', [
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['message' => 'Could not create setup intent: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -136,6 +176,28 @@ class PaymentMethodController extends Controller
             'invoice_settings' => ['default_payment_method' => $id],
         ]);
 
+        // Also point the active subscription at this card so future automatic
+        // charges (incl. trial-end) use it explicitly.
+        if ($tenant->stripe_subscription_id) {
+            try {
+                $stripe->subscriptions->update($tenant->stripe_subscription_id, [
+                    'default_payment_method' => $id,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Could not update subscription default PM', ['error' => $e->getMessage()]);
+            }
+        }
+
+        // Cache card metadata on the tenant for quick UI display
+        if (! empty($pm->card)) {
+            $tenant->forceFill([
+                'card_brand'     => $pm->card->brand,
+                'card_last4'     => $pm->card->last4,
+                'card_exp_month' => $pm->card->exp_month,
+                'card_exp_year'  => $pm->card->exp_year,
+            ])->save();
+        }
+
         return response()->json(['ok' => true]);
     }
 
@@ -160,6 +222,40 @@ class PaymentMethodController extends Controller
         }
 
         $stripe->paymentMethods->detach($id);
+
+        // Clear tenant card cache if no default PM remains after deletion.
+        // This ensures the wallet summary never shows a removed card.
+        if ($tenant->card_last4) {
+            try {
+                $customer   = $stripe->customers->retrieve($tenant->stripe_customer_id);
+                $newDefault = $customer->invoice_settings->default_payment_method ?? null;
+
+                if (! $newDefault) {
+                    // No default card left — wipe the cache.
+                    $tenant->forceFill([
+                        'card_brand'     => null,
+                        'card_last4'     => null,
+                        'card_exp_month' => null,
+                        'card_exp_year'  => null,
+                    ])->save();
+                } elseif ($newDefault !== $id) {
+                    // A different card is now the default — refresh the cache.
+                    $newPm = $stripe->paymentMethods->retrieve($newDefault);
+                    if (! empty($newPm->card)) {
+                        $tenant->forceFill([
+                            'card_brand'     => $newPm->card->brand,
+                            'card_last4'     => $newPm->card->last4,
+                            'card_exp_month' => $newPm->card->exp_month,
+                            'card_exp_year'  => $newPm->card->exp_year,
+                        ])->save();
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal — summary() will self-correct on next load.
+                Log::warning('Could not refresh card cache after detach', ['error' => $e->getMessage()]);
+            }
+        }
+
         return response()->noContent();
     }
 }

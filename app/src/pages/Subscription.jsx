@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +12,10 @@ import {
 } from '../api/subscription';
 
 const stripeKey     = import.meta.env.VITE_STRIPE_KEY;
-const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+if (stripeKey && !stripeKey.startsWith('pk_')) {
+  console.error('[Stripe] VITE_STRIPE_KEY looks like a secret key (sk_...). Set the publishable key (pk_...) instead.');
+}
+const stripePromise = (stripeKey && stripeKey.startsWith('pk_')) ? loadStripe(stripeKey) : null;
 
 const PLANS = [
   {
@@ -97,6 +101,7 @@ function CancelModal({ onConfirm, onClose, canceling }) {
 
 export default function Subscription() {
   const { user, refresh } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
   const [status, setStatus]       = useState(null);
   const [loading, setLoading]     = useState(true);
@@ -113,15 +118,9 @@ export default function Subscription() {
   }, []);
 
   const handleSelect = async (plan) => {
-    setPreparing(plan.id);
-    try {
-      const { client_secret } = await createSubscriptionIntent(plan.id);
-      setSelected({ plan, clientSecret: client_secret });
-    } catch {
-      /* ignore */
-    } finally {
-      setPreparing(null);
-    }
+    // The legacy one-off PaymentIntent flow is removed. Admins should always
+    // go through /onboarding/plan, which handles trial-aware subscriptions.
+    navigate('/onboarding/plan');
   };
 
   const handlePaid = async (paymentIntentId) => {
@@ -239,14 +238,63 @@ export default function Subscription() {
       {/* Trial card */}
       {isTrialing && !selected && (
         <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-sm font-semibold text-blue-900">You're on a Free Trial</h3>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                  Free Trial
+                </span>
+                {currentPlan && (
+                  <span className="inline-flex items-center rounded-full border border-blue-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-blue-900">
+                    {currentPlan.name} Plan
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-3 flex items-baseline gap-2">
+                <h2 className="text-2xl font-bold text-blue-900">
+                  {currentPlan?.name ?? 'Free Trial'}
+                </h2>
+                {currentPlan && (
+                  <>
+                    <span className="text-sm text-blue-600">·</span>
+                    <span className="text-lg font-semibold text-blue-800">
+                      ${currentPlan.price}
+                      <span className="text-sm font-normal text-blue-600">/mo after trial</span>
+                    </span>
+                  </>
+                )}
+              </div>
+
               {status.trial_ends_at && (
-                <p className="mt-1 text-sm text-blue-800">
-                  Trial ends on <span className="font-semibold">{new Date(status.trial_ends_at).toLocaleDateString()}</span>
-                  {status.days_left !== null && ` (${status.days_left} day${status.days_left === 1 ? '' : 's'} left)`}
+                <p className="mt-1.5 text-sm text-blue-800">
+                  Trial ends on{' '}
+                  <span className="font-semibold">
+                    {new Date(status.trial_ends_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
+                  {status.days_left != null && (
+                    <span className="ml-1.5 inline-flex items-center rounded-full bg-blue-200 px-2 py-0.5 text-xs font-semibold text-blue-900">
+                      {status.days_left} day{status.days_left === 1 ? '' : 's'} left
+                    </span>
+                  )}
                 </p>
+              )}
+
+              {currentPlan && (
+                <div className="mt-4 border-t border-blue-200 pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">What's included</p>
+                  <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                    {currentPlan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-sm text-blue-900">
+                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>
@@ -466,7 +514,8 @@ function PaymentForm({ plan, onSuccess }) {
           layout: 'tabs',
           paymentMethodOrder: ['card'],
           fields: { billingDetails: 'auto' },
-          terms: { card: 'never' },
+          wallets: { googlePay: 'never', applePay: 'never' },
+          terms: { card: 'never', usBankAccount: 'never', link: 'never' },
         }}
       />
 

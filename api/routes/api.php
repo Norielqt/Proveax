@@ -24,6 +24,9 @@ use Illuminate\Support\Facades\Route;
 // Google OAuth – complete onboarding (no auth required yet)
 Route::post('/auth/google/complete', [GoogleAuthController::class, 'complete']);
 
+// Stripe webhook — public, signature-verified inside controller
+Route::post('/webhooks/stripe', [\App\Http\Controllers\Api\StripeWebhookController::class, 'handle']);
+
 // ---------- Public ----------
 Route::post('/register',       [AuthController::class, 'registerAdmin']);
 Route::post('/login',          [AuthController::class, 'login']);
@@ -80,10 +83,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/billing/subscription/confirm',  [SubscriptionController::class, 'confirmSubscription']);
     Route::post('/billing/subscription/cancel',   [SubscriptionController::class, 'cancel']);
 
+    // Billing onboarding (admin only — pick plan + add card with 7-day trial)
+    Route::get ('/billing/onboarding/state',         [\App\Http\Controllers\Api\BillingOnboardingController::class, 'state']);
+    Route::post('/billing/onboarding/setup-intent',  [\App\Http\Controllers\Api\BillingOnboardingController::class, 'setupIntent']);
+    Route::post('/billing/onboarding/subscribe',     [\App\Http\Controllers\Api\BillingOnboardingController::class, 'subscribe']);
+
     // Wallet
     Route::get ('/wallet/summary',             [WalletController::class, 'summary']);
     Route::get ('/wallet/transactions',        [WalletController::class, 'transactions']);
     Route::post('/wallet/top-up/intent',       [WalletController::class, 'createTopUpIntent']);
+    Route::post('/wallet/top-up/charge',       [WalletController::class, 'chargeSavedCard']);
     Route::post('/wallet/top-up/confirm',      [WalletController::class, 'confirmTopUp']);
 
     // Payment methods (saved cards)
@@ -106,6 +115,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Paid-only
     Route::middleware('feature.access:paid')->group(function () {
+        Route::get ('/properties/{id}/skip-trace', [SkipTraceController::class, 'fetch']);
         Route::post('/properties/{id}/skip-trace', [SkipTraceController::class, 'run']);
     });
 

@@ -49,10 +49,20 @@ return [
         'base' => 'https://api.rentcast.io/v1',
     ],
 
+    'tracerfy' => [
+        'key'  => env('TRACERFY_API_KEY'),
+        'base' => env('TRACERFY_BASE_URL', 'https://tracerfy.com/v1/api'),
+    ],
+
     'stripe' => [
         'key'            => env('STRIPE_KEY'),
         'secret'         => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'prices' => [
+            'starter'  => env('STRIPE_PRICE_STARTER'),
+            'team'     => env('STRIPE_PRICE_TEAM'),
+            'business' => env('STRIPE_PRICE_BUSINESS'),
+        ],
     ],
 
 ];

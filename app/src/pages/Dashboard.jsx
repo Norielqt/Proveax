@@ -890,7 +890,7 @@ export default function Dashboard() {
               </svg>
             </button>
           </div>
-          <div className="h-full overflow-y-auto border-l border-gray-200 bg-white shadow-lg flex flex-col">
+          <div className="h-full overflow-y-auto border-l border-gray-200 shadow-lg flex flex-col" style={{ background: 'rgb(249, 249, 249)' }}>
             {/* ── Add to CRM action bar ────────────────────────────── */}
             {selectedKeys.size > 0 && (
               <div className="shrink-0 border-b border-blue-200 bg-blue-600 px-3 py-2.5 flex items-center justify-between gap-2">
