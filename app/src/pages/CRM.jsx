@@ -398,12 +398,12 @@ export default function CRM() {
           <h1 className="text-2xl font-bold text-gray-900">Customer Relationship Management</h1>
           <p className="mt-1 text-sm text-gray-500">Shared lead spreadsheet. Changes save automatically.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name, email, phone…"
-            className="w-64 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+            className="w-full sm:w-64 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
           />
           <button
             onClick={addRow}

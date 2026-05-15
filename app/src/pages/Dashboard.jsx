@@ -201,6 +201,16 @@ export default function Dashboard() {
   const allResultsRef = useRef(new Map());
   const [loading, setLoading] = useState(false);
   const [listOpen, setListOpen] = useState(true);
+  const [mobileSheet, setMobileSheet] = useState('peek'); // 'peek' | 'expanded'
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Lock body scroll while the mobile filter sheet is open
+  useEffect(() => {
+    if (!mobileFilterOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [mobileFilterOpen]);
   const viewTimerRef   = useRef(null);
   const [manualSearchKey, setManualSearchKey] = useState(0);
   const [panSearchKey, setPanSearchKey] = useState(0);
@@ -552,10 +562,10 @@ export default function Dashboard() {
       <div className="relative z-[1050] border-b border-[#E8F0FB] bg-white">
 
         {/* Main bar */}
-        <div className="flex items-center gap-3 px-6 py-3" ref={filtersHostRef}>
+        <div className="flex items-center gap-2 px-3 py-3 md:gap-3 md:px-6 md:overflow-visible" ref={filtersHostRef}>
 
           {/* Search input */}
-          <div className="relative min-w-0 w-[480px] shrink-0">
+          <div className="relative flex-1 min-w-0 md:w-[480px] md:flex-none">
             <button
               type="button"
               onClick={() => { clearTimeout(autoSearchTimerRef.current); submitSearch(); }}
@@ -575,7 +585,7 @@ export default function Dashboard() {
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               placeholder="Search by ZIP, city, or address…"
               autoComplete="off"
-              className="h-10 w-full rounded-xl border border-[#E8F0FB] bg-[#F7FAFF] pl-10 pr-9 text-sm text-[#111] placeholder-[#888] transition focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
+              className="h-10 w-full rounded-xl border border-[#E8F0FB] bg-[#F7FAFF] pl-10 pr-9 text-base md:text-sm text-[#111] placeholder-[#888] transition focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
             />
             {queryText && (
               <button
@@ -608,11 +618,58 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Divider */}
-          <div className="h-6 w-px shrink-0 bg-[#E8F0FB]" />
+          {/* Mobile-only: Filter button (opens sheet) + Search submit */}
+          <button
+            type="button"
+            onClick={() => setMobileFilterOpen((o) => !o)}
+            className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E8F0FB] bg-white text-[#185FA5] hover:bg-[#F7FAFF] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 relative"
+            aria-label="Filters"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 12.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 019 17v-4.586L3.293 6.707A1 1 0 013 6V4z" />
+            </svg>
+            {Object.entries(advFilters).some(([k, v]) => k === 'leadStrategies' ? v.length > 0 : v !== '') && (
+              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-[#185FA5] ring-2 ring-white" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => { handleApplyAdv(); setOpenFilter(null); setMobileFilterOpen(false); }}
+            disabled={loading}
+            className="md:hidden flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#185FA5] px-4 text-sm font-semibold text-white transition hover:bg-[#0C447C] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/30 disabled:opacity-50"
+            aria-label="Search"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+          </button>
 
-          {/* Filter chips cluster */}
-          <div className="flex flex-1 items-center gap-1.5 min-w-0">
+          {/* Divider */}
+          <div className="hidden md:block h-6 w-px shrink-0 bg-[#E8F0FB]" />
+
+          {/* Filter chips cluster — inline on desktop, slide-down sheet on mobile */}
+          <div
+            className={
+              mobileFilterOpen
+                ? "fixed inset-x-0 top-16 bottom-0 z-[1400] flex flex-col items-stretch gap-2 overflow-y-auto overscroll-contain bg-white p-4 md:static md:inset-auto md:z-auto md:flex md:flex-1 md:flex-row md:items-center md:gap-1.5 md:overflow-visible md:overscroll-auto md:bg-transparent md:p-0 md:min-w-0"
+                : "hidden md:flex md:flex-1 md:items-center md:gap-1.5 md:min-w-0"
+            }
+          >
+            {mobileFilterOpen && (
+              <div className="md:hidden flex items-center justify-between border-b border-gray-100 pb-3 mb-1">
+                <span className="text-base font-semibold text-gray-900">Filters</span>
+                <button
+                  type="button"
+                  onClick={() => setMobileFilterOpen(false)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
+                  aria-label="Close filters"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
 
             {/* Property type chip */}
             {(() => {
@@ -620,11 +677,11 @@ export default function Dashboard() {
               const active = !!filters.propertytype;
               const open = openFilter === 'type';
               return (
-                <div className="relative flex-1 min-w-0">
+                <div className="relative w-full md:flex-1 md:w-auto min-w-0">
                   <button
                     type="button"
                     onClick={() => setOpenFilter(open ? null : 'type')}
-                    className={`flex w-full h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
+                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
                       active
                         ? 'border-[#185FA5] bg-[#E6F1FB] text-[#0C447C]'
                         : open
@@ -677,11 +734,11 @@ export default function Dashboard() {
                 ? STRATEGY_OPTS.find(o => o.value === selectedArr[0])?.label
                 : selectedArr.length > 1 ? `${selectedArr.length} selected` : null;
               return (
-                <div className="relative flex-1 min-w-0">
+                <div className="relative w-full md:flex-1 md:w-auto min-w-0">
                   <button
                     type="button"
                     onClick={() => setOpenFilter(open ? null : 'lead')}
-                    className={`flex w-full h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
+                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
                       active
                         ? 'border-[#185FA5] bg-[#E6F1FB] text-[#0C447C]'
                         : open
@@ -751,11 +808,11 @@ export default function Dashboard() {
               const active = summary !== null;
               const open = openFilter === key;
               return (
-                <div key={key} className="relative flex-1 min-w-0">
+                <div key={key} className="relative w-full md:flex-1 md:w-auto min-w-0">
                   <button
                     type="button"
                     onClick={() => setOpenFilter(open ? null : key)}
-                    className={`flex w-full h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
+                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 ${
                       active
                         ? 'border-[#185FA5] bg-[#E6F1FB] text-[#0C447C]'
                         : open
@@ -780,7 +837,7 @@ export default function Dashboard() {
                           value={minVal}
                           onChange={(e) => setAdvFilters((p) => ({ ...p, [minKey]: e.target.value }))}
                           onKeyDown={(e) => { if (e.key === 'Enter') { handleApplyAdv(); setOpenFilter(null); } }}
-                          className="h-9 w-full rounded-lg border border-[#E8F0FB] bg-[#F7FAFF] px-3 text-sm text-[#111] placeholder-[#888] focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
+                          className="h-9 w-full rounded-lg border border-[#E8F0FB] bg-[#F7FAFF] px-3 text-base md:text-sm text-[#111] placeholder-[#888] focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
                         />
                         <span className="text-xs text-[#888]">to</span>
                         <input
@@ -788,7 +845,7 @@ export default function Dashboard() {
                           value={maxVal}
                           onChange={(e) => setAdvFilters((p) => ({ ...p, [maxKey]: e.target.value }))}
                           onKeyDown={(e) => { if (e.key === 'Enter') { handleApplyAdv(); setOpenFilter(null); } }}
-                          className="h-9 w-full rounded-lg border border-[#E8F0FB] bg-[#F7FAFF] px-3 text-sm text-[#111] placeholder-[#888] focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
+                          className="h-9 w-full rounded-lg border border-[#E8F0FB] bg-[#F7FAFF] px-3 text-base md:text-sm text-[#111] placeholder-[#888] focus:border-[#185FA5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#185FA5]/10"
                         />
                       </div>
                       <div className="mt-3 flex items-center">
@@ -832,17 +889,30 @@ export default function Dashboard() {
               </button>
             )}
 
-            {/* Search button */}
+            {/* Search button (desktop only — mobile uses the inline submit next to the input) */}
             <button
               type="button"
-              onClick={() => { handleApplyAdv(); setOpenFilter(null); }}
+              onClick={() => { handleApplyAdv(); setOpenFilter(null); setMobileFilterOpen(false); }}
               disabled={loading}
-              className="flex flex-1 h-9 items-center justify-center gap-1.5 rounded-full bg-[#185FA5] px-4 text-xs font-semibold text-white transition hover:bg-[#0C447C] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/30 disabled:opacity-50"
+              className="hidden md:flex flex-1 h-9 items-center justify-center gap-1.5 rounded-full bg-[#185FA5] px-4 text-xs font-semibold text-white transition hover:bg-[#0C447C] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/30 disabled:opacity-50"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
               </svg>
               Search
+            </button>
+
+            {/* Mobile-only: Apply button inside the sheet */}
+            <button
+              type="button"
+              onClick={() => { handleApplyAdv(); setOpenFilter(null); setMobileFilterOpen(false); }}
+              disabled={loading}
+              className="md:hidden mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#185FA5] px-4 text-sm font-semibold text-white transition hover:bg-[#0C447C] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/30 disabled:opacity-50"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+              </svg>
+              Apply filters & search
             </button>
 
             {/* Result count — inline after Search, no dead space */}
@@ -874,7 +944,8 @@ export default function Dashboard() {
         </div>
 
         {/* Properties list — right 20%, slides in/out. Toggle handle is attached to its left edge. */}
-        <div className={`absolute right-0 top-0 h-full w-[20%] z-[1000] transition-transform duration-300 ease-in-out ${listOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        {/* Hidden on mobile (<md) — mobile uses the bottom sheet below */}
+        <div className={`absolute right-0 top-0 h-full w-[20%] z-[1000] hidden md:block transition-transform duration-300 ease-in-out ${listOpen ? 'translate-x-0' : 'translate-x-full'}`}>
           {/* Toggle handle — sits on the left edge, always visible */}
           <div className="absolute -left-7 top-1/2 -translate-y-1/2 z-10">
             <button
@@ -933,6 +1004,76 @@ export default function Dashboard() {
                   {loadingMore ? 'Loading…' : 'Load More Data'}
                 </button>
                 <p className="mt-1.5 text-center text-xs text-gray-400">Each click uses +1 API request</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile bottom sheet (visible on <md only) */}
+        <div
+          className={`absolute inset-x-0 bottom-0 z-[1000] md:hidden flex flex-col bg-white rounded-t-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.12)] transition-[height] duration-300 ease-in-out`}
+          style={{ height: mobileSheet === 'expanded' ? '85%' : '160px' }}
+        >
+          {/* Drag handle / header */}
+          <button
+            type="button"
+            onClick={() => setMobileSheet((s) => (s === 'expanded' ? 'peek' : 'expanded'))}
+            className="flex items-center justify-between px-4 pt-2 pb-2 border-b border-gray-100"
+            aria-label={mobileSheet === 'expanded' ? 'Collapse results' : 'Expand results'}
+          >
+            <span className="absolute left-1/2 top-2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-gray-300" />
+            <span className="mt-3 text-sm font-semibold text-gray-800">
+              {results.length > 0 ? `${results.length.toLocaleString()} result${results.length !== 1 ? 's' : ''}` : 'No results'}
+            </span>
+            <svg
+              className={`mt-3 h-5 w-5 text-gray-500 transition-transform ${mobileSheet === 'expanded' ? 'rotate-180' : ''}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+          </button>
+
+          {/* Selection bar */}
+          {selectedKeys.size > 0 && (
+            <div className="shrink-0 border-b border-blue-200 bg-blue-600 px-3 py-2 flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-white whitespace-nowrap">
+                {selectedKeys.size} selected
+              </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  onClick={() => setSelectedKeys(new Set())}
+                  className="text-xs text-blue-200 hover:text-white whitespace-nowrap"
+                >Clear</button>
+                <button
+                  onClick={handleAddToCRM}
+                  disabled={crmSaving}
+                  className="rounded-md bg-white px-3 py-1 text-xs font-semibold text-blue-700 disabled:opacity-60 whitespace-nowrap"
+                >
+                  {crmSaving ? 'Saving…' : 'Add to CRM'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Results list (scrollable when expanded) */}
+          <div className="flex-1 overflow-y-auto" style={{ background: 'rgb(249, 249, 249)' }}>
+            <ResultsList
+              properties={results}
+              onHover={setHoveredId}
+              onSelect={(p) => { setSelectedProperty(p); }}
+              selected={selectedKeys}
+              onToggle={handleToggle}
+              onToggleAll={handleToggleAll}
+            />
+            {hasMore && (
+              <div className="shrink-0 p-3 border-t border-gray-100">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {loadingMore ? 'Loading…' : 'Load More Data'}
+                </button>
               </div>
             )}
           </div>

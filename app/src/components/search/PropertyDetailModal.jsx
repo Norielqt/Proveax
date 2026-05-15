@@ -225,11 +225,11 @@ export default function PropertyDetailModal({ property, onClose }) {
   return (
     /* Backdrop */
     <div
-      className="fixed inset-0 z-[2000] flex items-start justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+      className="fixed inset-0 z-[2000] flex items-stretch md:items-start justify-center bg-black/60 backdrop-blur-sm md:p-4 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Panel */}
-      <div className="relative w-full max-w-4xl my-6 bg-white rounded-xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-4xl md:my-6 bg-white md:rounded-xl shadow-2xl overflow-hidden min-h-screen md:min-h-0">
 
         {/* Top-right actions */}
         <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5">
