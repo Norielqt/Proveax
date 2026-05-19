@@ -128,7 +128,7 @@ function AccountMenu({ user, tenant, isAdmin, logout }) {
   }, []);
 
   const nav    = 'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium w-full text-left';
-  const active = 'bg-black/[0.07] text-[#111]';
+  const active = 'bg-blue-50 text-blue-700';
   const idle   = 'text-gray-700 hover:bg-gray-100';
 
   function go(path) {
