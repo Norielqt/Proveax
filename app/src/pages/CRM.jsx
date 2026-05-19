@@ -56,7 +56,7 @@ function TextCell({ value, onCommit, type = 'text', placeholder = '' }) {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); }
         if (e.key === 'Escape') { dirty.current = false; setDraft(value ?? ''); e.currentTarget.blur(); }
       }}
-      className="w-full resize-none overflow-hidden border-0 bg-transparent px-3 py-2.5 text-left text-sm text-[#111] outline-none placeholder:text-[#aaa] focus:bg-[#f4f1eb]/50 focus:ring-1 focus:ring-inset focus:ring-black/[0.12]"
+      className="w-full resize-none overflow-hidden border-0 bg-transparent px-3 py-2.5 text-left text-sm text-[#111] outline-none placeholder:text-[#aaa] focus:bg-[#f5f5f5]/50 focus:ring-1 focus:ring-inset focus:ring-black/[0.12]"
     />
   );
 }
@@ -91,18 +91,18 @@ function PriceCell({ value, onCommit }) {
         if (e.key === 'Enter') { e.currentTarget.blur(); }
         if (e.key === 'Escape') { dirty.current = false; setDraft(value ?? ''); e.currentTarget.blur(); }
       }}
-      className="w-full border-0 bg-transparent px-3 py-2.5 text-left text-sm tabular-nums text-[#111] outline-none placeholder:text-[#aaa] focus:bg-[#f4f1eb]/50 focus:ring-1 focus:ring-inset focus:ring-black/[0.12]"
+      className="w-full border-0 bg-transparent px-3 py-2.5 text-left text-sm tabular-nums text-[#111] outline-none placeholder:text-[#aaa] focus:bg-[#f5f5f5]/50 focus:ring-1 focus:ring-inset focus:ring-black/[0.12]"
     />
   );
 }
 
 const SOURCE_TYPE_BADGE = {
-  absentee_owner:     'bg-[#f4f1eb] text-[#5a5a55]',
+  absentee_owner:     'bg-[#f5f5f5] text-[#5a5a55]',
   out_of_state_owner: 'bg-[#e8f0fb] text-[#2a5a9a]',
   high_equity:        'bg-[#e6f4f1] text-[#1a6b5a]',
   cash_buyers:        'bg-amber-50 text-amber-700',
   vacant_lots:        'bg-rose-50 text-rose-600',
-  mls_withdrawn:      'bg-[#fafaf8] text-[#888]',
+  mls_withdrawn:      'bg-[#f9f9f9] text-[#888]',
 };
 
 function SourceTypeCell({ value, onCommit }) {
@@ -393,23 +393,28 @@ export default function CRM() {
           </div>
         </div>
       )}
-      <div className="flex flex-wrap items-end justify-between gap-3 pr-5">
+      <div className="flex flex-wrap items-end justify-between gap-4 pr-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#111]">Customer Relationship Management</h1>
-          <p className="mt-1 text-sm text-[#888]">Shared lead spreadsheet. Changes save automatically.</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">Workspace</p>
+          <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Leads</h1>
+          <p className="mt-2 text-sm text-[#5a5a55]">Shared spreadsheet. Changes save automatically.</p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, email, phone…"
-            className="w-full sm:w-64 rounded-md border border-black/[0.09] px-3 py-1.5 text-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-black/[0.06]"
-          />
+          <div className="relative w-full sm:w-72">
+            <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#bbb]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" /></svg>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name, email, phone…"
+              className="h-10 w-full rounded-full border border-black/[0.09] bg-white pl-10 pr-4 text-sm text-[#111] placeholder-[#bbb] transition focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+            />
+          </div>
           <button
             onClick={addRow}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#111] px-5 text-[13px] font-medium text-white transition-colors hover:bg-[#2a2a2a]"
           >
-            + New lead
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            New lead
           </button>
         </div>
       </div>
@@ -420,13 +425,13 @@ export default function CRM() {
         </div>
       )}
 
-      <div className="mt-5 overflow-x-auto rounded-2xl border border-black/[0.06] bg-white shadow-[0_18px_50px_-15px_rgba(17,17,17,0.12)]">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-black/[0.06] bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_24px_60px_-30px_rgba(17,17,17,0.18)]">
         {!filtered ? (
           <div className="p-4"><TableSkeleton rows={6} cols={7} /></div>
         ) : (
           <table className="w-full border-collapse text-sm">
-            <thead className="bg-[#fafaf8]">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-[#888]">
+            <thead className="bg-[#f9f9f9]">
+              <tr className="text-left text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">
                 <SortableTh sortKey="name"        sort={sort} onSort={toggleSort}>Name</SortableTh>
                 <SortableTh sortKey="address"     sort={sort} onSort={toggleSort}>Address</SortableTh>
                 <SortableTh sortKey="phone"       sort={sort} onSort={toggleSort}>Phone</SortableTh>
@@ -447,14 +452,9 @@ export default function CRM() {
                 </tr>
               )}
               {filtered.map((r) => (
-                <tr key={r.id} className="group transition-colors hover:bg-[#fafaf8]">
+                <tr key={r.id} className="group transition-colors hover:bg-[#f9f9f9]">
                   <Td>
-                    <div className="flex items-center gap-2">
-                      <span className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f4f1eb] text-xs font-bold text-[#555] select-none">
-                        {r.name ? r.name.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : '?'}
-                      </span>
-                      <TextCell value={r.name} onCommit={(v) => patchRow(r.id, { name: v })} placeholder="No Data" />
-                    </div>
+                    <TextCell value={r.name} onCommit={(v) => patchRow(r.id, { name: v })} placeholder="No Data" />
                   </Td>
                   <Td><TextCell value={r.address} onCommit={(v) => patchRow(r.id, { address: v })} placeholder="No Data" /></Td>
                   <Td>
@@ -517,18 +517,24 @@ export default function CRM() {
 }
 
 function Th({ children, className = '' }) {
-  return <th className={`border-b border-black/[0.06] px-4 py-3 ${className}`}>{children}</th>;
+  return <th className={`border-b border-black/[0.06] px-4 py-3.5 ${className}`}>{children}</th>;
 }
 function Td({ children, className = '' }) {
   return <td className={`align-middle ${className}`}>{children}</td>;
 }
 function SortableTh({ children, sortKey, sort, onSort, className = '' }) {
+  const active = sort?.key === sortKey;
   return (
     <th
-      className={`border-b border-black/[0.06] px-4 py-3 cursor-pointer select-none hover:bg-[#eee] ${className}`}
+      className={`border-b border-black/[0.06] px-4 py-3.5 cursor-pointer select-none transition-colors hover:bg-[#f5f5f5]/60 ${active ? 'text-[#111]' : ''} ${className}`}
       onClick={() => onSort(sortKey)}
     >
-      {children}
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {active && (
+          <svg className={`h-3 w-3 transition-transform ${sort.dir === 'desc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+        )}
+      </span>
     </th>
   );
 }

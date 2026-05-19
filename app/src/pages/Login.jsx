@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleAuthButton from '../components/GoogleAuthButton';
@@ -77,7 +77,7 @@ export default function Login() {
 
           {/* Hero image with floating card */}
           <div className="anim-fade-in relative" style={{ animationDelay: '300ms' }}>
-            <div className="overflow-hidden rounded-[24px] bg-[#f4f1eb] shadow-[0_30px_70px_-30px_rgba(17,17,17,0.3)] ring-1 ring-black/5">
+            <div className="overflow-hidden rounded-[24px] bg-[#f5f5f5] shadow-[0_30px_70px_-30px_rgba(17,17,17,0.3)] ring-1 ring-black/5">
               <img
                 src="/landing-hero.png"
                 alt="Property"

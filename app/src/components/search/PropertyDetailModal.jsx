@@ -331,7 +331,7 @@ export default function PropertyDetailModal({ property, onClose }) {
               </button>
               <button
                 onClick={() => setCrmPanel(false)}
-                className="rounded-lg border border-black/[0.08] px-3 py-1.5 text-xs font-medium text-[#5a5a55] hover:bg-[#fafaf8] transition-colors"
+                className="rounded-lg border border-black/[0.08] px-3 py-1.5 text-xs font-medium text-[#5a5a55] hover:bg-[#f9f9f9] transition-colors"
               >
                 Cancel
               </button>
@@ -449,7 +449,7 @@ export default function PropertyDetailModal({ property, onClose }) {
           ))}
         </div>
 
-        <div className="max-h-[calc(100vh-14rem)] overflow-y-auto bg-[#fafaf8]">
+        <div className="max-h-[calc(100vh-14rem)] overflow-y-auto bg-[#f9f9f9]">
         <div className="p-4 space-y-3">
 
           <LoadingCtx.Provider value={loading && !hasReport}>
@@ -648,7 +648,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                       </thead>
                       <tbody>
                         {txns.map((t, i) => (
-                          <tr key={i} className="border-b border-black/[0.04] hover:bg-[#f4f1eb]/40 transition-colors">
+                          <tr key={i} className="border-b border-black/[0.04] hover:bg-[#f5f5f5]/40 transition-colors">
                             <td className="py-3 pr-6 text-[#5a5a55] text-xs">
                               {t.sale_date
                                 ? new Date(t.sale_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -657,7 +657,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                             <td className="py-3 pr-6 font-semibold text-[#111]">{fmt$(t.sale_price) ?? <span className="text-[#ddd]">—</span>}</td>
                             <td className="py-3">
                               {t.event
-                                ? <span className="inline-flex items-center rounded-full bg-[#f4f1eb] border border-black/[0.06] px-2.5 py-0.5 text-xs font-medium text-[#111]">{t.event}</span>
+                                ? <span className="inline-flex items-center rounded-full bg-[#f5f5f5] border border-black/[0.06] px-2.5 py-0.5 text-xs font-medium text-[#111]">{t.event}</span>
                                 : <span className="text-[#ddd]">—</span>
                               }
                             </td>
@@ -763,7 +763,7 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
   // Empty state — show a load button (1 billable Rentcast call)
   if (!avm && !loading && !error) {
     return (
-      <div className="rounded-lg border border-black/[0.08] bg-[#f4f1eb] p-4 flex items-center justify-between gap-4">
+      <div className="rounded-lg border border-black/[0.08] bg-[#f5f5f5] p-4 flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-[#111]">Estimated Market Value</p>
           <p className="text-xs text-[#5a5a55] mt-0.5">Run Proveax AVM to fetch market estimate, confidence range &amp; comparable sales.</p>
@@ -780,7 +780,7 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
 
   if (loading && !avm) {
     return (
-      <div className="rounded-lg border border-black/[0.08] bg-[#f4f1eb] p-4 flex items-center gap-2 text-xs text-[#111]">
+      <div className="rounded-lg border border-black/[0.08] bg-[#f5f5f5] p-4 flex items-center gap-2 text-xs text-[#111]">
         <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
           Fetching AVM &amp; comparables…
       </div>
@@ -854,7 +854,7 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
           <p className="text-[10px] font-bold uppercase tracking-wider text-[#aaa] mb-2">Comparable Sales · {comps.length}</p>
           <div className="space-y-1.5">
             {comps.map((c) => (
-              <div key={c.id} className="flex items-center justify-between gap-3 rounded-md bg-[#fafaf8] hover:bg-[#f4f1eb]/40 px-3 py-2 transition-colors">
+              <div key={c.id} className="flex items-center justify-between gap-3 rounded-md bg-[#f9f9f9] hover:bg-[#f5f5f5]/40 px-3 py-2 transition-colors">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-[#111] truncate">{c.address}</p>
                   <p className="text-[10px] text-[#888] mt-0.5">

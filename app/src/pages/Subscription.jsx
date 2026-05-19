@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -17,46 +17,42 @@ if (stripeKey && !stripeKey.startsWith('pk_')) {
 }
 const stripePromise = (stripeKey && stripeKey.startsWith('pk_')) ? loadStripe(stripeKey) : null;
 
+const INCLUDED = [
+  'Unlimited property search',
+  'Built-in CRM',
+  'Team management',
+  'Lead pipeline',
+  'Time tracking & timesheets',
+  'Screenshots & activity',
+  'Reporting & analytics',
+  'Email support',
+];
+
 const PLANS = [
   {
     id: 'starter',
     name: 'Starter',
     price: 99.99,
-    seats: '1–5 users',
-    features: [
-      'Up to 5 team members',
-      'Unlimited property search',
-      'Time tracking & timesheets',
-      'Screenshots & activity',
-      'Email support',
-    ],
+    seats: '1-5 users',
+    tagline: 'Perfect for small teams and solo agents.',
+    features: INCLUDED,
   },
   {
     id: 'team',
     name: 'Team',
     price: 189.99,
-    seats: '6–10 users',
+    seats: '6-10 users',
+    tagline: 'Best for growing teams that move fast.',
     popular: true,
-    features: [
-      'Up to 10 team members',
-      'Everything in Starter',
-      'CRM & shared lead pipeline',
-      'Advanced reporting',
-      'Priority support',
-    ],
+    features: INCLUDED,
   },
   {
     id: 'business',
     name: 'Business',
     price: 249.99,
     seats: '10+ users',
-    features: [
-      'Unlimited team members',
-      'Everything in Team',
-      'API access & integrations',
-      'Dedicated account manager',
-      'Custom onboarding',
-    ],
+    tagline: 'Built for large brokerages and enterprises.',
+    features: INCLUDED,
   },
 ];
 
@@ -82,7 +78,7 @@ function CancelModal({ onConfirm, onClose, canceling }) {
           <button
             onClick={onClose}
             disabled={canceling}
-            className="rounded-full border border-black/[0.06] bg-white px-4 py-2 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50"
+            className="rounded-full border border-black/[0.06] bg-white px-4 py-2 text-sm font-semibold text-[#5a5a55] hover:bg-[#f9f9f9] disabled:opacity-50"
           >
             Keep subscription
           </button>
@@ -157,8 +153,9 @@ export default function Subscription() {
   return (
   <>
     <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Subscription</h1>
-      <p className="mt-1 text-sm text-[#888]">Manage your plan and billing.</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">Account</p>
+      <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Subscription</h1>
+      <p className="mt-2 text-sm text-[#5a5a55]">Manage your plan and billing.</p>
 
       {/* Active subscription card */}
       {isActive && (
@@ -166,7 +163,7 @@ export default function Subscription() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4f1eb] px-2.5 py-0.5 text-xs font-semibold text-[#5a5a55]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5f5f5] px-2.5 py-0.5 text-xs font-semibold text-[#5a5a55]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#111]" />
                   Active
                 </span>
@@ -237,7 +234,7 @@ export default function Subscription() {
 
       {/* Trial card */}
       {isTrialing && !selected && (
-        <div className="mt-6 rounded-2xl border border-black/[0.06] bg-[#f4f1eb] p-6">
+        <div className="mt-6 rounded-2xl border border-black/[0.06] bg-[#f5f5f5] p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -303,10 +300,10 @@ export default function Subscription() {
 
       {/* Plans */}
       {!selected && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-[#111]">
+        <div className="mt-10">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">
             {isCanceled ? 'Resubscribe' : isActive ? 'Plans' : 'Choose a plan'}
-          </h2>
+          </p>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {PLANS.map((plan) => {
               const isCurrentPlan = isActive && currentPlan?.id === plan.id;
@@ -316,7 +313,7 @@ export default function Subscription() {
                   key={plan.id}
                   className={`relative flex flex-col rounded-xl border p-6 ${
                     isCurrentPlan
-                      ? 'border-black/[0.08] bg-[#f4f1eb] ring-1 ring-[#111]/10'
+                      ? 'border-black/[0.08] bg-[#f5f5f5] ring-1 ring-[#111]/10'
                       : highlighted
                       ? 'border-[#111] bg-white shadow-[0_18px_50px_-15px_rgba(17,17,17,0.25)] ring-1 ring-[#111]'
                       : 'border-black/[0.06] bg-white'
@@ -333,7 +330,8 @@ export default function Subscription() {
                     </span>
                   )}
                   <h3 className="text-lg font-semibold text-[#111]">{plan.name}</h3>
-                  <p className="mt-1 text-sm text-[#888]">{plan.seats}</p>
+                  <p className="mt-0.5 text-xs text-[#888]">{plan.seats}</p>
+                  <p className="mt-3 text-sm text-[#5a5a55] leading-relaxed">{plan.tagline}</p>
                   <div className="mt-4 flex items-baseline">
                     <span className="font-display text-5xl font-bold text-[#111] leading-none">${plan.price}</span>
                     <span className="ml-1 text-sm text-[#888]">/month</span>
@@ -351,10 +349,10 @@ export default function Subscription() {
                     disabled={!!preparing || isCurrentPlan || !isAdmin}
                     className={`mt-6 w-full rounded-full px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
                       isCurrentPlan
-                        ? 'border border-black/[0.08] bg-[#f4f1eb] text-[#5a5a55] cursor-default'
+                        ? 'border border-black/[0.08] bg-[#f5f5f5] text-[#5a5a55] cursor-default'
                         : highlighted
                         ? 'bg-[#111] text-white hover:bg-[#2a2a2a]'
-                        : 'border border-black/[0.06] text-[#111] hover:bg-[#fafaf8]'
+                        : 'border border-black/[0.06] text-[#111] hover:bg-[#f9f9f9]'
                     }`}
                   >
                     {isCurrentPlan ? 'Current plan' : preparing === plan.id ? 'Preparing…' : 'Choose plan'}
@@ -407,8 +405,8 @@ function PaymentPanel({ plan, clientSecret, onBack, onSuccess, success }) {
 
   if (success) {
     return (
-      <div className="mt-8 rounded-2xl border border-black/[0.06] bg-[#f4f1eb] p-8 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f4f1eb]">
+      <div className="mt-8 rounded-2xl border border-black/[0.06] bg-[#f5f5f5] p-8 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f5f5f5]">
           <svg className="h-8 w-8 text-[#111]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
@@ -464,7 +462,7 @@ function PaymentPanel({ plan, clientSecret, onBack, onSuccess, success }) {
           <span className="text-sm text-[#5a5a55]">Monthly</span>
           <span className="text-2xl font-bold text-[#111]">${plan.price.toFixed(2)}</span>
         </div>
-        <div className="mt-4 rounded-md bg-[#fafaf8] p-3 text-xs text-[#5a5a55]">
+        <div className="mt-4 rounded-md bg-[#f9f9f9] p-3 text-xs text-[#5a5a55]">
           Billed monthly. Cancel anytime from this page.
         </div>
       </aside>

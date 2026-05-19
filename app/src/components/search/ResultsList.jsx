@@ -1,4 +1,4 @@
-
+﻿
 
 import emptyImg from '../../assets/Proveax_loading.png';
 
@@ -45,9 +45,9 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
             checked={allSelected}
             ref={(el) => { if (el) el.indeterminate = someSelected; }}
             onChange={() => onToggleAll(properties)}
-            className="h-3.5 w-3.5 rounded border-black/[0.1] accent-blue-600 cursor-pointer"
+            className="h-3.5 w-3.5 rounded border-black/[0.1] accent-[#111] cursor-pointer"
           />
-          <span className="text-[11px] font-medium text-[#999] tracking-wide">
+          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#888]">
             {selected?.size > 0 ? `${selected.size} selected` : 'Select all'}
           </span>
         </div>
@@ -67,7 +67,7 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
               key={key}
               onMouseEnter={() => onHover?.(id)}
               onMouseLeave={() => onHover?.(null)}
-              className={`transition-colors ${isSelected ? 'bg-blue-50/60' : 'bg-white hover:bg-[#fafcff]'}`}
+              className={`transition-colors ${isSelected ? 'bg-[#f5f5f5]/70' : 'bg-transparent hover:bg-white'}`}
             >
               <div className="flex items-stretch w-full">
                 {/* Checkbox column */}
@@ -80,7 +80,7 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => onToggle(key)}
-                      className="h-4 w-4 rounded border-black/[0.1] accent-blue-600 cursor-pointer"
+                      className="h-4 w-4 rounded border-black/[0.1] accent-[#111] cursor-pointer"
                     />
                   </label>
                 )}

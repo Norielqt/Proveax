@@ -234,7 +234,7 @@ function Dot({ stateKey }) {
 function StartCard({ withScreenshots, setWithScreenshots, starting, hasPrior, onStart, screenshotInterval }) {
   return (
     <div className="rounded-3xl border border-black/[0.06] bg-white p-5 shadow-sm">
-      <label className="flex cursor-pointer items-start gap-4 rounded-2xl bg-[#fafaf8] p-4 ring-1 ring-black/[0.06] transition hover:bg-[#fafaf8]">
+      <label className="flex cursor-pointer items-start gap-4 rounded-2xl bg-[#f9f9f9] p-4 ring-1 ring-black/[0.06] transition hover:bg-[#f9f9f9]">
         <input
           type="checkbox"
           checked={withScreenshots}
@@ -344,7 +344,7 @@ function DoneCard({ total }) {
 
 function Stat({ label, value }) {
   return (
-    <div className="rounded-2xl bg-[#fafaf8] px-4 py-3 ring-1 ring-black/[0.06]">
+    <div className="rounded-2xl bg-[#f9f9f9] px-4 py-3 ring-1 ring-black/[0.06]">
       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#aaa]">{label}</p>
       <p className="mt-1 text-base font-bold tabular-nums text-[#111]">{value}</p>
     </div>
@@ -369,7 +369,7 @@ function ConfirmEnd({ ending, onCancel, onConfirm }) {
             <button
               onClick={onCancel}
               disabled={ending}
-              className="flex-1 rounded-xl border border-black/[0.06] bg-white px-4 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50"
+              className="flex-1 rounded-xl border border-black/[0.06] bg-white px-4 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#f9f9f9] disabled:opacity-50"
             >
               Cancel
             </button>

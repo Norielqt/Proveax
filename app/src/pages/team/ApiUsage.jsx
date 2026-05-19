@@ -36,8 +36,9 @@ export default function ApiUsage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">API Usage</h1>
-          <p className="mt-1 text-sm text-[#888]">Rentcast API requests logged by your workspace.</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">My Team</p>
+          <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">API Usage</h1>
+          <p className="mt-2 text-sm text-[#5a5a55]">Rentcast API requests logged by your workspace.</p>
         </div>
         <div className="flex gap-2">
           <input type="date" value={range.from}
@@ -56,8 +57,8 @@ export default function ApiUsage() {
         <StatCard label="Avg latency" value={`${summary.avg_ms} ms`} />
       </div>
 
-      <div className="rounded-2xl border border-black/[0.06] bg-white p-4">
-        <h3 className="mb-3 text-sm font-semibold text-[#5a5a55]">Daily volume</h3>
+      <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
+        <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Daily volume</p>
         {daily.length === 0 ? (
           <p className="text-sm text-[#888]">No activity in this range.</p>
         ) : (
@@ -66,8 +67,8 @@ export default function ApiUsage() {
               const pct = (Number(d.total) / maxDaily) * 100;
               return (
                 <div key={d.day} className="group flex flex-1 flex-col items-center">
-                  <div className="relative w-full rounded-t bg-blue-600" style={{ height: `${pct}%` }}>
-                    <div className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-blue-600 px-2 py-0.5 text-xs text-white group-hover:block">
+                  <div className="relative w-full rounded-t bg-[#111] transition-opacity group-hover:opacity-90" style={{ height: `${pct}%` }}>
+                    <div className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[#111] px-2 py-0.5 text-xs text-white group-hover:block">
                       {d.total} on {d.day}
                     </div>
                   </div>
@@ -80,24 +81,26 @@ export default function ApiUsage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-2xl border border-black/[0.06] bg-white">
-          <div className="border-b border-black/[0.04] px-4 py-2 text-sm font-semibold text-[#5a5a55]">By member</div>
+          <div className="border-b border-black/[0.04] px-5 py-3">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">By member</p>
+          </div>
           <table className="min-w-full divide-y divide-black/[0.04] text-sm">
-            <thead className="bg-[#fafafa] text-xs uppercase text-[#888]">
+            <thead className="bg-[#f9f9f9] text-[10px] uppercase tracking-[0.14em] text-[#888]">
               <tr>
-                <th className="px-4 py-2 text-left">Member</th>
-                <th className="px-4 py-2 text-right">Total</th>
-                <th className="px-4 py-2 text-right">Billable</th>
+                <th className="px-5 py-2.5 text-left font-medium">Member</th>
+                <th className="px-5 py-2.5 text-right font-medium">Total</th>
+                <th className="px-5 py-2.5 text-right font-medium">Billable</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/[0.04]">
               {per_user.length === 0 && (
-                <tr><td colSpan={3} className="px-4 py-4 text-center text-[#888]">No data.</td></tr>
+                <tr><td colSpan={3} className="px-5 py-6 text-center text-[#aaa]">No data.</td></tr>
               )}
               {per_user.map((u) => (
-                <tr key={u.user_id ?? 'none'}>
-                  <td className="px-4 py-2">{u.name}<div className="text-xs text-[#888]">{u.email}</div></td>
-                  <td className="px-4 py-2 text-right tabular-nums">{u.total}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{u.billable}</td>
+                <tr key={u.user_id ?? 'none'} className="hover:bg-[#f9f9f9]">
+                  <td className="px-5 py-3"><div className="text-sm font-medium text-[#111]">{u.name}</div><div className="text-xs text-[#888]">{u.email}</div></td>
+                  <td className="px-5 py-3 text-right tabular-nums font-medium text-[#111]">{u.total}</td>
+                  <td className="px-5 py-3 text-right tabular-nums text-[#5a5a55]">{u.billable}</td>
                 </tr>
               ))}
             </tbody>
@@ -105,19 +108,21 @@ export default function ApiUsage() {
         </div>
 
         <div className="rounded-2xl border border-black/[0.06] bg-white">
-          <div className="border-b border-black/[0.04] px-4 py-2 text-sm font-semibold text-[#5a5a55]">Recent errors</div>
+          <div className="border-b border-black/[0.04] px-5 py-3">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Recent errors</p>
+          </div>
           <ul className="divide-y divide-black/[0.04] text-sm">
             {recent_errors.length === 0 && (
-              <li className="px-4 py-4 text-center text-[#888]">No errors. ✓</li>
+              <li className="px-5 py-6 text-center text-[#aaa]">No errors.</li>
             )}
             {recent_errors.map((e) => (
-              <li key={e.id} className="px-4 py-2">
-                <div className="flex justify-between">
-                  <span className="font-mono text-xs">{e.endpoint}</span>
-                  <span className="text-xs text-rose-600">HTTP {e.status_code}</span>
+              <li key={e.id} className="px-5 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate font-mono text-xs text-[#111]">{e.endpoint}</span>
+                  <span className="shrink-0 rounded-full border border-rose-200/70 bg-rose-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-rose-700">HTTP {e.status_code}</span>
                 </div>
-                <div className="text-xs text-[#888]">{new Date(e.requested_at).toLocaleString()}</div>
-                {e.error && <div className="text-xs text-[#5a5a55]">{e.error}</div>}
+                <div className="mt-0.5 text-[11px] text-[#aaa]">{new Date(e.requested_at).toLocaleString()}</div>
+                {e.error && <div className="mt-1 text-xs text-[#5a5a55]">{e.error}</div>}
               </li>
             ))}
           </ul>
@@ -130,9 +135,9 @@ export default function ApiUsage() {
 function StatCard({ label, value, tone = 'ok' }) {
   const color = tone === 'warn' ? 'text-amber-700' : 'text-[#111]';
   return (
-    <div className="rounded-2xl border border-black/[0.06] bg-white px-4 py-3">
-      <p className="text-xs text-[#888]">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${color}`}>{value}</p>
+    <div className="rounded-2xl border border-black/[0.06] bg-white px-5 py-4">
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">{label}</p>
+      <p className={`mt-2 font-display text-3xl leading-none tracking-tight ${color}`}>{value}</p>
     </div>
   );
 }

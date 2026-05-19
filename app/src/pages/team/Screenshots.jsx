@@ -53,8 +53,9 @@ export default function Screenshots() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Screenshots</h1>
-      <p className="mt-1 text-sm text-[#888]">Screen captures from members' active work sessions.</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">My Team</p>
+      <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Screenshots</h1>
+      <p className="mt-2 text-sm text-[#5a5a55]">Screen captures from members' active work sessions.</p>
 
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl border border-black/[0.06] bg-white p-4">
         {isAdmin && (
@@ -73,7 +74,7 @@ export default function Screenshots() {
             className="rounded-xl border border-black/[0.09] bg-white px-3 py-1.5 text-sm" />
         </Field>
         <button onClick={run} disabled={loading}
-          className="rounded-full bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#111] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#2a2a2a] disabled:opacity-50">
           {loading ? (
             <span className="flex items-center gap-1.5">
               <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">

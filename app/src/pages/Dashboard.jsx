@@ -585,12 +585,12 @@ export default function Dashboard() {
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               placeholder="Search by ZIP, city, or address…"
               autoComplete="off"
-              className="h-10 w-full rounded-xl border border-black/[0.08] bg-[#f8f9fc] pl-10 pr-9 text-base md:text-sm text-[#1a1a1a] placeholder-[#aaa] transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              className="h-10 w-full rounded-full border border-black/[0.09] bg-white pl-10 pr-9 text-base md:text-[13px] text-[#111] placeholder-[#bbb] transition focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
             />
             {queryText && (
               <button
                 onClick={() => { setQueryText(''); setParseError(''); setSuggestions([]); setShowSuggestions(false); setFilters({}); setSearchParams({}, { replace: true }); setResults([]); clearTimeout(autoSearchTimerRef.current); clearTimeout(suggestTimerRef.current); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-[#888] transition-colors hover:bg-[#f4f1eb] hover:text-[#111]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-[#888] transition-colors hover:bg-[#f5f5f5] hover:text-[#111]"
                 aria-label="Clear search"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -605,7 +605,7 @@ export default function Dashboard() {
                   <li
                     key={i}
                     onMouseDown={() => pickSuggestion(s)}
-                    className="flex cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-[#444] transition-colors hover:bg-[#f4f1eb] hover:text-[#000]"
+                    className="flex cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-[#444] transition-colors hover:bg-[#f5f5f5] hover:text-[#000]"
                   >
                     <svg className="h-3.5 w-3.5 shrink-0 text-[#888]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -622,7 +622,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => setMobileFilterOpen((o) => !o)}
-            className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/[0.06] bg-white text-[#111] hover:bg-[#fafaf8] focus:outline-none focus:ring-2 focus:ring-blue-600/20 relative"
+            className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/[0.06] bg-white text-[#111] hover:bg-[#f9f9f9] focus:outline-none focus:ring-2 focus:ring-blue-600/20 relative"
             aria-label="Filters"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -636,7 +636,7 @@ export default function Dashboard() {
             type="button"
             onClick={() => { handleApplyAdv(); setOpenFilter(null); setMobileFilterOpen(false); }}
             disabled={loading}
-            className="md:hidden flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
+            className="md:hidden flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-blue-600 px-5 text-[13px] font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
             aria-label="Search"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -661,7 +661,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setMobileFilterOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[#888] hover:bg-[#fafaf8]"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[#888] hover:bg-[#f9f9f9]"
                   aria-label="Close filters"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -681,17 +681,17 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setOpenFilter(open ? null : 'type')}
-                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3.5 text-[12px] font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-600/15 ${
                       active
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        ? 'border-[#111] bg-[#f5f5f5] text-[#111]'
                         : open
-                          ? 'border-blue-600 bg-white text-blue-600'
-                          : 'border-black/[0.06] bg-white text-[#444] hover:border-blue-200 hover:bg-blue-50/40'
+                          ? 'border-[#111] bg-white text-[#111]'
+                          : 'border-black/[0.08] bg-white text-[#5a5a55] hover:border-black/20 hover:text-[#111]'
                     }`}
                   >
                     <span className="flex min-w-0 items-center gap-1 truncate">
-                      <span className={`truncate ${active ? '' : 'text-[#555]'}`}>Type</span>
-                      {active && <span className="truncate text-blue-700">· {selected.label}</span>}
+                      <span className={`truncate ${active ? '' : ''}`}>Type</span>
+                      {active && <span className="truncate text-[#111]">· {selected.label}</span>}
                     </span>
                     <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -706,8 +706,8 @@ export default function Dashboard() {
                           onClick={() => { handleTypeChange(t.value); setOpenFilter(null); }}
                           className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-sm transition-colors ${
                             (filters.propertytype ?? '') === t.value
-                              ? 'bg-[#f4f1eb] text-[#000] font-medium'
-                              : 'text-[#444] hover:bg-[#fafaf8]'
+                              ? 'bg-[#f5f5f5] text-[#000] font-medium'
+                              : 'text-[#444] hover:bg-[#f9f9f9]'
                           }`}
                         >
                           {t.label}
@@ -738,17 +738,17 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setOpenFilter(open ? null : 'lead')}
-                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3.5 text-[12px] font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-600/15 ${
                       active
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        ? 'border-[#111] bg-[#f5f5f5] text-[#111]'
                         : open
-                          ? 'border-blue-600 bg-white text-blue-600'
-                          : 'border-black/[0.06] bg-white text-[#444] hover:border-blue-200 hover:bg-blue-50/40'
+                          ? 'border-[#111] bg-white text-[#111]'
+                          : 'border-black/[0.08] bg-white text-[#5a5a55] hover:border-black/20 hover:text-[#111]'
                     }`}
                   >
                     <span className="flex min-w-0 items-center gap-1 truncate">
-                      <span className={`truncate ${active ? '' : 'text-[#555]'}`}>Lead</span>
-                      {chipSuffix && <span className="truncate text-blue-700">· {chipSuffix}</span>}
+                      <span className={`truncate ${active ? '' : ''}`}>Lead</span>
+                      {chipSuffix && <span className="truncate text-[#111]">· {chipSuffix}</span>}
                     </span>
                     <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -777,7 +777,7 @@ export default function Dashboard() {
                               // keep dropdown open for multi-select
                             }}
                             className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors ${
-                              checked ? 'bg-[#f4f1eb] text-[#000] font-medium' : 'text-[#444] hover:bg-[#fafaf8]'
+                              checked ? 'bg-[#f5f5f5] text-[#000] font-medium' : 'text-[#444] hover:bg-[#f9f9f9]'
                             }`}
                           >
                             {/* checkbox */}
@@ -812,17 +812,17 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setOpenFilter(open ? null : key)}
-                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                    className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3.5 text-[12px] font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-600/15 ${
                       active
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        ? 'border-[#111] bg-[#f5f5f5] text-[#111]'
                         : open
-                          ? 'border-blue-600 bg-white text-blue-600'
-                          : 'border-black/[0.06] bg-white text-[#444] hover:border-blue-200 hover:bg-blue-50/40'
+                          ? 'border-[#111] bg-white text-[#111]'
+                          : 'border-black/[0.08] bg-white text-[#5a5a55] hover:border-black/20 hover:text-[#111]'
                     }`}
                   >
                     <span className="flex min-w-0 items-center gap-1 truncate">
-                      <span className={`truncate ${active ? '' : 'text-[#555]'}`}>{label}</span>
-                      {active && <span className="truncate text-blue-700">· {summary}{unit ? ` ${unit}` : ''}</span>}
+                      <span className={`truncate ${active ? '' : ''}`}>{label}</span>
+                      {active && <span className="truncate text-[#111]">· {summary}{unit ? ` ${unit}` : ''}</span>}
                     </span>
                     <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -837,7 +837,7 @@ export default function Dashboard() {
                           value={minVal}
                           onChange={(e) => setAdvFilters((p) => ({ ...p, [minKey]: e.target.value }))}
                           onKeyDown={(e) => { if (e.key === 'Enter') { handleApplyAdv(); setOpenFilter(null); } }}
-                          className="h-9 w-full rounded-lg border border-black/[0.06] bg-[#fafaf8] px-3 text-base md:text-sm text-[#111] placeholder-[#888] focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+                          className="h-9 w-full rounded-lg border border-black/[0.06] bg-[#f9f9f9] px-3 text-base md:text-sm text-[#111] placeholder-[#888] focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
                         />
                         <span className="text-xs text-[#888]">to</span>
                         <input
@@ -845,7 +845,7 @@ export default function Dashboard() {
                           value={maxVal}
                           onChange={(e) => setAdvFilters((p) => ({ ...p, [maxKey]: e.target.value }))}
                           onKeyDown={(e) => { if (e.key === 'Enter') { handleApplyAdv(); setOpenFilter(null); } }}
-                          className="h-9 w-full rounded-lg border border-black/[0.06] bg-[#fafaf8] px-3 text-base md:text-sm text-[#111] placeholder-[#888] focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+                          className="h-9 w-full rounded-lg border border-black/[0.06] bg-[#f9f9f9] px-3 text-base md:text-sm text-[#111] placeholder-[#888] focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
                         />
                       </div>
                       <div className="mt-3 flex items-center">
@@ -880,7 +880,7 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => { handleClearAdv(); setOpenFilter(null); }}
                 disabled={loading}
-                className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-xs font-medium text-[#888] transition hover:bg-[#fafaf8] hover:text-[#111] focus:outline-none disabled:opacity-50"
+                className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-xs font-medium text-[#888] transition hover:bg-[#f9f9f9] hover:text-[#111] focus:outline-none disabled:opacity-50"
               >
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -894,7 +894,7 @@ export default function Dashboard() {
               type="button"
               onClick={() => { handleApplyAdv(); setOpenFilter(null); setMobileFilterOpen(false); }}
               disabled={loading}
-              className="hidden md:flex flex-1 h-9 items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
+              className="hidden md:flex flex-1 h-9 items-center justify-center gap-1.5 rounded-full bg-blue-600 px-5 text-[12px] font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -907,7 +907,7 @@ export default function Dashboard() {
               type="button"
               onClick={() => { handleApplyAdv(); setOpenFilter(null); setMobileFilterOpen(false); }}
               disabled={loading}
-              className="md:hidden mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
+              className="md:hidden mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-4 text-[13px] font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -925,12 +925,13 @@ export default function Dashboard() {
                 Searching…
               </span>
             ) : results.length > 0 ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-black/[0.06] bg-[#f9f9f9] px-3 py-1 text-[11px] font-medium text-[#111]">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
                 {results.length.toLocaleString()}
-                <span className="font-normal text-blue-500">results</span>
+                <span className="text-[#888]">results</span>
               </span>
             ) : (filters.postalcode || filters.city) ? (
-              <span className="shrink-0 text-xs text-[#888]">No results</span>
+              <span className="shrink-0 text-[11px] text-[#888]">No results</span>
             ) : null}
           </div>
         </div>
@@ -951,7 +952,7 @@ export default function Dashboard() {
             <button
               onClick={() => setListOpen((o) => !o)}
               title={listOpen ? 'Collapse list' : 'Expand list'}
-              className="flex h-10 w-7 items-center justify-center rounded-l-full border border-black/[0.08] bg-white shadow-md text-[#888] hover:bg-[#fafaf8] hover:text-[#111] transition-colors"
+              className="flex h-10 w-7 items-center justify-center rounded-l-full border border-black/[0.08] bg-white shadow-md text-[#888] hover:bg-[#f9f9f9] hover:text-[#111] transition-colors"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 {listOpen
@@ -961,24 +962,24 @@ export default function Dashboard() {
               </svg>
             </button>
           </div>
-          <div className="h-full overflow-y-auto border-l border-black/[0.08] shadow-lg flex flex-col" style={{ background: 'rgb(249, 249, 249)' }}>
+          <div className="h-full overflow-y-auto border-l border-black/[0.06] flex flex-col" style={{ background: '#f9f9f9' }}>
             {/* ── Add to CRM action bar ────────────────────────────── */}
             {selectedKeys.size > 0 && (
-              <div className="shrink-0 border-b border-blue-700 bg-blue-600 px-3 py-2.5 flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-white whitespace-nowrap">
+              <div className="shrink-0 border-b border-black/[0.06] bg-[#f5f5f5] px-3 py-2.5 flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#111] whitespace-nowrap">
                   {selectedKeys.size} selected
                 </span>
                 <div className="flex items-center gap-2 min-w-0">
                   <button
                     onClick={() => setSelectedKeys(new Set())}
-                    className="text-xs text-white/70 hover:text-white transition-colors whitespace-nowrap"
+                    className="text-[11px] text-[#888] hover:text-[#111] transition-colors whitespace-nowrap"
                   >
                     Clear
                   </button>
                   <button
                     onClick={handleAddToCRM}
                     disabled={crmSaving}
-                    className="rounded-md bg-white px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 disabled:opacity-60 transition-colors whitespace-nowrap"
+                    className="rounded-full bg-blue-600 px-3.5 py-1 text-[11px] font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors whitespace-nowrap"
                   >
                     {crmSaving ? 'Saving…' : 'Add to CRM'}
                   </button>
@@ -995,15 +996,15 @@ export default function Dashboard() {
               onToggleAll={handleToggleAll}
             />
             {hasMore && (
-              <div className="shrink-0 p-3 border-t border-black/[0.06]">
+              <div className="shrink-0 p-3 border-t border-black/[0.06] bg-white">
                 <button
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="w-full rounded-full bg-[#111] py-2.5 text-[12px] font-medium text-white hover:bg-[#2a2a2a] disabled:opacity-50 transition-colors"
                 >
-                  {loadingMore ? 'Loading…' : 'Load More Data'}
+                  {loadingMore ? 'Loading…' : 'Load more'}
                 </button>
-                <p className="mt-1.5 text-center text-xs text-[#aaa]">Each click uses +1 API request</p>
+                <p className="mt-2 text-center text-[10px] text-[#aaa] uppercase tracking-[0.12em]">+1 API request</p>
               </div>
             )}
           </div>
@@ -1035,19 +1036,19 @@ export default function Dashboard() {
 
           {/* Selection bar */}
           {selectedKeys.size > 0 && (
-            <div className="shrink-0 border-b border-blue-700 bg-blue-600 px-3 py-2 flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-white whitespace-nowrap">
+            <div className="shrink-0 border-b border-black/[0.06] bg-[#f5f5f5] px-3 py-2 flex items-center justify-between gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#111] whitespace-nowrap">
                 {selectedKeys.size} selected
               </span>
               <div className="flex items-center gap-2 min-w-0">
                 <button
                   onClick={() => setSelectedKeys(new Set())}
-                  className="text-xs text-white/70 hover:text-white whitespace-nowrap"
+                  className="text-[11px] text-[#888] hover:text-[#111] whitespace-nowrap"
                 >Clear</button>
                 <button
                   onClick={handleAddToCRM}
                   disabled={crmSaving}
-                  className="rounded-md bg-white px-3 py-1 text-xs font-semibold text-blue-600 disabled:opacity-60 whitespace-nowrap"
+                  className="rounded-full bg-blue-600 px-3.5 py-1 text-[11px] font-medium text-white disabled:opacity-60 whitespace-nowrap"
                 >
                   {crmSaving ? 'Saving…' : 'Add to CRM'}
                 </button>
@@ -1056,7 +1057,7 @@ export default function Dashboard() {
           )}
 
           {/* Results list (scrollable when expanded) */}
-          <div className="flex-1 overflow-y-auto" style={{ background: 'rgb(249, 249, 249)' }}>
+          <div className="flex-1 overflow-y-auto" style={{ background: '#f9f9f9' }}>
             <ResultsList
               properties={results}
               onHover={setHoveredId}
@@ -1066,13 +1067,13 @@ export default function Dashboard() {
               onToggleAll={handleToggleAll}
             />
             {hasMore && (
-              <div className="shrink-0 p-3 border-t border-black/[0.06]">
+              <div className="shrink-0 p-3 border-t border-black/[0.06] bg-white">
                 <button
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="w-full rounded-full bg-[#111] py-2.5 text-[12px] font-medium text-white hover:bg-[#2a2a2a] disabled:opacity-50"
                 >
-                  {loadingMore ? 'Loading…' : 'Load More Data'}
+                  {loadingMore ? 'Loading…' : 'Load more'}
                 </button>
               </div>
             )}

@@ -36,7 +36,7 @@ const labelFor = (action) =>
 
 function ActionBadge({ action }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-[#f4f1eb] px-2.5 py-0.5 text-[11px] font-medium text-[#5a5a55]">
+    <span className="inline-flex items-center rounded-full bg-[#f5f5f5] px-2.5 py-0.5 text-[11px] font-medium text-[#5a5a55]">
       {labelFor(action)}
     </span>
   );
@@ -145,8 +145,9 @@ export default function AdminActivity() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Activity</h1>
-        <p className="mt-1 text-sm text-[#888]">Audit trail of all admin and member actions in your workspace.</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">My Team</p>
+        <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Activity</h1>
+        <p className="mt-2 text-sm text-[#5a5a55]">Audit trail of all admin and member actions in your workspace.</p>
       </div>
 
       {/* Summary strip */}
@@ -205,7 +206,7 @@ export default function AdminActivity() {
         {hasFilters && (
           <button
             onClick={() => setFilters({ user_id: '', action: '', from: '', to: '' })}
-            className="rounded-full border border-black/[0.06] px-3 py-1.5 text-sm text-[#5a5a55] hover:bg-[#fafaf8] transition-colors"
+            className="rounded-full border border-black/[0.06] px-3 py-1.5 text-sm text-[#5a5a55] hover:bg-[#f9f9f9] transition-colors"
           >
             Clear filters
           </button>
@@ -233,7 +234,7 @@ export default function AdminActivity() {
               </li>
             )}
             {logs?.data?.map((log) => (
-              <li key={log.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-[#fafaf8] transition-colors">
+              <li key={log.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-[#f9f9f9] transition-colors">
                 <Avatar name={log.user?.name} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -254,15 +255,15 @@ export default function AdminActivity() {
           </ul>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-black/[0.04] bg-[#fafaf8] px-5 py-2.5 text-sm">
+            <div className="flex items-center justify-between border-t border-black/[0.04] bg-[#f9f9f9] px-5 py-2.5 text-sm">
               <span className="text-[#888]">Page {page} of {totalPages}</span>
               <div className="flex gap-2">
                 <button onClick={() => setPage((p) => p - 1)} disabled={page === 1}
-                  className="rounded-full border border-black/[0.06] bg-white px-3 py-1.5 text-sm hover:bg-[#fafaf8] disabled:opacity-40 transition-colors">
+                  className="rounded-full border border-black/[0.06] bg-white px-3 py-1.5 text-sm hover:bg-[#f9f9f9] disabled:opacity-40 transition-colors">
                   ← Prev
                 </button>
                 <button onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages}
-                  className="rounded-full border border-black/[0.06] bg-white px-3 py-1.5 text-sm hover:bg-[#fafaf8] disabled:opacity-40 transition-colors">
+                  className="rounded-full border border-black/[0.06] bg-white px-3 py-1.5 text-sm hover:bg-[#f9f9f9] disabled:opacity-40 transition-colors">
                   Next →
                 </button>
               </div>

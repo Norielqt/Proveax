@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuth } from '../context/AuthContext';
@@ -90,13 +90,14 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Settings</h1>
-      <p className="text-sm text-[#888] mt-1 mb-8">Manage your account information and payment preferences.</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">Account</p>
+      <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Settings</h1>
+      <p className="mt-2 text-sm text-[#5a5a55] mb-8">Manage your account information and payment preferences.</p>
 
       {/* My Profile */}
-      <section className="mb-6 px-5">
-        <h2 className="text-base font-semibold text-[#111]">My Profile</h2>
-        <p className="text-sm text-[#888] mt-0.5 mb-3">Update your display name.</p>
+      <section className="mb-6">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">My profile</p>
+        <p className="text-sm text-[#5a5a55] mt-1 mb-3">Update your display name.</p>
         <div className="rounded-2xl border border-black/[0.06] bg-white overflow-hidden">
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
             <div>
@@ -122,7 +123,7 @@ export default function Settings() {
                 type="email"
                 value={user?.email ?? ''}
                 readOnly
-                className="w-full rounded-xl border border-black/[0.06] bg-[#fafaf8] px-3.5 py-2.5 text-sm text-[#888] cursor-not-allowed select-all"
+                className="w-full rounded-xl border border-black/[0.06] bg-[#f9f9f9] px-3.5 py-2.5 text-sm text-[#888] cursor-not-allowed select-all"
               />
             </div>
 
@@ -133,7 +134,7 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={() => setName(user?.name ?? '')}
-                className="rounded-full border border-black/[0.06] bg-white px-5 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafaf8] focus:outline-none focus:ring-4 focus:ring-black/[0.08] transition-colors"
+                className="rounded-full border border-black/[0.06] bg-white px-5 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#f9f9f9] focus:outline-none focus:ring-4 focus:ring-black/[0.08] transition-colors"
               >
                 Cancel
               </button>
@@ -150,11 +151,11 @@ export default function Settings() {
       </section>
 
       {/* Payment Methods */}
-      <section className="mt-16 px-5">
+      <section className="mt-16">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-base font-semibold text-[#111]">Payment Methods</h2>
-            <p className="text-sm text-[#888] mt-0.5">Manage cards used for wallet top-ups and subscriptions.</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Payment methods</p>
+            <p className="text-sm text-[#5a5a55] mt-1">Manage cards used for wallet top-ups and subscriptions.</p>
           </div>
           <button
             type="button"
@@ -196,7 +197,7 @@ export default function Settings() {
                       <span className="text-sm font-semibold text-[#111] capitalize">{m.brand}</span>
                       <span className="text-sm text-[#888]">•••• {m.last4}</span>
                       {m.is_default && (
-                        <span className="ml-1 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 ring-1 ring-blue-200">
+                        <span className="ml-1 inline-flex items-center rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[#5a5a55]">
                           Default
                         </span>
                       )}
@@ -212,7 +213,7 @@ export default function Settings() {
                       <button
                         onClick={() => handleSetDefault(m.id)}
                         disabled={busyId === m.id}
-                        className="rounded-md border border-black/[0.09] bg-white px-3 py-1.5 text-xs font-semibold text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50 transition-colors"
+                        className="rounded-full border border-black/[0.09] bg-white px-3.5 py-1.5 text-xs font-medium text-[#5a5a55] hover:bg-[#f9f9f9] disabled:opacity-50 transition-colors"
                       >
                         Set default
                       </button>
@@ -220,7 +221,7 @@ export default function Settings() {
                     <button
                       onClick={() => handleDelete(m.id)}
                       disabled={busyId === m.id}
-                      className="rounded-md border border-black/[0.06] bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50/60 hover:border-rose-200 disabled:opacity-50 transition-colors"
+                      className="rounded-full border border-black/[0.06] bg-white px-3.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50/60 hover:border-rose-200 disabled:opacity-50 transition-colors"
                     >
                       Remove
                     </button>
@@ -378,7 +379,7 @@ function AddCardForm({ onAdded, onCancel }) {
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full border border-black/[0.06] bg-white px-4 py-2 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafaf8] transition-colors"
+          className="rounded-full border border-black/[0.06] bg-white px-4 py-2 text-sm font-semibold text-[#5a5a55] hover:bg-[#f9f9f9] transition-colors"
         >
           Cancel
         </button>
