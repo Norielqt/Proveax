@@ -5,7 +5,7 @@ export default function CtaSection() {
   const [ref, visible] = useReveal(0.1);
   return (
     <section className="relative overflow-hidden border-t border-black/[0.06] bg-white px-6 py-24 md:px-10">
-      <div ref={ref} className={`relative mx-auto max-w-7xl overflow-hidden rounded-[36px] bg-[#111] px-8 py-20 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:px-16 md:py-24 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+      <div ref={ref} className={`relative mx-auto max-w-7xl overflow-hidden rounded-[36px] bg-[#111] px-8 py-20 transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:px-16 md:py-24 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         {/* Decorative orbs */}
         <div
           className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full opacity-40 blur-3xl"
@@ -29,7 +29,7 @@ export default function CtaSection() {
           <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
             · Ready when you are
           </p>
-          <h2 className="font-display text-[44px] font-normal leading-[1] tracking-[-1px] text-white md:text-[64px]">
+          <h2 className="font-display text-[32px] font-normal leading-[1] tracking-[-1px] text-white md:text-[44px] lg:text-[64px]">
             Start searching
             <br />
             properties today.

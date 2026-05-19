@@ -26,11 +26,11 @@ export default function HowItWorks() {
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-16 md:grid-cols-12">
           {/* LEFT heading */}
-          <div ref={leftRef} className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:col-span-5 ${leftVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+          <div ref={leftRef} className={`transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:col-span-5 ${leftVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">
               · How it works
             </p>
-            <h2 className="font-display text-[44px] font-normal leading-[1] tracking-[-1px] text-[#111] md:text-[60px]">
+            <h2 className="font-display text-[32px] font-normal leading-[1] tracking-[-1px] text-[#111] md:text-[44px] lg:text-[60px]">
               From sign up to first
               <br />
               insight, in minutes.
@@ -57,7 +57,7 @@ export default function HowItWorks() {
               {STEPS.map((s, i) => (
                 <li
                   key={s.n}
-                  className={`group relative rounded-3xl border border-black/[0.06] bg-white p-7 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-black/20 hover:shadow-[0_18px_50px_-20px_rgba(17,17,17,0.18)] ${stepsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}
+                  className={`group relative rounded-3xl border border-black/[0.06] bg-white p-7 transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-black/20 hover:shadow-[0_18px_50px_-20px_rgba(17,17,17,0.18)] ${stepsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}
                   style={{ transitionDelay: `${i * 120}ms` }}
                 >
                   <div className="flex items-start gap-6">

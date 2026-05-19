@@ -250,7 +250,7 @@ export default function AppShell() {
 
   return (
     <WorkSessionProvider>
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
       <header className="relative z-[1100] flex h-16 items-center justify-between border-b bg-white pr-2 md:pr-4">
         {/* Left: hamburger (mobile) + logo */}
         <div className="flex items-center">
@@ -264,9 +264,10 @@ export default function AppShell() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <Link to="/search" className="flex items-center gap-2">
+          <Link to="/search" className="hidden items-center gap-2 md:flex">
             <img src={proviaxxLogo} alt="Proviaxx" className="h-24 w-auto md:h-36 md:mt-2" />
           </Link>
+          <img src={proviaxxLogo} alt="Proviaxx" className="h-24 w-auto md:hidden" />
         </div>
 
         {/* Right: pills (hidden on mobile) + wallet icon-only on mobile */}
@@ -292,7 +293,7 @@ export default function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-scroll" style={{ background: '#f9f9f9' }}>
+      <main className="flex-1 overflow-y-auto min-h-0" style={{ background: '#f9f9f9' }}>
         <Outlet />
       </main>
 
@@ -345,29 +346,36 @@ function MobileNavDrawer({ open, onClose, user, tenant, isAdmin, logout }) {
   const navigate = useNavigate();
   const go = (path) => { onClose(); navigate(path); };
 
+  // Lock body scroll when open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
   // Close on escape
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
+    return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
-
-  if (!open) return null;
 
   const item = 'flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-[15px] font-medium text-gray-800 hover:bg-gray-100';
 
   return (
-    <div className="fixed inset-0 z-[9998] md:hidden">
+    <div className={`fixed inset-0 z-[9998] md:hidden transition-all duration-300 ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${open ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onClose}
+      />
 
       {/* Drawer */}
-      <aside className="absolute left-0 top-0 flex h-full w-[85%] max-w-sm flex-col overflow-y-auto bg-white shadow-2xl">
+      <aside className={`absolute left-0 top-0 flex h-full w-[85%] max-w-sm flex-col overflow-y-auto bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4">
           <div className="flex items-center gap-3">

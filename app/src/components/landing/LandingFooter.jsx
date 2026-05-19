@@ -19,8 +19,8 @@ export default function LandingFooter() {
   return (
     <footer className="border-t border-black/[0.06] bg-white px-6 py-16 md:px-10">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-10 md:grid-cols-12">
-          <div className="md:col-span-5">
+        <div className="grid gap-10 grid-cols-2 sm:grid-cols-3 md:grid-cols-12">
+          <div className="col-span-2 sm:col-span-3 md:col-span-5">
             <img src={logo} alt="Proveax" className="h-8 w-auto" />
             <p className="mt-5 max-w-[320px] text-[14px] leading-[1.65] text-[#5a5a55]">
               Property intelligence for serious real estate professionals.
@@ -45,7 +45,7 @@ export default function LandingFooter() {
             </div>
           ))}
 
-          <div className="md:col-span-1" />
+          <div className="hidden md:block md:col-span-1" />
         </div>
 
         <div className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-black/[0.06] pt-8">

@@ -193,6 +193,24 @@ export default function Dashboard() {
   const suggestTimerRef = useRef(null);
   const autoSearchTimerRef = useRef(null);
   const inputRef = useRef(null);
+  const sheetTouchStartY = useRef(null);
+  const sheetListRef = useRef(null);
+
+  const handleSheetTouchStart = (e) => {
+    sheetTouchStartY.current = e.touches[0].clientY;
+  };
+  const handleSheetTouchEnd = (e) => {
+    if (sheetTouchStartY.current === null) return;
+    const dy = sheetTouchStartY.current - e.changedTouches[0].clientY;
+    if (dy > 40) setMobileSheet('expanded');
+    else if (dy < -40) {
+      // only collapse if list is scrolled to top
+      if (!sheetListRef.current || sheetListRef.current.scrollTop === 0) {
+        setMobileSheet('peek');
+      }
+    }
+    sheetTouchStartY.current = null;
+  };
 
   const [results, setResults] = useState([]);
   const [, setAttomTotal] = useState(0);
@@ -1013,12 +1031,14 @@ export default function Dashboard() {
         {/* Mobile bottom sheet (visible on <md only) */}
         <div
           className={`absolute inset-x-0 bottom-0 z-[1000] md:hidden flex flex-col bg-white rounded-t-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.12)] transition-[height] duration-300 ease-in-out`}
-          style={{ height: mobileSheet === 'expanded' ? '85%' : '160px' }}
+          style={{ height: mobileSheet === 'expanded' ? '85%' : '52px' }}
         >
           {/* Drag handle / header */}
           <button
             type="button"
             onClick={() => setMobileSheet((s) => (s === 'expanded' ? 'peek' : 'expanded'))}
+            onTouchStart={handleSheetTouchStart}
+            onTouchEnd={handleSheetTouchEnd}
             className="flex items-center justify-between px-4 pt-2 pb-2 border-b border-black/[0.06]"
             aria-label={mobileSheet === 'expanded' ? 'Collapse results' : 'Expand results'}
           >
@@ -1057,7 +1077,7 @@ export default function Dashboard() {
           )}
 
           {/* Results list (scrollable when expanded) */}
-          <div className="flex-1 overflow-y-auto" style={{ background: '#f9f9f9' }}>
+          <div ref={sheetListRef} className="flex-1 overflow-y-auto" style={{ background: '#f9f9f9' }}>
             <ResultsList
               properties={results}
               onHover={setHoveredId}

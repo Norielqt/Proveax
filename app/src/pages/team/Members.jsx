@@ -161,7 +161,8 @@ export default function Members() {
         Team members {!fetchingMembers && `· ${members.length}`}
       </p>
       <div className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white">
-        <table className="w-full table-fixed text-sm">
+        <div className="overflow-x-auto">
+        <table className="min-w-max w-full text-sm">
           <thead className="bg-[#f9f9f9] text-left text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">
             <tr>
               <th className="w-1/4 px-4 py-2 font-medium">Name</th>
@@ -246,6 +247,7 @@ export default function Members() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Pending invites */}
@@ -260,7 +262,8 @@ export default function Members() {
                 return s === 'pending' || s === 'expired';
               });
               return (
-                <table className="w-full table-fixed text-sm">
+                <div className="overflow-x-auto">
+                <table className="min-w-max w-full text-sm">
                   <thead className="bg-[#f9f9f9] text-left text-xs uppercase tracking-wide text-[#888]">
                     <tr>
                       <th className="w-1/4 px-4 py-2 font-medium">Email</th>
@@ -316,6 +319,7 @@ export default function Members() {
                     })}
                   </tbody>
                 </table>
+                </div>
               );
             })()}
           </div>

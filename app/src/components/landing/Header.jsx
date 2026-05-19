@@ -18,7 +18,7 @@ export default function Header() {
       <div className="relative mx-auto grid max-w-7xl gap-12 px-6 pb-24 pt-20 md:grid-cols-12 md:px-10 md:pb-28 md:pt-24">
         {/* LEFT: copy */}
         <div className="relative md:col-span-7 md:pt-6">
-          <h1 className="anim-fade-up font-display text-[56px] font-normal leading-[0.98] tracking-[-1.5px] text-[#111] md:text-[88px]" style={{ animationDelay: '0ms' }}>
+          <h1 className="anim-fade-up font-display text-[38px] font-normal leading-[0.98] tracking-[-1.5px] text-[#111] sm:text-[52px] md:text-[88px]" style={{ animationDelay: '0ms' }}>
             The whole story
             <br />
             behind every address.
@@ -71,7 +71,7 @@ export default function Header() {
               <img
                 src="/landing-hero.png"
                 alt="Modern luxury home"
-                className="h-[520px] w-full object-cover md:h-[600px]"
+                className="h-[300px] w-full object-cover sm:h-[400px] md:h-[600px]"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
             </div>

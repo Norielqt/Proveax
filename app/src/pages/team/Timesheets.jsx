@@ -121,7 +121,8 @@ export default function Timesheets() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white">
-            <table className="min-w-full divide-y divide-black/[0.04] text-sm">
+            <div className="overflow-x-auto">
+            <table className="min-w-max w-full divide-y divide-black/[0.04] text-sm">
               <thead className="bg-[#f9f9f9] text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">
                 <tr>
                   <th className="px-5 py-3 text-left font-medium">Date</th>
@@ -157,6 +158,7 @@ export default function Timesheets() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </section>

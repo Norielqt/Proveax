@@ -393,14 +393,14 @@ export default function CRM() {
           </div>
         </div>
       )}
-      <div className="flex flex-wrap items-end justify-between gap-4 pr-5">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">Workspace</p>
           <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Leads</h1>
           <p className="mt-2 text-sm text-[#5a5a55]">Shared spreadsheet. Changes save automatically.</p>
         </div>
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <div className="relative w-full sm:w-72">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <div className="relative flex-1 sm:w-72 sm:flex-none">
             <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#bbb]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" /></svg>
             <input
               value={query}
@@ -411,10 +411,11 @@ export default function CRM() {
           </div>
           <button
             onClick={addRow}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#111] px-5 text-[13px] font-medium text-white transition-colors hover:bg-[#2a2a2a]"
+            className="shrink-0 inline-flex h-10 items-center gap-1.5 rounded-full bg-[#111] px-4 sm:px-5 text-[13px] font-medium text-white transition-colors hover:bg-[#2a2a2a]"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            New lead
+            <span className="hidden sm:inline">New lead</span>
+            <span className="sm:hidden">New</span>
           </button>
         </div>
       </div>
@@ -429,7 +430,7 @@ export default function CRM() {
         {!filtered ? (
           <div className="p-4"><TableSkeleton rows={6} cols={7} /></div>
         ) : (
-          <table className="w-full border-collapse text-sm">
+          <table className="min-w-max w-full border-collapse text-sm">
             <thead className="bg-[#f9f9f9]">
               <tr className="text-left text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">
                 <SortableTh sortKey="name"        sort={sort} onSort={toggleSort}>Name</SortableTh>

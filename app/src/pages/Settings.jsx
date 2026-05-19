@@ -130,18 +130,18 @@ export default function Settings() {
             {error && <p className="text-sm text-rose-600">{error}</p>}
             {success && <p className="text-sm text-[#111]">Profile updated successfully.</p>}
 
-            <div className="border-t border-black/[0.04] -mx-6 px-6 pt-4 flex items-center justify-end gap-3">
+            <div className="border-t border-black/[0.04] -mx-6 px-6 pt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setName(user?.name ?? '')}
-                className="rounded-full border border-black/[0.06] bg-white px-5 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#f9f9f9] focus:outline-none focus:ring-4 focus:ring-black/[0.08] transition-colors"
+                className="rounded-full border border-black/[0.06] bg-white px-5 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#f9f9f9] focus:outline-none focus:ring-4 focus:ring-black/[0.08] transition-colors text-center"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || !name.trim()}
-                className="rounded-full bg-[#111] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2a2a2a] focus:outline-none focus:ring-4 focus:ring-black/[0.15] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-full bg-[#111] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2a2a2a] focus:outline-none focus:ring-4 focus:ring-black/[0.15] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-center"
               >
                 {saving ? 'Saving…' : 'Save changes'}
               </button>
@@ -151,8 +151,8 @@ export default function Settings() {
       </section>
 
       {/* Payment Methods */}
-      <section className="mt-16">
-        <div className="flex items-center justify-between mb-3">
+      <section className="mt-10 md:mt-16">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Payment methods</p>
             <p className="text-sm text-[#5a5a55] mt-1">Manage cards used for wallet top-ups and subscriptions.</p>
@@ -160,7 +160,7 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2a2a2a] focus:outline-none focus:ring-4 focus:ring-black/[0.15] transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#2a2a2a] focus:outline-none focus:ring-4 focus:ring-black/[0.15] transition-colors"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
