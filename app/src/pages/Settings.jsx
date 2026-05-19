@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuth } from '../context/AuthContext';
@@ -95,7 +95,7 @@ export default function Settings() {
 
       {/* My Profile */}
       <section className="mb-6 px-5">
-        <h2 className="font-display text-xl font-bold text-[#111]">My Profile</h2>
+        <h2 className="text-base font-semibold text-[#111]">My Profile</h2>
         <p className="text-sm text-[#888] mt-0.5 mb-3">Update your display name.</p>
         <div className="rounded-2xl border border-black/[0.06] bg-white overflow-hidden">
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
@@ -108,7 +108,7 @@ export default function Settings() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-black/[0.09] px-3.5 py-2.5 text-sm text-[#111] placeholder-[#aaa] focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-black/[0.1]"
+                className="w-full rounded-xl border border-black/[0.09] px-3.5 py-2.5 text-sm text-[#111] placeholder-[#aaa] focus:border-[#111] focus:outline-none focus:ring-4 focus:ring-black/[0.1]"
                 placeholder="Your name"
                 required
               />
@@ -122,25 +122,25 @@ export default function Settings() {
                 type="email"
                 value={user?.email ?? ''}
                 readOnly
-                className="w-full rounded-xl border border-black/[0.06] bg-[#fafafa] px-3.5 py-2.5 text-sm text-[#888] cursor-not-allowed select-all"
+                className="w-full rounded-xl border border-black/[0.06] bg-[#fafaf8] px-3.5 py-2.5 text-sm text-[#888] cursor-not-allowed select-all"
               />
             </div>
 
-            {error && <p className="text-sm text-[#111]">{error}</p>}
+            {error && <p className="text-sm text-rose-600">{error}</p>}
             {success && <p className="text-sm text-[#111]">Profile updated successfully.</p>}
 
             <div className="border-t border-black/[0.04] -mx-6 px-6 pt-4 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setName(user?.name ?? '')}
-                className="rounded-full border border-black/[0.06] bg-white px-5 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafafa] focus:outline-none focus:ring-4 focus:ring-black/[0.08] transition-colors"
+                className="rounded-full border border-black/[0.06] bg-white px-5 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafaf8] focus:outline-none focus:ring-4 focus:ring-black/[0.08] transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || !name.trim()}
-                className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-black/[0.15] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-full bg-[#111] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2a2a2a] focus:outline-none focus:ring-4 focus:ring-black/[0.15] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {saving ? 'Saving…' : 'Save changes'}
               </button>
@@ -153,13 +153,13 @@ export default function Settings() {
       <section className="mt-16 px-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="font-display text-xl font-bold text-[#111]">Payment Methods</h2>
+            <h2 className="text-base font-semibold text-[#111]">Payment Methods</h2>
             <p className="text-sm text-[#888] mt-0.5">Manage cards used for wallet top-ups and subscriptions.</p>
           </div>
           <button
             type="button"
             onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-black/[0.15] transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2a2a2a] focus:outline-none focus:ring-4 focus:ring-black/[0.15] transition-colors"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -170,7 +170,7 @@ export default function Settings() {
 
         <div className="rounded-2xl border border-black/[0.06] bg-white overflow-hidden">
           {pmError && (
-            <div className="border-b border-rose-100 bg-[#fafafa] px-6 py-3 text-sm text-[#111]">{pmError}</div>
+            <div className="border-b border-rose-100 bg-rose-50/60 px-6 py-3 text-sm text-rose-700">{pmError}</div>
           )}
 
           {pmLoading ? (
@@ -196,7 +196,7 @@ export default function Settings() {
                       <span className="text-sm font-semibold text-[#111] capitalize">{m.brand}</span>
                       <span className="text-sm text-[#888]">•••• {m.last4}</span>
                       {m.is_default && (
-                        <span className="ml-1 inline-flex items-center rounded-full bg-black/[0.05] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#5a5a55] ring-1 ring-black/[0.06]">
+                        <span className="ml-1 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 ring-1 ring-blue-200">
                           Default
                         </span>
                       )}
@@ -212,7 +212,7 @@ export default function Settings() {
                       <button
                         onClick={() => handleSetDefault(m.id)}
                         disabled={busyId === m.id}
-                        className="rounded-full border border-black/[0.06] bg-white px-3 py-1.5 text-xs font-semibold text-[#5a5a55] hover:bg-[#fafafa] disabled:opacity-50 transition-colors"
+                        className="rounded-md border border-black/[0.09] bg-white px-3 py-1.5 text-xs font-semibold text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50 transition-colors"
                       >
                         Set default
                       </button>
@@ -220,7 +220,7 @@ export default function Settings() {
                     <button
                       onClick={() => handleDelete(m.id)}
                       disabled={busyId === m.id}
-                      className="rounded-full border border-black/[0.15] bg-white px-3 py-1.5 text-xs font-semibold text-[#111] hover:bg-[#fafafa] disabled:opacity-50 transition-colors"
+                      className="rounded-md border border-black/[0.06] bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50/60 hover:border-rose-200 disabled:opacity-50 transition-colors"
                     >
                       Remove
                     </button>
@@ -252,7 +252,7 @@ function CardBrandIcon({ brand }) {
     mastercard: 'bg-[#eb001b]',
     amex:       'bg-[#2e77bb]',
     discover:   'bg-[#ff6000]',
-  }[brand] || 'bg-blue-600';
+  }[brand] || 'bg-[#111]';
   return (
     <div className={`flex h-9 w-14 shrink-0 items-center justify-center rounded-md ${bg} text-[10px] font-extrabold tracking-wider text-white shadow-sm`}>
       {label}
@@ -284,7 +284,7 @@ function AddCardModal({ onClose, onAdded }) {
       clientSecret,
       appearance: {
         theme: 'stripe',
-        variables: { colorPrimary: '#111111', borderRadius: '12px', fontSizeBase: '14px' },
+        variables: { colorPrimary: '#2563eb', borderRadius: '10px', fontSizeBase: '14px' },
       },
     } : null,
     [clientSecret],
@@ -307,9 +307,9 @@ function AddCardModal({ onClose, onAdded }) {
           </button>
         </div>
         <div className="p-6">
-          {err && <div className="mb-4 rounded-xl bg-[#fafafa] px-4 py-3 text-sm text-[#111]">{err}</div>}
+          {err && <div className="mb-4 rounded-lg bg-rose-50/60 px-4 py-3 text-sm text-rose-700">{err}</div>}
           {!stripePromise && (
-            <div className="rounded-xl border border-black/[0.06] bg-white px-4 py-3 text-sm text-[#5a5a55]">
+            <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
               Payments are not configured. Set <code>VITE_STRIPE_KEY</code> in the frontend env.
             </div>
           )}
@@ -373,19 +373,19 @@ function AddCardForm({ onAdded, onCancel }) {
           terms: { card: 'never', usBankAccount: 'never', link: 'never' },
         }}
       />
-      {err && <p className="text-sm text-[#111]">{err}</p>}
+      {err && <p className="text-sm text-rose-600">{err}</p>}
       <div className="flex items-center justify-end gap-3 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full border border-black/[0.06] bg-white px-4 py-2 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafafa] transition-colors"
+          className="rounded-full border border-black/[0.06] bg-white px-4 py-2 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafaf8] transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!stripe || busy}
-          className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2a2a2a] disabled:opacity-50 transition-colors"
         >
           {busy ? 'Saving…' : 'Save card'}
         </button>

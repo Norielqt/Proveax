@@ -1,22 +1,22 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { listInvites, createInvite, resendInvite, revokeInvite } from '../../api/invites';
 import { listMembers, updateMemberRole, pauseMember, unpauseMember, removeMember } from '../../api/team';
 import { useAuth } from '../../context/AuthContext';
 
 const INVITE_STATUS = {
-  pending:  'bg-amber-50 text-amber-700',
-  accepted: 'bg-black/[0.05] text-[#5a5a55]',
-  expired:  'bg-black/[0.04] text-[#888]',
-  revoked:  'bg-black/[0.04] text-[#888]',
+  pending:  'bg-amber-50 text-amber-700 border-amber-200',
+  accepted: 'bg-green-50 text-green-700 border-green-200',
+  expired:  'bg-black/[0.04] text-[#888] border-black/[0.06]',
+  revoked:  'bg-red-50 text-red-700 border-red-200',
 };
 
 function Notice({ notice }) {
   if (!notice) return null;
   return (
-    <div className={`mb-3 rounded-xl border px-3 py-2 text-sm ${
+    <div className={`mb-3 rounded-md border px-3 py-2 text-sm ${
       notice.type === 'success'
-        ? 'border-black/[0.06] bg-black/[0.05] text-[#111]'
-        : 'border-black/[0.08] bg-[#fafafa] text-[#111]'
+        ? 'border-green-200 bg-green-50 text-green-800'
+        : 'border-red-200 bg-red-50 text-red-800'
     }`}>
       {notice.text}
     </div>
@@ -135,18 +135,18 @@ export default function Members() {
             required type="email" value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="employee@company.com"
-            className="flex-1 rounded-xl border border-black/[0.09] bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-black/[0.06]"
+            className="flex-1 rounded-xl border border-black/[0.09] bg-white px-3 py-2 text-sm focus:border-[#111] focus:outline-none focus:ring-2 focus:ring-black/[0.06]"
           />
           <select
             value={role} onChange={(e) => setRole(e.target.value)}
-            className="rounded-xl border border-black/[0.09] bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-black/[0.06]"
+            className="rounded-xl border border-black/[0.09] bg-white px-3 py-2 text-sm focus:border-[#111] focus:outline-none focus:ring-2 focus:ring-black/[0.06]"
           >
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>
           </select>
           <button
             disabled={loading}
-            className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2a2a2a] disabled:opacity-50"
           >
             {loading ? 'Sending…' : 'Send invite'}
           </button>
@@ -156,18 +156,18 @@ export default function Members() {
       )}
 
       {/* Members list */}
-      <h2 className="mt-8 mb-3 text-sm font-semibold text-[#111]">
+      <h2 className="mt-8 mb-3 font-semibold text-[#111]">
         Team members {!fetchingMembers && `(${members.length})`}
       </h2>
       <div className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white">
         <table className="w-full table-fixed text-sm">
-          <thead className="bg-[#fafafa] text-left text-[10px] uppercase tracking-[0.12em] text-[#888]">
+          <thead className="bg-[#fafaf8] text-left text-xs uppercase tracking-wide text-[#888]">
             <tr>
-              <th className="w-1/4 px-4 py-3 font-semibold">Name</th>
-              <th className="w-1/4 px-4 py-3 font-semibold">Email</th>
-              <th className="w-1/6 px-4 py-3 font-semibold">Role</th>
-              <th className="w-1/6 px-4 py-3 font-semibold">Status</th>
-              <th className="w-24 px-4 py-3 font-semibold"></th>
+              <th className="w-1/4 px-4 py-2 font-medium">Name</th>
+              <th className="w-1/4 px-4 py-2 font-medium">Email</th>
+              <th className="w-1/6 px-4 py-2 font-medium">Role</th>
+              <th className="w-1/6 px-4 py-2 font-medium">Status</th>
+              <th className="w-24 px-4 py-2 font-medium"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-black/[0.04]">
@@ -193,7 +193,7 @@ export default function Members() {
               const isMe = m.id === me?.id;
               const busy = actionId === `m-${m.id}`;
               return (
-                <tr key={m.id} className={`text-[#5a5a55] ${m.is_paused ? 'bg-[#fafafa]/60' : ''}`}>
+                <tr key={m.id} className={`text-[#5a5a55] ${m.is_paused ? 'bg-[#fafaf8]/60' : ''}`}>
                   <td className="px-4 py-2.5 font-medium">
                     {m.name} {isMe && <span className="ml-1 text-xs text-[#aaa]">(you)</span>}
                   </td>
@@ -204,7 +204,7 @@ export default function Members() {
                         value={m.role}
                         onChange={(e) => doRoleChange(m.id, e.target.value)}
                         disabled={isMe || busy}
-                        className="rounded-2xl border border-black/[0.06] bg-white px-2 py-1 text-xs disabled:bg-[#f5f5f5] disabled:text-[#aaa]"
+                        className="rounded-2xl border border-black/[0.06] bg-white px-2 py-1 text-xs disabled:bg-[#fafaf8] disabled:text-[#aaa]"
                       >
                         <option value="employee">Employee</option>
                         <option value="admin">Admin</option>
@@ -215,15 +215,9 @@ export default function Members() {
                   </td>
                   <td className="px-4 py-2.5">
                     {m.is_paused ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.05] px-2.5 py-0.5 text-xs font-medium text-[#5a5a55]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#888]" />
-                        Paused
-                      </span>
+                      <span className="inline-block rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700">Paused</span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.05] px-2.5 py-0.5 text-xs font-medium text-[#5a5a55]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
-                        Active
-                      </span>
+                      <span className="inline-block rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs text-green-700">Active</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -232,14 +226,14 @@ export default function Members() {
                         <button
                           onClick={() => doPause(m.id, m.is_paused)}
                           disabled={busy}
-                          className="rounded-full border border-black/[0.06] px-2.5 py-1 text-xs font-medium text-[#5a5a55] hover:bg-[#fafafa] disabled:opacity-50"
+                          className="rounded-full border border-black/[0.06] px-2.5 py-1 text-xs font-medium text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50"
                         >
                           {m.is_paused ? 'Restore' : 'Pause'}
                         </button>
                         <button
                           onClick={() => doRemove(m.id, m.name)}
                           disabled={busy}
-                          className="rounded-full border border-black/[0.09] px-2.5 py-1 text-xs font-medium text-[#5a5a55] hover:bg-[#fafafa] disabled:opacity-50"
+                          className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
                         >
                           Remove
                         </button>
@@ -266,7 +260,7 @@ export default function Members() {
               });
               return (
                 <table className="w-full table-fixed text-sm">
-                  <thead className="bg-[#fafafa] text-left text-[10px] uppercase tracking-[0.12em] text-[#888]">
+                  <thead className="bg-[#fafaf8] text-left text-xs uppercase tracking-wide text-[#888]">
                     <tr>
                       <th className="w-1/4 px-4 py-2 font-medium">Email</th>
                       <th className="w-1/8 px-4 py-2 font-medium">Role</th>
@@ -286,7 +280,7 @@ export default function Members() {
                           <td className="px-4 py-2.5">{inv.email}</td>
                           <td className="px-4 py-2.5 capitalize">{inv.role ?? 'employee'}</td>
                           <td className="px-4 py-2.5">
-                            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${INVITE_STATUS[status] ?? INVITE_STATUS.pending}`}>
+                            <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${INVITE_STATUS[status] ?? INVITE_STATUS.pending}`}>
                               {status}
                             </span>
                           </td>
@@ -301,14 +295,14 @@ export default function Members() {
                                   <button
                                     onClick={() => doResend(inv.id)}
                                     disabled={busy}
-                                    className="rounded-full border border-black/[0.06] px-2.5 py-1 text-xs font-medium text-[#5a5a55] hover:bg-[#fafafa] disabled:opacity-50"
+                                    className="rounded-full border border-black/[0.06] px-2.5 py-1 text-xs font-medium text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50"
                                   >
                                     Resend
                                   </button>
                                   <button
                                     onClick={() => doRevoke(inv.id)}
                                     disabled={busy}
-                                    className="rounded-full border border-black/[0.09] px-2.5 py-1 text-xs font-medium text-[#5a5a55] hover:bg-[#fafafa] disabled:opacity-50"
+                                    className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
                                   >
                                     Revoke
                                   </button>
