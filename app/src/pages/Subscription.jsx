@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -17,41 +17,46 @@ if (stripeKey && !stripeKey.startsWith('pk_')) {
 }
 const stripePromise = (stripeKey && stripeKey.startsWith('pk_')) ? loadStripe(stripeKey) : null;
 
-const INCLUDED = [
-  'Unlimited property search',
-  'Built-in CRM',
-  'Team management',
-  'Lead pipeline',
-  'Time tracking & timesheets',
-  'Screenshots & activity',
-  'Reporting & analytics',
-  'Email support',
-];
-
 const PLANS = [
   {
     id: 'starter',
     name: 'Starter',
     price: 99.99,
     seats: '1–5 users',
-    tagline: 'Perfect for small teams and solo agents.',
-    popular: false,
+    features: [
+      'Up to 5 team members',
+      'Unlimited property search',
+      'Time tracking & timesheets',
+      'Screenshots & activity',
+      'Email support',
+    ],
   },
   {
     id: 'team',
     name: 'Team',
     price: 189.99,
     seats: '6–10 users',
-    tagline: 'Best for growing teams that move fast.',
     popular: true,
+    features: [
+      'Up to 10 team members',
+      'Everything in Starter',
+      'CRM & shared lead pipeline',
+      'Advanced reporting',
+      'Priority support',
+    ],
   },
   {
     id: 'business',
     name: 'Business',
     price: 249.99,
     seats: '10+ users',
-    tagline: 'Built for large brokerages and enterprises.',
-    popular: false,
+    features: [
+      'Unlimited team members',
+      'Everything in Team',
+      'API access & integrations',
+      'Dedicated account manager',
+      'Custom onboarding',
+    ],
   },
 ];
 
@@ -61,8 +66,8 @@ function CancelModal({ onConfirm, onClose, canceling }) {
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_18px_50px_-15px_rgba(17,17,17,0.25)]">
         <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fafafa]">
-            <svg className="h-5 w-5 text-[#111]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50/60">
+            <svg className="h-5 w-5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
@@ -84,7 +89,7 @@ function CancelModal({ onConfirm, onClose, canceling }) {
           <button
             onClick={onConfirm}
             disabled={canceling}
-            className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
           >
             {canceling ? 'Canceling…' : 'Yes, cancel'}
           </button>
@@ -161,8 +166,8 @@ export default function Subscription() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-semibold tracking-[0.08em] uppercase text-white">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4f1eb] px-2.5 py-0.5 text-xs font-semibold text-[#5a5a55]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#111]" />
                   Active
                 </span>
                 {currentPlan && <span className="text-xs text-[#888]">{currentPlan.seats}</span>}
@@ -185,7 +190,7 @@ export default function Subscription() {
             {isAdmin && (
               <button
                 onClick={handleCancel}
-                className="rounded-full border border-black/[0.15] bg-white px-4 py-2 text-sm font-semibold text-[#111] transition hover:bg-[#fafafa]"
+                className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50/60"
               >
                 Cancel subscription
               </button>
@@ -195,7 +200,7 @@ export default function Subscription() {
             <div className="mt-5 border-t border-black/[0.04] pt-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#aaa]">What's included</p>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                {INCLUDED.map((f) => (
+                {currentPlan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm text-[#5a5a55]">
                     <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#111]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -211,14 +216,14 @@ export default function Subscription() {
 
       {/* Canceled banner */}
       {isCanceled && (
-        <div className="mt-6 rounded-2xl border border-black/[0.08] bg-white p-6">
+        <div className="mt-6 rounded-2xl border border-amber-200/60 bg-amber-50/60 p-6">
           <div className="flex items-start gap-3">
-            <svg className="h-5 w-5 shrink-0 text-[#111]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <h3 className="text-sm font-semibold text-[#111]">Your subscription is canceled</h3>
-              <p className="mt-1 text-sm text-[#5a5a55]">
+              <h3 className="text-sm font-semibold text-amber-900">Your subscription is canceled</h3>
+              <p className="mt-1 text-sm text-amber-800">
                 You'll keep access until{' '}
                 {status.subscription_ends_at
                   ? <span className="font-semibold">{new Date(status.subscription_ends_at).toLocaleDateString()}</span>
@@ -232,12 +237,12 @@ export default function Subscription() {
 
       {/* Trial card */}
       {isTrialing && !selected && (
-        <div className="mt-6 rounded-2xl border border-black/[0.06] bg-white p-6">
+        <div className="mt-6 rounded-2xl border border-black/[0.06] bg-[#f4f1eb] p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-semibold tracking-[0.08em] uppercase text-white">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-[#5a5a55] ring-1 ring-black/[0.06]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#111]" />
                   Free Trial
                 </span>
                 {currentPlan && (
@@ -269,7 +274,7 @@ export default function Subscription() {
                     {new Date(status.trial_ends_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
                   </span>
                   {status.days_left != null && (
-                    <span className="ml-1.5 inline-flex items-center rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
+                    <span className="ml-1.5 inline-flex items-center rounded-full bg-[#111] px-2 py-0.5 text-xs font-semibold text-white">
                       {status.days_left} day{status.days_left === 1 ? '' : 's'} left
                     </span>
                   )}
@@ -280,7 +285,7 @@ export default function Subscription() {
                 <div className="mt-4 border-t border-black/[0.08] pt-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#888]">What's included</p>
                   <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
-                    {INCLUDED.map((f) => (
+                    {currentPlan.features.map((f) => (
                       <li key={f} className="flex items-start gap-2 text-sm text-[#5a5a55]">
                         <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#111]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -309,69 +314,47 @@ export default function Subscription() {
               return (
                 <div
                   key={plan.id}
-                  className={`relative flex flex-col rounded-2xl border p-7 transition-all ${
-                    highlighted
-                      ? 'border-transparent bg-blue-600 text-white shadow-[0_40px_80px_-20px_rgba(17,17,17,0.45)] md:-translate-y-2'
-                      : isCurrentPlan
-                      ? 'border-blue-600 bg-white ring-1 ring-blue-600'
-                      : 'border-black/[0.07] bg-white hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.1)]'
+                  className={`relative flex flex-col rounded-xl border p-6 ${
+                    isCurrentPlan
+                      ? 'border-black/[0.08] bg-[#f4f1eb] ring-1 ring-[#111]/10'
+                      : highlighted
+                      ? 'border-[#111] bg-white shadow-[0_18px_50px_-15px_rgba(17,17,17,0.25)] ring-1 ring-[#111]'
+                      : 'border-black/[0.06] bg-white'
                   }`}
                 >
-                  <div className="mb-6 flex items-center justify-between">
-                    <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${highlighted ? 'text-white/50' : 'text-[#999]'}`}>
-                      {plan.name}
+                  {isCurrentPlan && (
+                    <span className="absolute -top-3 left-6 rounded-full bg-[#111] px-3 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
+                      Current plan
                     </span>
-                    {isCurrentPlan && (
-                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${highlighted ? 'bg-white/15 text-white/80' : 'bg-blue-600 text-white'}`}>
-                        Current
-                      </span>
-                    )}
-                    {!isCurrentPlan && highlighted && (
-                      <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/80">
-                        Popular
-                      </span>
-                    )}
+                  )}
+                  {!isCurrentPlan && highlighted && (
+                    <span className="absolute -top-3 left-6 rounded-full bg-[#111] px-3 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
+                      Most popular
+                    </span>
+                  )}
+                  <h3 className="text-lg font-semibold text-[#111]">{plan.name}</h3>
+                  <p className="mt-1 text-sm text-[#888]">{plan.seats}</p>
+                  <div className="mt-4 flex items-baseline">
+                    <span className="font-display text-5xl font-bold text-[#111] leading-none">${plan.price}</span>
+                    <span className="ml-1 text-sm text-[#888]">/month</span>
                   </div>
-
-                  <div className={`flex items-start ${highlighted ? 'text-white' : 'text-[#111]'}`}>
-                    <span className={`mt-2.5 mr-0.5 text-[15px] font-medium ${highlighted ? 'text-white/60' : 'text-[#999]'}`}>$</span>
-                    <span className="font-display text-[56px] font-normal leading-none tracking-[-2px]">{Math.floor(plan.price)}</span>
-                    <div className="ml-1 mt-auto mb-2">
-                      <div className={`text-[15px] font-medium ${highlighted ? 'text-white/60' : 'text-[#999]'}`}>.{String(Math.round((plan.price % 1) * 100)).padStart(2, '0')}</div>
-                      <div className={`text-[11px] ${highlighted ? 'text-white/40' : 'text-[#bbb]'}`}>/mo</div>
-                    </div>
-                  </div>
-
-                  <div className={`mt-5 inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-[0.08em] uppercase ${
-                    highlighted ? 'bg-white/10 text-white/80' : 'bg-black/[0.04] text-[#5a5a55]'
-                  }`}>
-                    {plan.seats}
-                  </div>
-
-                  <p className={`mt-4 mb-6 text-[13px] leading-[1.6] ${highlighted ? 'text-white/55' : 'text-[#888]'}`}>
-                    {plan.tagline}
-                  </p>
-
-                  <ul className={`flex-1 space-y-2.5 text-[13px] ${highlighted ? 'text-white/75' : 'text-[#5a5a55]'}`}>
-                    {INCLUDED.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5">
-                        <svg viewBox="0 0 12 12" className={`mt-1 h-3 w-3 flex-shrink-0 ${highlighted ? 'text-white' : 'text-[#111]'}`} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6.5 4.5 9 10 3.5" /></svg>
+                  <ul className="mt-6 flex-1 space-y-2 text-sm text-[#5a5a55]">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2">
+                        <span className="mt-0.5 text-[#111]">✓</span>
                         <span>{f}</span>
                       </li>
                     ))}
                   </ul>
-
                   <button
                     onClick={() => handleSelect(plan)}
                     disabled={!!preparing || isCurrentPlan || !isAdmin}
-                    className={`mt-7 block w-full rounded-full py-3 text-center text-[13px] font-semibold tracking-[-0.1px] transition-all disabled:opacity-60 disabled:cursor-default ${
+                    className={`mt-6 w-full rounded-full px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
                       isCurrentPlan
-                        ? highlighted
-                          ? 'bg-white/10 text-white/70'
-                          : 'bg-black/[0.04] text-[#888]'
+                        ? 'border border-black/[0.08] bg-[#f4f1eb] text-[#5a5a55] cursor-default'
                         : highlighted
-                        ? 'bg-white text-[#111] hover:bg-[#f0f0ee]'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-[#111] text-white hover:bg-[#2a2a2a]'
+                        : 'border border-black/[0.06] text-[#111] hover:bg-[#fafaf8]'
                     }`}
                   >
                     {isCurrentPlan ? 'Current plan' : preparing === plan.id ? 'Preparing…' : 'Choose plan'}
@@ -424,9 +407,9 @@ function PaymentPanel({ plan, clientSecret, onBack, onSuccess, success }) {
 
   if (success) {
     return (
-      <div className="mt-8 rounded-2xl border border-black/[0.06] bg-white p-8 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-600">
-          <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <div className="mt-8 rounded-2xl border border-black/[0.06] bg-[#f4f1eb] p-8 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f4f1eb]">
+          <svg className="h-8 w-8 text-[#111]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -438,7 +421,7 @@ function PaymentPanel({ plan, clientSecret, onBack, onSuccess, success }) {
 
   if (!stripePromise) {
     return (
-      <div className="mt-8 rounded-2xl border border-black/[0.08] bg-white p-6 text-sm text-[#5a5a55]">
+      <div className="mt-8 rounded-2xl border border-amber-200/60 bg-amber-50/60 p-6 text-sm text-amber-800">
         Stripe is not configured. Set <code>VITE_STRIPE_KEY</code> in your env.
       </div>
     );
@@ -537,7 +520,7 @@ function PaymentForm({ plan, onSuccess }) {
       />
 
       {error && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-[#fafafa] px-3 py-2 text-sm font-medium text-[#111]">
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-rose-50/60 px-3 py-2 text-sm font-medium text-rose-700">
           <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -548,7 +531,7 @@ function PaymentForm({ plan, onSuccess }) {
       <button
         type="submit"
         disabled={!stripe || busy}
-        className="mt-6 w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+        className="mt-6 w-full rounded-full bg-[#111] py-3 text-sm font-semibold text-white transition hover:bg-[#2a2a2a] disabled:opacity-50"
       >
         {busy ? (
           <span className="inline-flex items-center justify-center gap-2">
