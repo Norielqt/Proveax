@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import * as maptilersdk from '@maptiler/sdk';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
 
@@ -79,7 +79,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     return () => { delete window.__pvxSelect; };
   }, []);
 
-  // ── Build all GL sources + layers (called on load & after style swap) ────
+  // -- Build all GL sources + layers (called on load & after style swap) ----
   function setupLayers(map) {
     // Canvas-based pill background with rounded corners + gray border.
     if (!map.hasImage('pill-bg')) {
@@ -102,7 +102,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
         cx.closePath();
         cx.fillStyle = '#ffffff';
         cx.fill();
-        cx.strokeStyle = '#d1d5db';
+        cx.strokeStyle = '#dddddd';
         cx.lineWidth = 1;
         cx.stroke();
         const imgData = cx.getImageData(0, 0, s, s);
@@ -112,7 +112,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
           stretchY: [[r + 1, s - r - 1]],
         });
       } catch (_) {
-        // Fallback: plain white pixel — pills still work, just no border
+        // Fallback: plain white pixel � pills still work, just no border
         try {
           map.addImage('pill-bg', { width: 1, height: 1, data: new Uint8Array([255, 255, 255, 255]) });
         } catch (_2) { /* already exists */ }
@@ -135,13 +135,13 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
       map.addSource('highlight', { type: 'geojson', data: EMPTY_FC });
     }
 
-    // ── Cluster circles ──
+    // -- Cluster circles --
     if (!map.getLayer('clusters')) {
       map.addLayer({
         id: 'clusters', type: 'circle', source: 'properties',
         filter: ['has', 'point_count'],
         paint: {
-          'circle-color': ['step', ['get', 'point_count'], '#3b82f6', 50, '#1d4ed8', 500, '#1e3a8a'],
+          'circle-color': ['step', ['get', 'point_count'], '#3b82f6', 50, '#2563eb', 500, '#1d4ed8'],
           'circle-radius': ['step', ['get', 'point_count'], 18, 50, 24, 500, 32],
           'circle-opacity': 0.9,
           'circle-stroke-width': 2,
@@ -150,7 +150,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
       });
     }
 
-    // ── Cluster count labels ──
+    // -- Cluster count labels --
     if (!map.getLayer('cluster-count')) {
       map.addLayer({
         id: 'cluster-count', type: 'symbol', source: 'properties',
@@ -164,7 +164,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
       });
     }
 
-    // ── Unclustered dots (low zoom, before price pills appear) ──
+    // -- Unclustered dots (low zoom, before price pills appear) --
     if (!map.getLayer('unclustered-point')) {
       map.addLayer({
         id: 'unclustered-point', type: 'circle', source: 'properties',
@@ -179,7 +179,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
       });
     }
 
-    // ── Small fallback dots for price-hidden points (high zoom) ──
+    // -- Small fallback dots for price-hidden points (high zoom) --
     // These show where pills were hidden by collision detection
     if (!map.getLayer('price-dots')) {
       map.addLayer({
@@ -195,7 +195,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
       });
     }
 
-    // ── GL price pills (high zoom) ──
+    // -- GL price pills (high zoom) --
     // Collision detection is ON so pills don't overlap. Hidden ones
     // still appear as small dots from the layer above.
     if (!map.getLayer('price-labels')) {
@@ -222,7 +222,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
       });
     }
 
-    // ── Hover highlight ring ──
+    // -- Hover highlight ring --
     if (!map.getLayer('highlight-glow')) {
       map.addLayer({
         id: 'highlight-glow', type: 'circle', source: 'highlight',
@@ -236,7 +236,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     }
   }
 
-  // ── Init map once ─────────────────────────────────────────────────────────
+  // -- Init map once ---------------------------------------------------------
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -267,7 +267,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
         }
       });
 
-      // Rebuild our custom layers after any style swap (satellite ↔ streets).
+      // Rebuild our custom layers after any style swap (satellite ? streets).
       // setStyle() destroys all custom sources/layers. We track swaps with a
       // flag and listen to 'style.load' which fires once after the new style
       // is fully parsed and ready to accept addSource/addLayer calls.
@@ -310,7 +310,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
         }
       });
 
-      // Click cluster → zoom in to expand
+      // Click cluster ? zoom in to expand
       map.on('click', 'clusters', (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
         if (!features.length) return;
@@ -321,7 +321,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
         });
       });
 
-      // Hover popup — single reusable instance so only one shows at a time
+      // Hover popup � single reusable instance so only one shows at a time
       const hoverPopup = new maptilersdk.Popup({
         offset: 14,
         maxWidth: '320px',
@@ -343,23 +343,23 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
           .setLngLat(coords)
           .setHTML(`
             <div style="font-family:system-ui,sans-serif;padding:4px 2px;min-width:260px">
-              <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:2px">${fp.street}</div>
-              <div style="font-size:12px;color:#6b7280;margin-bottom:12px">${fp.city}, ${fp.state} ${fp.zip}</div>
+              <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:2px">${fp.street}</div>
+              <div style="font-size:12px;color:#5a5a55;margin-bottom:12px">${fp.city}, ${fp.state} ${fp.zip}</div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
                 <div style="text-align:center">
-                  <div style="font-size:15px;font-weight:700;color:#111827">${fp.price || '—'}</div>
-                  <div style="font-size:10px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Last Sale Price</div>
+                  <div style="font-size:15px;font-weight:700;color:#111">${fp.price || '�'}</div>
+                  <div style="font-size:10px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Last Sale Price</div>
                 </div>
-                <div style="text-align:center;border-left:1px solid #f3f4f6;border-right:1px solid #f3f4f6">
-                  <div style="font-size:15px;font-weight:700;color:#111827">${fp.sqft || '—'}</div>
-                  <div style="font-size:10px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Sq Ft</div>
+                <div style="text-align:center;border-left:1px solid rgba(0,0,0,0.06);border-right:1px solid rgba(0,0,0,0.06)">
+                  <div style="font-size:15px;font-weight:700;color:#111">${fp.sqft || '�'}</div>
+                  <div style="font-size:10px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Sq Ft</div>
                 </div>
                 <div style="text-align:center">
-                  <div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${fp.proptype || '—'}</div>
-                  <div style="font-size:10px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Type</div>
+                  <div style="font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${fp.proptype || '�'}</div>
+                  <div style="font-size:10px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Type</div>
                 </div>
               </div>
-              <button onclick="window.__pvxSelect('${fp.uid}')" style="width:100%;padding:7px 0;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">View Details</button>
+              <button onclick="window.__pvxSelect('${fp.uid}')" style="width:100%;padding:7px 0;background:#2563eb;color:#fff;border:none;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer">View Details</button>
             </div>
           `)
           .addTo(map);
@@ -408,13 +408,13 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     };
   }, []);
 
-  // ── Sync data whenever properties change ──────────────────────────────────
+  // -- Sync data whenever properties change ----------------------------------
   useEffect(() => {
     propertiesRef.current = properties;
     const map = mapRef.current;
     if (!map) return;
 
-    // Rebuild uid → property lookup
+    // Rebuild uid ? property lookup
     propByUidRef.current.clear();
     properties.forEach((p) => {
       if (p.lat == null || p.lng == null) return;
@@ -433,7 +433,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     if (isManualSearch) pendingFlyRef.current = true;
 
     const apply = () => {
-      // Just update GeoJSON — GL layers re-render automatically (no DOM churn)
+      // Just update GeoJSON � GL layers re-render automatically (no DOM churn)
       if (map.getSource('properties')) {
         map.getSource('properties').setData(toGeoJSON(properties));
       }
@@ -452,7 +452,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     else map.once('styledata', apply);
   }, [properties, manualKey, panKey]);
 
-  // ── Fly to geocoded location when user picks a suggestion ────────────────
+  // -- Fly to geocoded location when user picks a suggestion ----------------
   useEffect(() => {
     if (!flyTo || flyTo === prevFlyToRef.current) return;
     prevFlyToRef.current = flyTo;
@@ -467,7 +467,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     }
   }, [flyTo]);
 
-  // ── Hover highlight (amber ring via GL source) ────────────────────────────
+  // -- Hover highlight (amber ring via GL source) ----------------------------
   useEffect(() => {
     const map = mapRef.current;
     prevHoveredIdRef.current = hoveredId;

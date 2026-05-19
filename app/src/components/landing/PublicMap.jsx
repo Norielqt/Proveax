@@ -7,7 +7,7 @@ maptilersdk.config.apiKey = import.meta.env.VITE_MAPTILER_KEY;
 const _KEY          = import.meta.env.VITE_MAPTILER_KEY;
 const STYLE_STREETS = `https://api.maptiler.com/maps/streets-v2/style.json?key=${_KEY}`;
 
-const DEMO_PINS = [
+const US_PINS = [
   { id: 1, lat: 25.7617, lng: -80.1918, label: 'Miami, FL' },
   { id: 2, lat: 29.7604, lng: -95.3698, label: 'Houston, TX' },
   { id: 3, lat: 33.7490, lng: -84.3880, label: 'Atlanta, GA' },
@@ -15,7 +15,11 @@ const DEMO_PINS = [
   { id: 5, lat: 34.0522, lng: -118.2437, label: 'Los Angeles, CA' },
 ];
 
-export default function PublicMap() {
+export default function PublicMap({
+  center    = [-98.5795, 39.8283],
+  zoom      = 4,
+  pins      = US_PINS,
+}) {
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -34,13 +38,13 @@ export default function PublicMap() {
       const map = new maptilersdk.Map({
         container:         inner,
         style:             STYLE_STREETS,
-        center:            [-98.5795, 39.8283],
-        zoom:              4,
+        center,
+        zoom,
         scrollZoom:        false,
         navigationControl: false,
       });
 
-      DEMO_PINS.forEach((p) => {
+      pins.forEach((p) => {
         new maptilersdk.Marker({ color: '#2563eb' })
           .setLngLat([p.lng, p.lat])
           .setPopup(

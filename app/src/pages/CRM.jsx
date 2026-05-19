@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { listLeads, createLead, updateLead, deleteLead, SOURCE_TYPES, SOURCE_TYPE_LABELS, uploadLeadFile, deleteLeadFile } from '../api/leads';
 import { TableSkeleton } from '../components/Skeleton';
 
@@ -56,7 +56,7 @@ function TextCell({ value, onCommit, type = 'text', placeholder = '' }) {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); }
         if (e.key === 'Escape') { dirty.current = false; setDraft(value ?? ''); e.currentTarget.blur(); }
       }}
-      className="w-full resize-none overflow-hidden border-0 bg-transparent px-3 py-2.5 text-left text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:bg-blue-50/60 focus:ring-1 focus:ring-inset focus:ring-blue-400"
+      className="w-full resize-none overflow-hidden border-0 bg-transparent px-3 py-2.5 text-left text-sm text-[#111] outline-none placeholder:text-[#aaa] focus:bg-[#f4f1eb]/50 focus:ring-1 focus:ring-inset focus:ring-black/[0.12]"
     />
   );
 }
@@ -91,18 +91,18 @@ function PriceCell({ value, onCommit }) {
         if (e.key === 'Enter') { e.currentTarget.blur(); }
         if (e.key === 'Escape') { dirty.current = false; setDraft(value ?? ''); e.currentTarget.blur(); }
       }}
-      className="w-full border-0 bg-transparent px-3 py-2.5 text-left text-sm tabular-nums text-gray-800 outline-none placeholder:text-gray-400 focus:bg-blue-50/60 focus:ring-1 focus:ring-inset focus:ring-blue-400"
+      className="w-full border-0 bg-transparent px-3 py-2.5 text-left text-sm tabular-nums text-[#111] outline-none placeholder:text-[#aaa] focus:bg-[#f4f1eb]/50 focus:ring-1 focus:ring-inset focus:ring-black/[0.12]"
     />
   );
 }
 
 const SOURCE_TYPE_BADGE = {
-  absentee_owner:     'bg-violet-100 text-violet-700',
-  out_of_state_owner: 'bg-blue-100 text-blue-700',
-  high_equity:        'bg-teal-100 text-teal-700',
-  cash_buyers:        'bg-amber-100 text-amber-700',
-  vacant_lots:        'bg-rose-100 text-rose-700',
-  mls_withdrawn:      'bg-slate-100 text-slate-600',
+  absentee_owner:     'bg-[#f4f1eb] text-[#5a5a55]',
+  out_of_state_owner: 'bg-[#e8f0fb] text-[#2a5a9a]',
+  high_equity:        'bg-[#e6f4f1] text-[#1a6b5a]',
+  cash_buyers:        'bg-amber-50 text-amber-700',
+  vacant_lots:        'bg-rose-50 text-rose-600',
+  mls_withdrawn:      'bg-[#fafaf8] text-[#888]',
 };
 
 function SourceTypeCell({ value, onCommit }) {
@@ -120,11 +120,11 @@ function SourceTypeCell({ value, onCommit }) {
       </select>
       <div className="pointer-events-none flex min-h-[42px] items-center px-3">
         {value ? (
-          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${SOURCE_TYPE_BADGE[value] ?? 'bg-gray-100 text-gray-600'}`}>
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${SOURCE_TYPE_BADGE[value] ?? 'bg-[#eee] text-[#5a5a55]'}`}>
             {SOURCE_TYPE_LABELS[value] ?? value}
           </span>
         ) : (
-          <span className="text-sm text-gray-400">—</span>
+          <span className="text-sm text-[#aaa]">—</span>
         )}
       </div>
     </div>
@@ -138,12 +138,12 @@ function PhonesCell({ phones, phone, onCommitPhone }) {
       <div className="px-3 py-2.5 space-y-1.5 min-w-[160px]">
         {phones.map((ph, i) => (
           <div key={i} className="flex flex-wrap items-center gap-1.5">
-            <span className="text-sm text-gray-800 tabular-nums">{ph.number}</span>
+            <span className="text-sm text-[#111] tabular-nums">{ph.number}</span>
             {ph.dnc && (
               <span className="rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-600">DNC</span>
             )}
             {ph.type && (
-              <span className="text-[10px] text-gray-400 capitalize">{ph.type}</span>
+              <span className="text-[10px] text-[#aaa] capitalize">{ph.type}</span>
             )}
           </div>
         ))}
@@ -194,14 +194,14 @@ function FileCell({ leadId, files = [], onFileAdded, onFileDeleted, notify }) {
     <div className="flex flex-col gap-1 px-3 py-2 min-w-[140px]">
       {files.map((f) => (
         <div key={f.id} className="flex items-center gap-1">
-          <svg className="h-3 w-3 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-3 w-3 shrink-0 text-[#aaa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
           <a
             href={f.file_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="max-w-[100px] truncate text-xs font-medium text-blue-600 hover:underline"
+            className="max-w-[100px] truncate text-xs font-medium text-[#111] underline-offset-2 hover:underline"
             title={f.file_name}
           >
             {f.file_name}
@@ -212,7 +212,7 @@ function FileCell({ leadId, files = [], onFileAdded, onFileDeleted, notify }) {
             <button
               onClick={() => handleDelete(f.id)}
               title="Remove file"
-              className="ml-auto rounded p-0.5 text-gray-400 hover:text-red-500 transition-colors"
+              className="ml-auto rounded p-0.5 text-[#aaa] hover:text-red-500 transition-colors"
             >
               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -223,11 +223,11 @@ function FileCell({ leadId, files = [], onFileAdded, onFileDeleted, notify }) {
       ))}
       <div>
         {uploading ? (
-          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
         ) : (
           <button
             onClick={() => inputRef.current?.click()}
-            className="flex items-center gap-0.5 rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-xs text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
+            className="flex items-center gap-0.5 rounded border border-dashed border-black/[0.09] px-1.5 py-0.5 text-xs text-[#aaa] hover:border-black/[0.12] hover:text-[#111] transition-colors"
           >
             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -395,19 +395,19 @@ export default function CRM() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3 pr-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customer Relationship Management</h1>
-          <p className="mt-1 text-sm text-gray-500">Shared lead spreadsheet. Changes save automatically.</p>
+          <h1 className="text-2xl font-bold text-[#111]">Customer Relationship Management</h1>
+          <p className="mt-1 text-sm text-[#888]">Shared lead spreadsheet. Changes save automatically.</p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name, email, phone…"
-            className="w-full sm:w-64 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+            className="w-full sm:w-64 rounded-md border border-black/[0.09] px-3 py-1.5 text-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-black/[0.06]"
           />
           <button
             onClick={addRow}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
             + New lead
           </button>
@@ -415,18 +415,18 @@ export default function CRM() {
       </div>
 
       {error && (
-        <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {error} <button className="underline" onClick={() => { setError(null); load(); }}>retry</button>
         </div>
       )}
 
-      <div className="mt-5 overflow-x-auto rounded-xl border border-gray-200 bg-white mx-5 shadow-sm">
+      <div className="mt-5 overflow-x-auto rounded-2xl border border-black/[0.06] bg-white shadow-[0_18px_50px_-15px_rgba(17,17,17,0.12)]">
         {!filtered ? (
           <div className="p-4"><TableSkeleton rows={6} cols={7} /></div>
         ) : (
           <table className="w-full border-collapse text-sm">
-            <thead className="bg-gray-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <thead className="bg-[#fafaf8]">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-[#888]">
                 <SortableTh sortKey="name"        sort={sort} onSort={toggleSort}>Name</SortableTh>
                 <SortableTh sortKey="address"     sort={sort} onSort={toggleSort}>Address</SortableTh>
                 <SortableTh sortKey="phone"       sort={sort} onSort={toggleSort}>Phone</SortableTh>
@@ -438,19 +438,19 @@ export default function CRM() {
                 <Th className="w-20">Action</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-black/[0.04]">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500">
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-[#888]">
                     {rows?.length === 0 ? 'No leads yet. Click + New lead to start.' : 'No leads match those filters.'}
                   </td>
                 </tr>
               )}
               {filtered.map((r) => (
-                <tr key={r.id} className="group transition-colors hover:bg-indigo-50/30">
+                <tr key={r.id} className="group transition-colors hover:bg-[#fafaf8]">
                   <Td>
                     <div className="flex items-center gap-2">
-                      <span className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 select-none">
+                      <span className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f4f1eb] text-xs font-bold text-[#555] select-none">
                         {r.name ? r.name.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : '?'}
                       </span>
                       <TextCell value={r.name} onCommit={(v) => patchRow(r.id, { name: v })} placeholder="No Data" />
@@ -487,11 +487,11 @@ export default function CRM() {
                   </Td>
                   <Td>
                     <div className="flex items-center justify-center gap-1">
-                      {saving[r.id] && <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-400" title="Saving…" />}
+                      {saving[r.id] && <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-600" title="Saving…" />}
                       <button
                         onClick={() => removeRow(r.id)}
                         title="Delete lead"
-                        className="rounded p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                        className="rounded p-1 text-[#aaa] transition hover:bg-red-50 hover:text-red-600"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
@@ -507,7 +507,7 @@ export default function CRM() {
       </div>
 
       {filtered && filtered.length > 0 && (
-        <p className="mt-3 text-xs text-gray-400 mx-5">
+        <p className="mt-3 text-xs text-[#aaa] mx-5">
           {filtered.length} of {rows.length} leads
           {lastEdit && <> · last edit {timeAgo(lastEdit)}</>}
         </p>
@@ -517,7 +517,7 @@ export default function CRM() {
 }
 
 function Th({ children, className = '' }) {
-  return <th className={`border-b border-gray-200 px-4 py-3 ${className}`}>{children}</th>;
+  return <th className={`border-b border-black/[0.06] px-4 py-3 ${className}`}>{children}</th>;
 }
 function Td({ children, className = '' }) {
   return <td className={`align-middle ${className}`}>{children}</td>;
@@ -525,7 +525,7 @@ function Td({ children, className = '' }) {
 function SortableTh({ children, sortKey, sort, onSort, className = '' }) {
   return (
     <th
-      className={`border-b border-gray-200 px-4 py-3 cursor-pointer select-none hover:bg-gray-100 ${className}`}
+      className={`border-b border-black/[0.06] px-4 py-3 cursor-pointer select-none hover:bg-[#eee] ${className}`}
       onClick={() => onSort(sortKey)}
     >
       {children}

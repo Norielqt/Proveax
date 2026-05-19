@@ -331,18 +331,21 @@ export default function AppShell() {
       {/* Welcome toast */}
       {welcomeToast !== null && (
         <div className="pointer-events-none fixed top-16 right-2 z-[9999] md:right-6">
-          <div className="pointer-events-auto flex items-center gap-3 rounded-xl bg-blue-700 px-5 py-3.5 shadow-2xl ring-1 ring-blue-600/40">
-            <svg className="h-5 w-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="text-sm font-semibold text-white">
-              Welcome back{welcomeToast ? `, ${welcomeToast}` : ''}!
-            </span>
+          <div className="pointer-events-auto flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-xl ring-1 ring-black/[0.07]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-base">
+              👋
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Back again</p>
+              <p className="text-sm font-semibold text-[#111] leading-tight">
+                {welcomeToast ? `Hey, ${welcomeToast}!` : 'Good to see you!'}
+              </p>
+            </div>
             <button
               onClick={() => setWelcomeToast(null)}
-              className="ml-2 rounded-full p-0.5 text-white/70 hover:text-white transition-colors"
+              className="ml-1 rounded-full p-1 text-[#aaa] hover:text-[#555] hover:bg-[#f4f4f4] transition-colors"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

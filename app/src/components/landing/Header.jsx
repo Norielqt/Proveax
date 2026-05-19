@@ -1,96 +1,148 @@
 import { Link } from 'react-router-dom';
 
-const STATS = [
-  { num: '150M+', lbl: 'Property records' },
-  { num: '12K+',  lbl: 'Active users' },
-  { num: '98%',   lbl: 'Data accuracy' },
-  { num: '4.9★',  lbl: 'Avg rating' },
-];
-
 export default function Header() {
   return (
-    <section className="relative overflow-hidden">
-      {/* Subtle dot grid background */}
+    <section className="relative overflow-hidden bg-white">
+      {/* faint grid overlay */}
       <div
-        className="absolute inset-0 opacity-[0.35]"
+        className="pointer-events-none absolute inset-0 opacity-[0.6]"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 1px 1px, #B5D4F4 1px, transparent 0)',
-          backgroundSize: '28px 28px',
-          maskImage:
-            'radial-gradient(ellipse 70% 80% at 50% 30%, black 40%, transparent 75%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse 70% 80% at 50% 30%, black 40%, transparent 75%)',
-        }}
-      />
-      {/* Soft radial glow */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[600px]"
-        style={{
-          background:
-            'radial-gradient(ellipse 60% 60% at 50% 20%, rgba(24,95,165,0.10), transparent 70%)',
+            'linear-gradient(to right, rgba(17,17,17,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(17,17,17,0.035) 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+          maskImage: 'radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 80%)',
         }}
       />
 
-      <div className="relative mx-auto max-w-5xl px-6 pb-20 pt-24 text-center md:px-10">
-        <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#B5D4F4]/60 bg-white/70 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#0C447C] shadow-sm backdrop-blur-sm">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#185FA5] opacity-75"></span>
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#185FA5]"></span>
-          </span>
-          Property data platform
-        </span>
+      <div className="relative mx-auto grid max-w-7xl gap-12 px-6 pb-24 pt-20 md:grid-cols-12 md:px-10 md:pb-28 md:pt-24">
+        {/* LEFT: copy */}
+        <div className="relative md:col-span-7 md:pt-6">
+          <h1 className="anim-fade-up font-display text-[56px] font-normal leading-[0.98] tracking-[-1.5px] text-[#111] md:text-[88px]" style={{ animationDelay: '0ms' }}>
+            The whole story
+            <br />
+            behind every address.
+          </h1>
 
-        <h1 className="mx-auto mb-6 max-w-[720px] text-[44px] font-semibold leading-[1.08] tracking-[-1px] text-[#111] md:text-[56px]">
-          Find any property.{' '}
-          <span className="bg-gradient-to-r from-[#185FA5] via-[#378ADD] to-[#185FA5] bg-clip-text italic text-transparent">
-            Know everything about it.
-          </span>
-        </h1>
+          <p className="anim-fade-up mt-7 max-w-[480px] text-[16px] leading-[1.65] text-[#5a5a55]" style={{ animationDelay: '120ms' }}>
+            Proveax pulls verified ownership, deeds, tax records, valuations and
+            market signals into one quiet, beautiful workspace built for serious
+            real estate professionals.
+          </p>
 
-        <p className="mx-auto mb-10 max-w-[520px] text-[17px] leading-[1.65] text-[#555]">
-          Proveax gives real estate professionals instant access to verified property
-          records, ownership data, market trends, and more — all in one place.
-        </p>
-
-        <div className="mb-16 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            to="/register"
-            className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#185FA5] to-[#0C447C] px-7 py-3.5 text-[15px] font-medium text-white shadow-lg shadow-[#185FA5]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#185FA5]/35"
-          >
-            Search properties free
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+          <div className="anim-fade-up mt-9 flex flex-wrap items-center gap-3" style={{ animationDelay: '240ms' }}>
+            <Link
+              to="/register"
+              className="group inline-flex items-center gap-2 rounded-full bg-[#111] px-6 py-3 text-[14px] font-medium text-white transition-all hover:bg-[#2a2a2a]"
             >
-              <path
-                d="M4 10h12M11 5l5 5-5 5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </Link>
-          <a
-            href="#features"
-            className="rounded-xl border border-[#B5D4F4] bg-white px-7 py-3.5 text-[15px] font-medium text-[#185FA5] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#E6F1FB] hover:shadow"
-          >
-            See what's inside
-          </a>
+              Start searching, free
+              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 8h10M9 4l4 4-4 4" />
+              </svg>
+            </Link>
+            <a
+              href="#how"
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-6 py-3 text-[14px] font-medium text-[#111] transition-all hover:border-black/25"
+            >
+              See how it works
+            </a>
+          </div>
+
+          <div className="anim-fade-up mt-12 flex flex-wrap items-center gap-x-8 gap-y-3 text-[12px] text-[#7a7a72]" style={{ animationDelay: '360ms' }}>
+            <div className="flex items-center gap-2">
+              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-[#111]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 4 6 11l-3-3" />
+              </svg>
+              7-day free trial
+            </div>
+            <div className="flex items-center gap-2">
+              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-[#111]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 4 6 11l-3-3" />
+              </svg>
+              Cancel anytime
+            </div>
+          </div>
         </div>
 
-        <div className="mx-auto flex max-w-[640px] overflow-hidden rounded-2xl border border-[#E8F0FB] bg-white/70 shadow-[0_10px_40px_-15px_rgba(24,95,165,0.18)] backdrop-blur-sm">
-          {STATS.map((s, i) => (
-            <div
-              key={i}
-              className="flex-1 border-r border-[#E8F0FB] px-4 py-5 last:border-r-0"
-            >
-              <div className="bg-gradient-to-br from-[#185FA5] to-[#0C447C] bg-clip-text text-[24px] font-semibold leading-none text-transparent">
+        {/* RIGHT: image + floating cards */}
+        <div className="anim-fade-in relative md:col-span-5" style={{ animationDelay: '200ms' }}>
+          <div className="relative">
+            <div className="overflow-hidden rounded-[28px] bg-[#f4f1eb] shadow-[0_30px_80px_-30px_rgba(17,17,17,0.35)] ring-1 ring-black/5">
+              <img
+                src="/landing-hero.png"
+                alt="Modern luxury home"
+                className="h-[520px] w-full object-cover md:h-[600px]"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            </div>
+
+            {/* Floating data card, top-left */}
+            <div className="anim-fade-up absolute -left-4 top-8 hidden w-[230px] rounded-2xl border border-black/[0.06] bg-white/95 p-4 shadow-[0_18px_50px_-15px_rgba(17,17,17,0.25)] backdrop-blur md:block" style={{ animationDelay: '500ms' }}>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">
+                  Property
+                </span>
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200/60">
+                  Verified
+                </span>
+              </div>
+              <div className="font-display text-[20px] leading-tight tracking-[-0.5px] text-[#111]">
+                428 Oak Ridge Dr
+              </div>
+              <div className="mt-0.5 text-[11px] text-[#888]">Austin, TX 78704</div>
+              <div className="mt-3 grid grid-cols-3 gap-2 border-t border-black/5 pt-3">
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-[#a8a8a0]">Est.</div>
+                  <div className="text-[12px] font-semibold text-[#111]">$1.24M</div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-[#a8a8a0]">Sqft</div>
+                  <div className="text-[12px] font-semibold text-[#111]">3,240</div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-[#a8a8a0]">Year</div>
+                  <div className="text-[12px] font-semibold text-[#111]">2018</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating owner card, bottom-right */}
+            <div className="anim-fade-up absolute -bottom-6 -right-4 hidden w-[240px] rounded-2xl border border-black/[0.06] bg-white/95 p-4 shadow-[0_18px_50px_-15px_rgba(17,17,17,0.25)] backdrop-blur md:block" style={{ animationDelay: '650ms' }}>
+              <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">
+                Ownership
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#111] text-[12px] font-semibold text-white">
+                  MR
+                </div>
+                <div>
+                  <div className="text-[13px] font-semibold text-[#111]">Morgan Reyes</div>
+                  <div className="text-[11px] text-[#888]">Owner since 2021</div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-1.5 border-t border-black/5 pt-3 text-[11px] text-[#5a5a55]">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                3 deeds on record
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat strip */}
+      <div className="relative border-t border-black/[0.06]">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-black/[0.06] px-6 py-8 md:grid-cols-4 md:px-10">
+          {[
+            { num: '150M+', lbl: 'Property records' },
+            { num: '12K+',  lbl: 'Professionals onboard' },
+            { num: '98%',   lbl: 'Data accuracy' },
+            { num: '4.9 / 5', lbl: 'Average rating' },
+          ].map((s, i) => (
+            <div key={s.lbl} className="anim-fade-up px-6 first:pl-0 last:pr-0" style={{ animationDelay: `${480 + i * 80}ms` }}>
+              <div className="font-display text-[32px] font-normal leading-none tracking-[-0.5px] text-[#111]">
                 {s.num}
               </div>
-              <div className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.05em] text-[#888]">
+              <div className="mt-2 text-[11px] uppercase tracking-[0.08em] text-[#888]">
                 {s.lbl}
               </div>
             </div>

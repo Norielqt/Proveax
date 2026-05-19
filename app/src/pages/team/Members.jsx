@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 const INVITE_STATUS = {
   pending:  'bg-amber-50 text-amber-700 border-amber-200',
   accepted: 'bg-green-50 text-green-700 border-green-200',
-  expired:  'bg-gray-100 text-gray-500 border-gray-200',
+  expired:  'bg-black/[0.04] text-[#888] border-black/[0.06]',
   revoked:  'bg-red-50 text-red-700 border-red-200',
 };
 
@@ -122,46 +122,46 @@ export default function Members() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Members</h1>
-      <p className="mt-1 text-sm text-gray-500">Manage who has access to your workspace.</p>
+      <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Members</h1>
+      <p className="mt-1 text-sm text-[#888]">Manage who has access to your workspace.</p>
 
       {/* Invite form — admin only */}
       {isAdmin && (
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="font-semibold text-gray-900">Invite a new member</h2>
+      <div className="mt-6 rounded-2xl border border-black/[0.06] bg-white p-5">
+        <h2 className="font-semibold text-[#111]">Invite a new member</h2>
         <Notice notice={notice} />
         <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
             required type="email" value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="employee@company.com"
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+            className="flex-1 rounded-xl border border-black/[0.09] bg-white px-3 py-2 text-sm focus:border-[#111] focus:outline-none focus:ring-2 focus:ring-black/[0.06]"
           />
           <select
             value={role} onChange={(e) => setRole(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+            className="rounded-xl border border-black/[0.09] bg-white px-3 py-2 text-sm focus:border-[#111] focus:outline-none focus:ring-2 focus:ring-black/[0.06]"
           >
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>
           </select>
           <button
             disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2a2a2a] disabled:opacity-50"
           >
             {loading ? 'Sending…' : 'Send invite'}
           </button>
         </form>
-        <p className="mt-2 text-xs text-gray-400">Invitation links are valid for 7 days.</p>
+        <p className="mt-2 text-xs text-[#aaa]">Invitation links are valid for 7 days.</p>
       </div>
       )}
 
       {/* Members list */}
-      <h2 className="mt-8 mb-3 font-semibold text-gray-900">
+      <h2 className="mt-8 mb-3 font-semibold text-[#111]">
         Team members {!fetchingMembers && `(${members.length})`}
       </h2>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white">
         <table className="w-full table-fixed text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+          <thead className="bg-[#fafaf8] text-left text-xs uppercase tracking-wide text-[#888]">
             <tr>
               <th className="w-1/4 px-4 py-2 font-medium">Name</th>
               <th className="w-1/4 px-4 py-2 font-medium">Email</th>
@@ -170,21 +170,21 @@ export default function Members() {
               <th className="w-24 px-4 py-2 font-medium"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-black/[0.04]">
             {fetchingMembers
               ? Array.from({ length: 3 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-4 py-3">
-                      <div className="h-3.5 w-32 rounded bg-gray-200" />
+                      <div className="h-3.5 w-32 rounded bg-black/[0.06]" />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="h-3.5 w-44 rounded bg-gray-200" />
+                      <div className="h-3.5 w-44 rounded bg-black/[0.06]" />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="h-3.5 w-16 rounded bg-gray-200" />
+                      <div className="h-3.5 w-16 rounded bg-black/[0.06]" />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="h-5 w-14 rounded-full bg-gray-200" />
+                      <div className="h-5 w-14 rounded-full bg-black/[0.06]" />
                     </td>
                     <td className="px-4 py-3" />
                   </tr>
@@ -193,24 +193,24 @@ export default function Members() {
               const isMe = m.id === me?.id;
               const busy = actionId === `m-${m.id}`;
               return (
-                <tr key={m.id} className={`text-gray-700 ${m.is_paused ? 'bg-gray-50/60' : ''}`}>
+                <tr key={m.id} className={`text-[#5a5a55] ${m.is_paused ? 'bg-[#fafaf8]/60' : ''}`}>
                   <td className="px-4 py-2.5 font-medium">
-                    {m.name} {isMe && <span className="ml-1 text-xs text-gray-400">(you)</span>}
+                    {m.name} {isMe && <span className="ml-1 text-xs text-[#aaa]">(you)</span>}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">{m.email}</td>
+                  <td className="px-4 py-2.5 text-[#5a5a55]">{m.email}</td>
                   <td className="px-4 py-2.5">
                     {isAdmin ? (
                       <select
                         value={m.role}
                         onChange={(e) => doRoleChange(m.id, e.target.value)}
                         disabled={isMe || busy}
-                        className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs disabled:bg-gray-50 disabled:text-gray-400"
+                        className="rounded-2xl border border-black/[0.06] bg-white px-2 py-1 text-xs disabled:bg-[#fafaf8] disabled:text-[#aaa]"
                       >
                         <option value="employee">Employee</option>
                         <option value="admin">Admin</option>
                       </select>
                     ) : (
-                      <span className="capitalize text-xs text-gray-600">{m.role}</span>
+                      <span className="capitalize text-xs text-[#5a5a55]">{m.role}</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5">
@@ -226,7 +226,7 @@ export default function Members() {
                         <button
                           onClick={() => doPause(m.id, m.is_paused)}
                           disabled={busy}
-                          className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                          className="rounded-full border border-black/[0.06] px-2.5 py-1 text-xs font-medium text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50"
                         >
                           {m.is_paused ? 'Restore' : 'Pause'}
                         </button>
@@ -250,8 +250,8 @@ export default function Members() {
       {/* Pending invites */}
       {invites.length > 0 && (
         <>
-          <h2 className="mt-8 mb-3 font-semibold text-gray-900">Invitations</h2>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <h2 className="mt-8 mb-3 font-semibold text-[#111]">Invitations</h2>
+          <div className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white">
             {(() => {
               const hasInvitedBy = invites.some((i) => i.invited_by?.name);
               const hasActions   = isAdmin && invites.some((i) => {
@@ -260,7 +260,7 @@ export default function Members() {
               });
               return (
                 <table className="w-full table-fixed text-sm">
-                  <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                  <thead className="bg-[#fafaf8] text-left text-xs uppercase tracking-wide text-[#888]">
                     <tr>
                       <th className="w-1/4 px-4 py-2 font-medium">Email</th>
                       <th className="w-1/8 px-4 py-2 font-medium">Role</th>
@@ -270,13 +270,13 @@ export default function Members() {
                       {hasActions && <th className="px-4 py-2 font-medium"></th>}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-black/[0.04]">
                     {invites.map((inv) => {
                       const status = inv.status ?? (inv.accepted_at ? 'accepted' : 'pending');
                       const canAct = status === 'pending' || status === 'expired';
                       const busy = actionId === `inv-${inv.id}`;
                       return (
-                        <tr key={inv.id} className="text-gray-700">
+                        <tr key={inv.id} className="text-[#5a5a55]">
                           <td className="px-4 py-2.5">{inv.email}</td>
                           <td className="px-4 py-2.5 capitalize">{inv.role ?? 'employee'}</td>
                           <td className="px-4 py-2.5">
@@ -284,8 +284,8 @@ export default function Members() {
                               {status}
                             </span>
                           </td>
-                          {hasInvitedBy && <td className="px-4 py-2.5 text-xs text-gray-500">{inv.invited_by?.name ?? '—'}</td>}
-                          <td className="px-4 py-2.5 text-xs text-gray-500">
+                          {hasInvitedBy && <td className="px-4 py-2.5 text-xs text-[#888]">{inv.invited_by?.name ?? '—'}</td>}
+                          <td className="px-4 py-2.5 text-xs text-[#888]">
                             {inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}
                           </td>
                           {hasActions && (
@@ -295,7 +295,7 @@ export default function Members() {
                                   <button
                                     onClick={() => doResend(inv.id)}
                                     disabled={busy}
-                                    className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                                    className="rounded-full border border-black/[0.06] px-2.5 py-1 text-xs font-medium text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50"
                                   >
                                     Resend
                                   </button>
