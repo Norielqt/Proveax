@@ -359,7 +359,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
                   <div style="font-size:10px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Type</div>
                 </div>
               </div>
-              <button onclick="window.__pvxSelect('${fp.uid}')" style="width:100%;padding:7px 0;background:#111;color:#fff;border:none;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer">View Details</button>
+              <button onclick="window.__pvxSelect('${fp.uid}')" style="width:100%;padding:7px 0;background:#2563eb;color:#fff;border:none;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer">View Details</button>
             </div>
           `)
           .addTo(map);

@@ -39,7 +39,7 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
     <>
       {/* Select-all header — only shown when checkboxes are enabled */}
       {selectable && (
-        <div className="flex items-center gap-2 border-b border-black/[0.06] bg-[#fafaf8] px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-black/[0.06] bg-white px-4 py-2.5">
           <input
             type="checkbox"
             checked={allSelected}
@@ -47,13 +47,13 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
             onChange={() => onToggleAll(properties)}
             className="h-3.5 w-3.5 rounded border-black/[0.1] accent-blue-600 cursor-pointer"
           />
-          <span className="text-xs text-[#888]">
+          <span className="text-[11px] font-medium text-[#999] tracking-wide">
             {selected?.size > 0 ? `${selected.size} selected` : 'Select all'}
           </span>
         </div>
       )}
 
-      <ul className="divide-y divide-black/[0.06]">
+      <ul className="divide-y divide-black/[0.05]">
         {properties.map((p) => {
           const key        = propertyKey(p);
           const id         = p.attom_id ?? p.id;
@@ -67,13 +67,13 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
               key={key}
               onMouseEnter={() => onHover?.(id)}
               onMouseLeave={() => onHover?.(null)}
-              className={isSelected ? 'bg-[#f4f1eb]/60' : ''}
+              className={`transition-colors ${isSelected ? 'bg-blue-50/60' : 'bg-white hover:bg-[#fafcff]'}`}
             >
               <div className="flex items-stretch w-full">
                 {/* Checkbox column */}
                 {selectable && (
                   <label
-                    className="flex items-center justify-center px-4 cursor-pointer hover:bg-[#f4f1eb]"
+                    className="flex items-center justify-center px-3.5 cursor-pointer"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <input
@@ -88,26 +88,29 @@ export default function ResultsList({ properties, onHover, onSelect, selected, o
                 {/* Property row */}
                 <button
                   onClick={() => onSelect?.(p)}
-                  className="flex-1 flex items-start justify-between gap-3 px-4 py-4 hover:bg-[#fafaf8] transition-colors text-left min-w-0"
+                  className="flex-1 flex items-start justify-between gap-3 px-4 py-3.5 text-left min-w-0"
                 >
                   {/* Left — address block */}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[#111]">{p.street || p.address}</p>
-                    <p className="truncate text-xs text-[#888] mt-1">
+                    <p className="truncate text-[13px] font-semibold text-[#1a1a1a] leading-snug">{p.street || p.address}</p>
+                    <p className="truncate text-[11px] text-[#999] mt-0.5 font-medium">
                       {p.city}, {p.state} {p.zip}
                     </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#aaa]">
-                      {sqft  && <span>{sqft} sqft</span>}
-                      {type  && <><span className="text-[#ddd]">·</span><span>{type}</span></>}
-                    </div>
+                    {(sqft || type) && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                        {sqft  && <span className="text-[11px] text-[#bbb]">{sqft} sqft</span>}
+                        {sqft && type && <span className="text-[#ddd] text-[11px]">&middot;</span>}
+                        {type  && <span className="text-[11px] text-[#bbb]">{type}</span>}
+                      </div>
+                    )}
                   </div>
 
                   {/* Right — value block */}
                   <div className="shrink-0 text-right">
                     {value
                       ? <>
-                          <p className="text-sm font-semibold text-[#111]">{value}</p>
-                          <p className="text-xs text-[#aaa] mt-0.5">Last sale price</p>
+                          <p className="text-[13px] font-bold text-[#1a1a1a] leading-snug">{value}</p>
+                          <p className="text-[10px] text-[#bbb] mt-0.5 uppercase tracking-wide">Last sale</p>
                         </>
                       : <p className="text-xs text-[#ddd]">—</p>
                     }

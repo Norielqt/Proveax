@@ -585,7 +585,7 @@ export default function Dashboard() {
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               placeholder="Search by ZIP, city, or address…"
               autoComplete="off"
-              className="h-10 w-full rounded-xl border border-black/[0.06] bg-[#fafaf8] pl-10 pr-9 text-base md:text-sm text-[#111] placeholder-[#888] transition focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              className="h-10 w-full rounded-xl border border-black/[0.08] bg-[#f8f9fc] pl-10 pr-9 text-base md:text-sm text-[#1a1a1a] placeholder-[#aaa] transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
             />
             {queryText && (
               <button
@@ -683,15 +683,15 @@ export default function Dashboard() {
                     onClick={() => setOpenFilter(open ? null : 'type')}
                     className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
                       active
-                        ? 'border-blue-600 bg-[#f4f1eb] text-[#000]'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
                         : open
-                          ? 'border-blue-600 bg-white text-[#000]'
-                          : 'border-black/[0.06] bg-white text-[#444] hover:border-[#B5D4F4] hover:bg-[#fafaf8]'
+                          ? 'border-blue-600 bg-white text-blue-600'
+                          : 'border-black/[0.06] bg-white text-[#444] hover:border-blue-200 hover:bg-blue-50/40'
                     }`}
                   >
                     <span className="flex min-w-0 items-center gap-1 truncate">
                       <span className={`truncate ${active ? '' : 'text-[#555]'}`}>Type</span>
-                      {active && <span className="truncate text-[#000]">· {selected.label}</span>}
+                      {active && <span className="truncate text-blue-700">· {selected.label}</span>}
                     </span>
                     <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -740,15 +740,15 @@ export default function Dashboard() {
                     onClick={() => setOpenFilter(open ? null : 'lead')}
                     className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
                       active
-                        ? 'border-blue-600 bg-[#f4f1eb] text-[#000]'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
                         : open
-                          ? 'border-blue-600 bg-white text-[#000]'
-                          : 'border-black/[0.06] bg-white text-[#444] hover:border-[#B5D4F4] hover:bg-[#fafaf8]'
+                          ? 'border-blue-600 bg-white text-blue-600'
+                          : 'border-black/[0.06] bg-white text-[#444] hover:border-blue-200 hover:bg-blue-50/40'
                     }`}
                   >
                     <span className="flex min-w-0 items-center gap-1 truncate">
                       <span className={`truncate ${active ? '' : 'text-[#555]'}`}>Lead</span>
-                      {chipSuffix && <span className="truncate text-[#000]">· {chipSuffix}</span>}
+                      {chipSuffix && <span className="truncate text-blue-700">· {chipSuffix}</span>}
                     </span>
                     <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -814,15 +814,15 @@ export default function Dashboard() {
                     onClick={() => setOpenFilter(open ? null : key)}
                     className={`flex w-full h-10 md:h-9 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
                       active
-                        ? 'border-blue-600 bg-[#f4f1eb] text-[#000]'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
                         : open
-                          ? 'border-blue-600 bg-white text-[#000]'
-                          : 'border-black/[0.06] bg-white text-[#444] hover:border-[#B5D4F4] hover:bg-[#fafaf8]'
+                          ? 'border-blue-600 bg-white text-blue-600'
+                          : 'border-black/[0.06] bg-white text-[#444] hover:border-blue-200 hover:bg-blue-50/40'
                     }`}
                   >
                     <span className="flex min-w-0 items-center gap-1 truncate">
                       <span className={`truncate ${active ? '' : 'text-[#555]'}`}>{label}</span>
-                      {active && <span className="truncate text-[#000]">· {summary}{unit ? ` ${unit}` : ''}</span>}
+                      {active && <span className="truncate text-blue-700">· {summary}{unit ? ` ${unit}` : ''}</span>}
                     </span>
                     <svg className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -918,16 +918,16 @@ export default function Dashboard() {
             {/* Result count — inline after Search, no dead space */}
             {loading ? (
               <span className="inline-flex shrink-0 items-center gap-1.5 pl-2 text-xs text-[#888]">
-                <svg className="h-3 w-3 animate-spin text-[#111]" viewBox="0 0 24 24" fill="none">
+                <svg className="h-3 w-3 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
                 Searching…
               </span>
             ) : results.length > 0 ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f4f1eb] px-3 py-1 text-xs font-semibold text-[#000]">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
                 {results.length.toLocaleString()}
-                <span className="font-normal text-[#111]/70">results</span>
+                <span className="font-normal text-blue-500">results</span>
               </span>
             ) : (filters.postalcode || filters.city) ? (
               <span className="shrink-0 text-xs text-[#888]">No results</span>
@@ -999,7 +999,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
                   {loadingMore ? 'Loading…' : 'Load More Data'}
                 </button>
@@ -1070,7 +1070,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
                   {loadingMore ? 'Loading…' : 'Load More Data'}
                 </button>
