@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { getActivityLogs, getActivitySummary } from '../api/activity';
 import { listMembers } from '../api/team';
 import { StatCardsSkeleton, TableSkeleton } from '../components/Skeleton';
@@ -36,7 +36,7 @@ const labelFor = (action) =>
 
 function ActionBadge({ action }) {
   return (
-    <span className="inline-block rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600">
+    <span className="inline-flex items-center rounded-full bg-[#f4f1eb] px-2.5 py-0.5 text-[11px] font-medium text-[#5a5a55]">
       {labelFor(action)}
     </span>
   );
@@ -44,7 +44,7 @@ function ActionBadge({ action }) {
 
 function Avatar({ name }) {
   const letter = (name ?? '?')[0].toUpperCase();
-  const colors = ['bg-blue-500', 'bg-violet-500', 'bg-rose-500', 'bg-amber-500', 'bg-teal-500', 'bg-indigo-500'];
+  const colors = ['bg-blue-600', 'bg-blue-700', 'bg-blue-600', 'bg-blue-500', 'bg-blue-500', 'bg-blue-800'];
   const color = colors[(name ?? '?').charCodeAt(0) % colors.length];
   return (
     <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${color} text-xs font-bold text-white shadow-sm`}>
@@ -66,8 +66,8 @@ function MetaChips({ metadata }) {
   return (
     <div className="mt-1 flex flex-wrap gap-1">
       {Object.entries(metadata).map(([k, v]) => (
-        <span key={k} className="inline-flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
-          <span className="font-medium text-gray-700">{k.replace(/_/g, ' ')}:</span> {String(v)}
+        <span key={k} className="inline-flex items-center gap-1 rounded bg-black/[0.04] px-1.5 py-0.5 text-[11px] text-[#888]">
+          <span className="font-medium text-[#5a5a55]">{k.replace(/_/g, ' ')}:</span> {String(v)}
         </span>
       ))}
     </div>
@@ -83,10 +83,10 @@ function DailyMiniChart({ daily }) {
       {daily.map((d) => (
         <div key={d.day} className="group relative flex-1">
           <div
-            className="w-full rounded-t bg-blue-400 group-hover:bg-blue-500 transition-colors"
+            className="w-full rounded-t bg-blue-600 opacity-80 group-hover:opacity-100 transition-opacity"
             style={{ height: `${Math.max(4, (Number(d.total) / max) * 100)}%` }}
           />
-          <div className="pointer-events-none absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-white group-hover:block">
+          <div className="pointer-events-none absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-blue-600 px-1.5 py-0.5 text-[10px] text-white group-hover:block">
             {d.total} · {d.day}
           </div>
         </div>
@@ -145,8 +145,8 @@ export default function AdminActivity() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Activity</h1>
-        <p className="mt-1 text-sm text-gray-500">Audit trail of all admin and member actions in your workspace.</p>
+        <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Activity</h1>
+        <p className="mt-1 text-sm text-[#888]">Audit trail of all admin and member actions in your workspace.</p>
       </div>
 
       {/* Summary strip */}
@@ -156,26 +156,26 @@ export default function AdminActivity() {
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {Object.entries(summary.last_30_days ?? {}).slice(0, 8).map(([action, total]) => (
-              <div key={action} className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-                <p className="text-xs text-gray-500 truncate">{labelFor(action)}</p>
-                <p className="mt-1.5 text-2xl font-bold text-gray-900">{total}</p>
-                <p className="text-xs text-gray-400">last 30 days</p>
+              <div key={action} className="rounded-2xl border border-black/[0.06] bg-white px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#888] truncate">{labelFor(action)}</p>
+                <p className="mt-2 font-display text-3xl font-bold text-[#111] leading-none">{total}</p>
+                <p className="text-xs text-[#aaa]">last 30 days</p>
               </div>
             ))}
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-            <p className="mb-2 text-xs font-medium text-gray-400 uppercase tracking-wide">Daily events — last 30 days</p>
+          <div className="rounded-2xl border border-black/[0.06] bg-white px-5 py-4">
+            <p className="mb-2 text-xs font-medium text-[#aaa] uppercase tracking-wide">Daily events — last 30 days</p>
             <DailyMiniChart daily={summary.daily} />
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-black/[0.06] bg-white px-4 py-3">
         <select
           value={filters.user_id}
           onChange={(e) => setFilters((f) => ({ ...f, user_id: e.target.value }))}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-xl border border-black/[0.09] bg-white px-3 py-1.5 text-sm text-[#5a5a55] focus:outline-none focus:ring-2 focus:ring-black/[0.15]"
         >
           <option value="">All members</option>
           {members.map((m) => (
@@ -185,33 +185,33 @@ export default function AdminActivity() {
         <select
           value={filters.action}
           onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value }))}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-xl border border-black/[0.09] bg-white px-3 py-1.5 text-sm text-[#5a5a55] focus:outline-none focus:ring-2 focus:ring-black/[0.15]"
         >
           <option value="">All actions</option>
           {actions.map((a) => <option key={a} value={a}>{labelFor(a)}</option>)}
         </select>
         <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-400">From</span>
+          <span className="text-xs text-[#aaa]">From</span>
           <input type="date" value={filters.from}
             onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
-            className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="rounded-xl border border-black/[0.09] bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/[0.15]" />
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-400">To</span>
+          <span className="text-xs text-[#aaa]">To</span>
           <input type="date" value={filters.to}
             onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
-            className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="rounded-xl border border-black/[0.09] bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/[0.15]" />
         </div>
         {hasFilters && (
           <button
             onClick={() => setFilters({ user_id: '', action: '', from: '', to: '' })}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+            className="rounded-full border border-black/[0.06] px-3 py-1.5 text-sm text-[#5a5a55] hover:bg-[#fafaf8] transition-colors"
           >
             Clear filters
           </button>
         )}
         {logs && (
-          <span className="ml-auto text-xs text-gray-400">{logs.total} event{logs.total !== 1 ? 's' : ''}</span>
+          <span className="ml-auto text-xs text-[#aaa]">{logs.total} event{logs.total !== 1 ? 's' : ''}</span>
         )}
       </div>
 
@@ -219,50 +219,50 @@ export default function AdminActivity() {
       {loading ? (
         <TableSkeleton rows={8} cols={4} />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <ul className="divide-y divide-gray-100">
+        <div className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white">
+          <ul className="divide-y divide-black/[0.04]">
             {!logs?.data?.length && (
               <li className="px-6 py-14 text-center">
-                <p className="text-sm font-medium text-gray-500">No activity matches these filters.</p>
+                <p className="text-sm font-medium text-[#888]">No activity matches these filters.</p>
                 {hasFilters && (
                   <button onClick={() => setFilters({ user_id: '', action: '', from: '', to: '' })}
-                    className="mt-2 text-sm text-blue-600 hover:underline">
+                    className="mt-2 text-sm text-[#111] underline underline-offset-2 hover:opacity-70">
                     Clear filters
                   </button>
                 )}
               </li>
             )}
             {logs?.data?.map((log) => (
-              <li key={log.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <li key={log.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-[#fafaf8] transition-colors">
                 <Avatar name={log.user?.name} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-900">{log.user?.name ?? 'Deleted user'}</span>
+                    <span className="text-sm font-semibold text-[#111]">{log.user?.name ?? 'Deleted user'}</span>
                     <ActionBadge action={log.action} />
                   </div>
                   <MetaChips metadata={log.metadata} />
-                  <p className="mt-0.5 text-xs text-gray-400">{log.user?.email}</p>
+                  <p className="mt-0.5 text-xs text-[#aaa]">{log.user?.email}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-xs font-medium text-gray-500" title={new Date(log.created_at).toLocaleString()}>
+                  <p className="text-xs font-medium text-[#888]" title={new Date(log.created_at).toLocaleString()}>
                     {timeAgo(log.created_at)}
                   </p>
-                  {log.ip && <p className="mt-0.5 text-[11px] text-gray-400 font-mono">{log.ip}</p>}
+                  {log.ip && <p className="mt-0.5 text-[11px] text-[#aaa] font-mono">{log.ip}</p>}
                 </div>
               </li>
             ))}
           </ul>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-5 py-2.5 text-sm">
-              <span className="text-gray-500">Page {page} of {totalPages}</span>
+            <div className="flex items-center justify-between border-t border-black/[0.04] bg-[#fafaf8] px-5 py-2.5 text-sm">
+              <span className="text-[#888]">Page {page} of {totalPages}</span>
               <div className="flex gap-2">
                 <button onClick={() => setPage((p) => p - 1)} disabled={page === 1}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                  className="rounded-full border border-black/[0.06] bg-white px-3 py-1.5 text-sm hover:bg-[#fafaf8] disabled:opacity-40 transition-colors">
                   ← Prev
                 </button>
                 <button onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                  className="rounded-full border border-black/[0.06] bg-white px-3 py-1.5 text-sm hover:bg-[#fafaf8] disabled:opacity-40 transition-colors">
                   Next →
                 </button>
               </div>

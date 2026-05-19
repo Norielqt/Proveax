@@ -32,7 +32,7 @@ export default function PropertyDetailModal({ property, onClose }) {
   const [crmSourceType,setCrmSourceType] = useState('');
   const [tab,      setTab]      = useState('property');
 
-  // ── On-demand AVM (one billable /avm/value call per property) ──
+  // -- On-demand AVM (one billable /avm/value call per property) --
   const [avm,      setAvm]      = useState(null);
   const [avmLoading, setAvmLoading] = useState(false);
   const [avmErr,   setAvmErr]   = useState('');
@@ -119,7 +119,7 @@ export default function PropertyDetailModal({ property, onClose }) {
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  // ── Source-type auto-detection ────────────────────────────────────────
+  // -- Source-type auto-detection ----------------------------------------
   const detectSourceType = () => {
     const status = (p.listing_status ?? '').toLowerCase();
     if (status === 'active')    return 'mls_active';
@@ -259,11 +259,11 @@ export default function PropertyDetailModal({ property, onClose }) {
 
         {/* CRM confirmation panel */}
         {crmPanel && (
-          <div className="absolute right-3 top-[3.25rem] z-30 w-72 rounded-xl border border-gray-200 bg-white shadow-2xl">
+          <div className="absolute right-3 top-[3.25rem] z-30 w-72 rounded-xl border border-black/[0.08] bg-white shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2.5">
-              <span className="text-sm font-semibold text-gray-800">Add to CRM</span>
-              <button onClick={() => setCrmPanel(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <div className="flex items-center justify-between border-b border-black/[0.06] px-4 py-2.5">
+              <span className="text-sm font-semibold text-[#111]">Add to CRM</span>
+              <button onClick={() => setCrmPanel(false)} className="text-[#aaa] hover:text-[#5a5a55] transition-colors">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
@@ -272,17 +272,17 @@ export default function PropertyDetailModal({ property, onClose }) {
             <div className="px-4 py-3 space-y-2">
               {p.owner_name && (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Owner</p>
-                  <p className="text-xs font-medium text-gray-700">{p.owner_name}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#aaa]">Owner</p>
+                  <p className="text-xs font-medium text-[#5a5a55]">{p.owner_name}</p>
                 </div>
               )}
               {allPhonesMeta.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Phones</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#aaa]">Phones</p>
                   {allPhonesMeta.map((ph, i) => (
-                    <p key={i} className="text-xs text-gray-700">
+                    <p key={i} className="text-xs text-[#5a5a55]">
                       {ph.number}
-                      {ph.type && <span className="ml-1.5 text-gray-400">({ph.type})</span>}
+                      {ph.type && <span className="ml-1.5 text-[#aaa]">({ph.type})</span>}
                       {ph.dnc && <span className="ml-1.5 rounded bg-red-100 px-1 text-[9px] font-semibold text-red-600">DNC</span>}
                     </p>
                   ))}
@@ -290,27 +290,27 @@ export default function PropertyDetailModal({ property, onClose }) {
               )}
               {allEmails.length > 0 ? (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Emails</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#aaa]">Emails</p>
                   {allEmails.map((em, i) => (
-                    <p key={i} className="truncate text-xs text-gray-700">{em}</p>
+                    <p key={i} className="truncate text-xs text-[#5a5a55]">{em}</p>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 italic">No email found</p>
+                <p className="text-xs text-[#aaa] italic">No email found</p>
               )}
               {allPhonesMeta.length === 0 && allEmails.length === 0 && (
-                <p className="text-xs text-gray-400 italic">No contacts — run skip trace first for best results</p>
+                <p className="text-xs text-[#aaa] italic">No contacts — run skip trace first for best results</p>
               )}
             </div>
 
             {/* Lead type (source) */}
-            <div className="border-t border-gray-100 px-4 py-3">
+            <div className="border-t border-black/[0.06] px-4 py-3">
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Lead Type</label>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-[#aaa] mb-1">Lead Type</label>
                 <select
                   value={crmSourceType}
                   onChange={(e) => setCrmSourceType(e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-md border border-black/[0.08] bg-white px-2.5 py-1.5 text-xs text-[#5a5a55] focus:border-blue-600 focus:outline-none"
                 >
                   <option value="">— Not set —</option>
                   {SOURCE_TYPES.map((t) => (
@@ -321,7 +321,7 @@ export default function PropertyDetailModal({ property, onClose }) {
             </div>
 
             {/* Actions */}
-            <div className="border-t border-gray-100 px-4 py-3 flex gap-2">
+            <div className="border-t border-black/[0.06] px-4 py-3 flex gap-2">
               <button
                 onClick={doAddToCrm}
                 disabled={crmSaving}
@@ -331,7 +331,7 @@ export default function PropertyDetailModal({ property, onClose }) {
               </button>
               <button
                 onClick={() => setCrmPanel(false)}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                className="rounded-lg border border-black/[0.08] px-3 py-1.5 text-xs font-medium text-[#5a5a55] hover:bg-[#fafaf8] transition-colors"
               >
                 Cancel
               </button>
@@ -349,13 +349,13 @@ export default function PropertyDetailModal({ property, onClose }) {
           </div>
         )}
 
-        {/* ── Hero ── */}
-        <div className="relative bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-5">
+        {/* -- Hero -- */}
+        <div className="relative bg-blue-600 px-6 py-5">
           <div className="flex items-center justify-between gap-4 pr-10">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-blue-200 uppercase tracking-[0.18em] mb-1">Property</p>
+              <p className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em] mb-1">Property</p>
               <h1 className="text-xl font-bold text-white leading-tight truncate">{address}</h1>
-              <p className="text-blue-100 mt-0.5 text-xs">{cityLine}</p>
+              <p className="text-white/80 mt-0.5 text-xs">{cityLine}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {!hasReport && (
@@ -367,13 +367,13 @@ export default function PropertyDetailModal({ property, onClose }) {
                       : fetchReport({ address: p.address || p.street, zipCode: p.zip });
                   }}
                   disabled={loading}
-                  className="rounded-md bg-blue-600 hover:bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition-colors"
+                  className="rounded-md bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition-colors"
                 >
                   {loading ? 'Loading…' : 'Load report'}
                 </button>
               )}
               {loading && hasReport && (
-                <span className="flex items-center gap-1 text-xs text-blue-100">
+                <span className="flex items-center gap-1 text-xs text-white/80">
                   <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
                   Refreshing
                 </span>
@@ -409,10 +409,10 @@ export default function PropertyDetailModal({ property, onClose }) {
             ].filter(Boolean);
             if (!stats.length) return null;
             return (
-              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-blue-400/30 pt-3">
+              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/15 pt-3">
                 {stats.map((s, i) => (
                   <div key={i} className="flex items-baseline gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-200">{s.label}</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-white/70">{s.label}</span>
                     <span className="text-sm font-semibold text-white">{s.value}</span>
                   </div>
                 ))}
@@ -428,8 +428,8 @@ export default function PropertyDetailModal({ property, onClose }) {
           </div>
         )}
 
-        {/* ── Tabs ── */}
-        <div className="flex gap-1 px-4 border-b border-gray-200 bg-white">
+        {/* -- Tabs -- */}
+        <div className="flex gap-1 px-4 border-b border-black/[0.08] bg-white">
           {[
             { id: 'property',     label: 'Property' },
             { id: 'owner',        label: 'Owner' },
@@ -440,8 +440,8 @@ export default function PropertyDetailModal({ property, onClose }) {
               onClick={() => setTab(id)}
               className={`px-3 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors focus:outline-none ${
                 tab === id
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-600 text-[#111]'
+                  : 'border-transparent text-[#888] hover:text-[#5a5a55]'
               }`}
             >
               {label}
@@ -449,12 +449,12 @@ export default function PropertyDetailModal({ property, onClose }) {
           ))}
         </div>
 
-        <div className="max-h-[calc(100vh-14rem)] overflow-y-auto bg-gray-50">
+        <div className="max-h-[calc(100vh-14rem)] overflow-y-auto bg-[#fafaf8]">
         <div className="p-4 space-y-3">
 
           <LoadingCtx.Provider value={loading && !hasReport}>
 
-          {/* ── Tab: Property ─────────────────────────────────────────────────── */}
+          {/* -- Tab: Property --------------------------------------------------- */}
           {tab === 'property' && (
             <div className="space-y-4">
               <AvmCard
@@ -542,7 +542,7 @@ export default function PropertyDetailModal({ property, onClose }) {
             </div>
           )}
 
-          {/* ── Tab: Owner ────────────────────────────────────────────────────── */}
+          {/* -- Tab: Owner ------------------------------------------------------ */}
           {tab === 'owner' && (
             <div className="space-y-4">
               <Card title="Owner Info" loading={loading && !hasReport} icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
@@ -558,7 +558,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                   </div>
                   <div>
                     {trace ? (
-                      /* ── Results: same FieldGroup/StatRow style as Ownership ── */
+                      /* -- Results: same FieldGroup/StatRow style as Ownership -- */
                       <FieldGroup heading="Skip Trace">
                         {trace.owner_name && <StatRow label="Owner" value={trace.owner_name} />}
                         {(trace.phones?.length > 0) && (
@@ -569,7 +569,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                               value={
                                 sub.isActive
                                   ? ph
-                                  : <span className="blur-sm select-none pointer-events-none text-gray-400">●●●-●●●-●●●●</span>
+                                  : <span className="blur-sm select-none pointer-events-none text-[#aaa]">???-???-????</span>
                               }
                             />
                           ))
@@ -582,7 +582,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                               value={
                                 sub.isActive
                                   ? em
-                                  : <span className="blur-sm select-none pointer-events-none text-gray-400">●●●●●@●●●.com</span>
+                                  : <span className="blur-sm select-none pointer-events-none text-[#aaa]">?????@???.com</span>
                               }
                             />
                           ))
@@ -590,11 +590,11 @@ export default function PropertyDetailModal({ property, onClose }) {
                           <StatRow label="Email" value="No data found" />
                         )}
                         {!trace.hit && (
-                          <p className="text-xs text-gray-400 mt-1">No contact info found for this address.</p>
+                          <p className="text-xs text-[#aaa] mt-1">No contact info found for this address.</p>
                         )}
                       </FieldGroup>
                     ) : (
-                      /* ── Pre-trace: button + warnings ── */
+                      /* -- Pre-trace: button + warnings -- */
                       <FieldGroup heading="Skip Trace">
                         {!hasCredits && !tracing && (
                           <div className="mb-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2">
@@ -609,7 +609,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                           onClick={doSkipTrace}
                           disabled={tracing || !hasCredits}
                           title={!hasCredits ? `Not enough credits — $${SKIP_TRACE_COST.toFixed(2)} required` : undefined}
-                          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-[#eee] disabled:text-[#aaa] transition-colors"
                         >
                           {tracing ? (
                             <><svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Running…</>
@@ -625,12 +625,12 @@ export default function PropertyDetailModal({ property, onClose }) {
             </div>
           )}
 
-          {/* ── Tab: Transaction History ──────────────────────────────────────── */}
+          {/* -- Tab: Transaction History ---------------------------------------- */}
           {tab === 'transactions' && (
             <div className="space-y-4">
               <Card title={`Transaction History${txns.length ? ` · ${txns.length} records` : ''}`} loading={loading && !hasReport} icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6m-6 4h4">
                 {txns.length === 0 && hasReport ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <div className="flex flex-col items-center justify-center py-12 text-[#aaa]">
                     <svg className="h-10 w-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -640,7 +640,7 @@ export default function PropertyDetailModal({ property, onClose }) {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs uppercase tracking-wider text-gray-400 border-b-2 border-gray-100">
+                        <tr className="text-left text-xs uppercase tracking-wider text-[#aaa] border-b-2 border-black/[0.06]">
                           <th className="pb-3 pr-6 font-semibold">Date</th>
                           <th className="pb-3 pr-6 font-semibold">Sale Price</th>
                           <th className="pb-3 font-semibold">Event</th>
@@ -648,17 +648,17 @@ export default function PropertyDetailModal({ property, onClose }) {
                       </thead>
                       <tbody>
                         {txns.map((t, i) => (
-                          <tr key={i} className="border-b border-gray-50 hover:bg-blue-50/40 transition-colors">
-                            <td className="py-3 pr-6 text-gray-600 text-xs">
+                          <tr key={i} className="border-b border-black/[0.04] hover:bg-[#f4f1eb]/40 transition-colors">
+                            <td className="py-3 pr-6 text-[#5a5a55] text-xs">
                               {t.sale_date
                                 ? new Date(t.sale_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                                : <span className="text-gray-300">—</span>}
+                                : <span className="text-[#ddd]">—</span>}
                             </td>
-                            <td className="py-3 pr-6 font-semibold text-gray-900">{fmt$(t.sale_price) ?? <span className="text-gray-300">—</span>}</td>
+                            <td className="py-3 pr-6 font-semibold text-[#111]">{fmt$(t.sale_price) ?? <span className="text-[#ddd]">—</span>}</td>
                             <td className="py-3">
                               {t.event
-                                ? <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">{t.event}</span>
-                                : <span className="text-gray-300">—</span>
+                                ? <span className="inline-flex items-center rounded-full bg-[#f4f1eb] border border-black/[0.06] px-2.5 py-0.5 text-xs font-medium text-[#111]">{t.event}</span>
+                                : <span className="text-[#ddd]">—</span>
                               }
                             </td>
                           </tr>
@@ -680,21 +680,21 @@ export default function PropertyDetailModal({ property, onClose }) {
   );
 }
 
-// ─── UI Primitives ────────────────────────────────────────────────────────────
+// --- UI Primitives ------------------------------------------------------------
 
 
 function Card({ title, loading, children, icon }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
+    <div className="rounded-lg border border-black/[0.08] bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-black/[0.06]">
         <div className="flex items-center gap-2">
-          <svg className="h-3.5 w-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-3.5 w-3.5 text-[#111]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d={icon ?? 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'} />
           </svg>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-700" dangerouslySetInnerHTML={{ __html: title }} />
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#5a5a55]" dangerouslySetInnerHTML={{ __html: title }} />
         </div>
         {loading && (
-          <span className="flex items-center gap-1 text-[10px] text-gray-400 animate-pulse">
+          <span className="flex items-center gap-1 text-[10px] text-[#aaa] animate-pulse">
             <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
             Loading
           </span>
@@ -708,7 +708,7 @@ function Card({ title, loading, children, icon }) {
 function FieldGroup({ heading, children }) {
   return (
     <div className="mb-3 last:mb-0">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 pb-1 border-b border-gray-100"
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[#aaa] mb-1 pb-1 border-b border-black/[0.06]"
         dangerouslySetInnerHTML={{ __html: heading }} />
       <dl>{children}</dl>
     </div>
@@ -721,10 +721,10 @@ function StatRow({ label, value, accent }) {
   if (!isLoading && empty) return null;
   return (
     <div className="flex items-center justify-between gap-3 py-1">
-      <dt className="text-xs text-gray-500 shrink-0">{label}</dt>
-      <dd className={`text-xs font-semibold text-right truncate ${accent ? 'text-blue-600' : 'text-gray-900'}`}>
+      <dt className="text-xs text-[#888] shrink-0">{label}</dt>
+      <dd className={`text-xs font-semibold text-right truncate ${accent ? 'text-[#111]' : 'text-[#111]'}`}>
         {isLoading && empty
-          ? <span className="inline-block h-3 w-20 rounded bg-gray-200 animate-pulse" />
+          ? <span className="inline-block h-3 w-20 rounded bg-[#eee] animate-pulse" />
           : value
         }
       </dd>
@@ -738,7 +738,7 @@ function Section({ title, loading, children }) {
 }
 function SubHead({ children, className = '' }) {
   return (
-    <p className={`text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 ${className}`}>
+    <p className={`text-xs font-semibold uppercase tracking-wider text-[#aaa] mb-2 ${className}`}>
       {children}
     </p>
   );
@@ -750,23 +750,23 @@ function RowFixed({ label, value }) {
   const empty = value === null || value === undefined || value === '';
   return (
     <div className="flex items-center justify-between gap-4 py-0.5">
-      <dt className="text-sm text-gray-500 shrink-0">{label}</dt>
-      <dd className={`text-sm font-semibold text-right ${empty ? 'text-gray-300' : 'text-gray-900'}`}>
+      <dt className="text-sm text-[#888] shrink-0">{label}</dt>
+      <dd className={`text-sm font-semibold text-right ${empty ? 'text-[#ddd]' : 'text-[#111]'}`}>
         {empty ? '—' : value}
       </dd>
     </div>
   );
 }
 
-// ─── AVM Card ────────────────────────────────────────────────────────────────
+// --- AVM Card ----------------------------------------------------------------
 function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
   // Empty state — show a load button (1 billable Rentcast call)
   if (!avm && !loading && !error) {
     return (
-      <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 flex items-center justify-between gap-4">
+      <div className="rounded-lg border border-black/[0.08] bg-[#f4f1eb] p-4 flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Estimated Market Value</p>
-          <p className="text-xs text-gray-600 mt-0.5">Run Proveax AVM to fetch market estimate, confidence range &amp; comparable sales.</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#111]">Estimated Market Value</p>
+          <p className="text-xs text-[#5a5a55] mt-0.5">Run Proveax AVM to fetch market estimate, confidence range &amp; comparable sales.</p>
         </div>
         <button
           onClick={onLoad}
@@ -780,7 +780,7 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
 
   if (loading && !avm) {
     return (
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 flex items-center gap-2 text-xs text-blue-700">
+      <div className="rounded-lg border border-black/[0.08] bg-[#f4f1eb] p-4 flex items-center gap-2 text-xs text-[#111]">
         <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
           Fetching AVM &amp; comparables…
       </div>
@@ -812,20 +812,20 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
   const comps = (avm.comparables || []).slice(0, 3);
 
   return (
-    <div className="rounded-lg border border-blue-200 bg-white shadow-sm overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-3 flex items-center justify-between">
+    <div className="rounded-lg border border-black/[0.08] bg-white shadow-sm overflow-hidden">
+      <div className="bg-blue-600 px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-200">Proveax AVM</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">Proveax AVM</p>
           <p className="text-2xl font-bold text-white leading-tight">{value != null ? `$${Number(value).toLocaleString()}` : '—'}</p>
         </div>
         {delta != null && (
           <div className="text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-200">vs Last Sale</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">vs Last Sale</p>
             <p className={`text-sm font-bold ${delta >= 0 ? 'text-emerald-300' : 'text-amber-300'}`}>
               {delta >= 0 ? '+' : ''}${Math.abs(delta).toLocaleString()}
               {pct != null && <span className="ml-1 text-xs opacity-90">({pct >= 0 ? '+' : ''}{pct.toFixed(1)}%)</span>}
             </p>
-            <p className="text-[10px] text-blue-200 mt-0.5">Sold ${Number(lsp).toLocaleString()}</p>
+            <p className="text-[10px] text-white/70 mt-0.5">Sold ${Number(lsp).toLocaleString()}</p>
           </div>
         )}
       </div>
@@ -833,14 +833,14 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
       {/* Confidence range bar */}
       {low != null && high != null && (
         <div className="px-4 pt-3 pb-2">
-          <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">
+          <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#aaa] mb-1">
             <span>Low ${Number(low).toLocaleString()}</span>
-            <span className="text-gray-500">85% confidence range</span>
+            <span className="text-[#888]">85% confidence range</span>
             <span>High ${Number(high).toLocaleString()}</span>
           </div>
-          <div className="relative h-2 rounded-full bg-gradient-to-r from-amber-200 via-blue-200 to-emerald-200">
+          <div className="relative h-2 rounded-full bg-gradient-to-r from-amber-200 via-[#ddd] to-emerald-200">
             <div
-              className="absolute -top-1 h-4 w-1 bg-blue-700 rounded-sm shadow-md"
+              className="absolute -top-1 h-4 w-1 bg-blue-600 rounded-sm shadow-md"
               style={{ left: `calc(${markerPct}% - 2px)` }}
               title={`Estimate: $${Number(value).toLocaleString()}`}
             />
@@ -850,21 +850,21 @@ function AvmCard({ avm, loading, error, onLoad, lastSalePrice }) {
 
       {/* Comparable sales */}
       {comps.length > 0 && (
-        <div className="px-4 pt-3 pb-4 border-t border-gray-100 mt-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Comparable Sales · {comps.length}</p>
+        <div className="px-4 pt-3 pb-4 border-t border-black/[0.06] mt-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#aaa] mb-2">Comparable Sales · {comps.length}</p>
           <div className="space-y-1.5">
             {comps.map((c) => (
-              <div key={c.id} className="flex items-center justify-between gap-3 rounded-md bg-gray-50 hover:bg-blue-50/40 px-3 py-2 transition-colors">
+              <div key={c.id} className="flex items-center justify-between gap-3 rounded-md bg-[#fafaf8] hover:bg-[#f4f1eb]/40 px-3 py-2 transition-colors">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-gray-900 truncate">{c.address}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">
-                    {[c.bedrooms && `${c.bedrooms}bd`, c.bathrooms && `${c.bathrooms}ba`, c.square_feet && `${Number(c.square_feet).toLocaleString()} sqft`, c.distance != null && `${c.distance.toFixed(2)} mi`].filter(Boolean).join(' · ')}
+                  <p className="text-xs font-semibold text-[#111] truncate">{c.address}</p>
+                  <p className="text-[10px] text-[#888] mt-0.5">
+                    {[c.bedrooms && `${c.bedrooms}bd`, c.bathrooms && `${c.bathrooms}ba`, c.square_feet && `${Number(c.square_feet).toLocaleString()} sqft`, c.distance != null && `${c.distance.toFixed(2)} mi`].filter(Boolean).join(' \u00b7 ')}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs font-bold text-gray-900">{c.price != null ? `$${Number(c.price).toLocaleString()}` : '—'}</p>
+                  <p className="text-xs font-bold text-[#111]">{c.price != null ? `$${Number(c.price).toLocaleString()}` : '—'}</p>
                   {c.correlation != null && (
-                    <p className="text-[10px] text-gray-400">{Math.round(c.correlation * 100)}% match</p>
+                    <p className="text-[10px] text-[#aaa]">{Math.round(c.correlation * 100)}% match</p>
                   )}
                 </div>
               </div>

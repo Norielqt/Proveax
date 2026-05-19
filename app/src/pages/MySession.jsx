@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useWorkSessionContext } from '../context/WorkSessionContext';
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -47,8 +47,8 @@ export default function MySession() {
   return (
     <PageShell>
       <header className="mb-8 text-center">
-        <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-gray-400">{today}</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900">My Session</h1>
+        <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-[#aaa]">{today}</p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#111]">My Session</h1>
       </header>
 
       {error && (
@@ -189,24 +189,24 @@ function Chamber({ stateKey, totalTodaySeconds }) {
 
           {/* Timer in the center */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="font-mono font-bold tabular-nums leading-none text-gray-900" style={{ letterSpacing: '-0.05em' }}>
+            <div className="font-mono font-bold tabular-nums leading-none text-[#111]" style={{ letterSpacing: '-0.05em' }}>
               <span className="text-[54px] md:text-[68px]">{h}</span>
-              <span className="text-[54px] md:text-[68px] text-gray-300 mx-0.5">:</span>
+              <span className="text-[54px] md:text-[68px] text-[#ddd] mx-0.5">:</span>
               <span className="text-[54px] md:text-[68px]">{m}</span>
-              <span className="text-[28px] md:text-[36px] align-baseline ml-1 text-gray-300">:{s}</span>
+              <span className="text-[28px] md:text-[36px] align-baseline ml-1 text-[#ddd]">:{s}</span>
             </div>
-            <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.32em] text-gray-400">
+            <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.32em] text-[#aaa]">
               hours&nbsp;·&nbsp;minutes
             </div>
           </div>
         </div>
 
-        <p className="mt-8 text-sm font-medium text-gray-500">{subline}</p>
+        <p className="mt-8 text-sm font-medium text-[#888]">{subline}</p>
 
         {/* hours numeric */}
         <div className="mt-3 inline-flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold tracking-tight text-gray-900">{fmtHours(totalTodaySeconds)}</span>
-          <span className="text-sm font-semibold text-gray-400">hours today</span>
+          <span className="text-2xl font-bold tracking-tight text-[#111]">{fmtHours(totalTodaySeconds)}</span>
+          <span className="text-sm font-semibold text-[#aaa]">hours today</span>
         </div>
       </div>
     </div>
@@ -233,8 +233,8 @@ function Dot({ stateKey }) {
 
 function StartCard({ withScreenshots, setWithScreenshots, starting, hasPrior, onStart, screenshotInterval }) {
   return (
-    <div className="rounded-3xl border border-gray-200/70 bg-white p-5 shadow-sm">
-      <label className="flex cursor-pointer items-start gap-4 rounded-2xl bg-gray-50/80 p-4 ring-1 ring-gray-200/60 transition hover:bg-gray-50">
+    <div className="rounded-3xl border border-black/[0.06] bg-white p-5 shadow-sm">
+      <label className="flex cursor-pointer items-start gap-4 rounded-2xl bg-[#fafaf8] p-4 ring-1 ring-black/[0.06] transition hover:bg-[#fafaf8]">
         <input
           type="checkbox"
           checked={withScreenshots}
@@ -243,12 +243,12 @@ function StartCard({ withScreenshots, setWithScreenshots, starting, hasPrior, on
         />
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-900">Capture screenshots</span>
-            <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500 ring-1 ring-gray-200">
+            <span className="text-sm font-semibold text-[#111]">Capture screenshots</span>
+            <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#888] ring-1 ring-black/[0.06]">
               every {screenshotInterval}m
             </span>
           </div>
-          <p className="mt-1 text-xs leading-relaxed text-gray-500">
+          <p className="mt-1 text-xs leading-relaxed text-[#888]">
             Periodic screen captures help verify your session. You can stop anytime from the browser bar.
           </p>
         </div>
@@ -257,7 +257,7 @@ function StartCard({ withScreenshots, setWithScreenshots, starting, hasPrior, on
       <button
         onClick={onStart}
         disabled={starting}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 px-5 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:shadow-xl hover:shadow-blue-600/40 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-5 py-4 text-sm font-bold text-white transition active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
       >
         {starting ? (
           <>
@@ -284,7 +284,7 @@ function ActiveCard({ session, ending, needsShareResume, onResumeShare, onEnd })
 
   // Live countdown removed — session auto-pauses immediately on refresh now.
   return (
-    <div className="rounded-3xl border border-gray-200/70 bg-white p-5 shadow-sm">
+    <div className="rounded-3xl border border-black/[0.06] bg-white p-5 shadow-sm">
       {needsShareResume && (
         <button
           onClick={onResumeShare}
@@ -315,7 +315,7 @@ function ActiveCard({ session, ending, needsShareResume, onResumeShare, onEnd })
       <button
         onClick={onEnd}
         disabled={ending}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gray-900 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-black active:scale-[0.99] disabled:opacity-60"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-blue-700 active:scale-[0.99] disabled:opacity-60"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
           <rect x="6" y="6" width="12" height="12" rx="2" />
@@ -328,15 +328,15 @@ function ActiveCard({ session, ending, needsShareResume, onResumeShare, onEnd })
 
 function DoneCard({ total }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-gray-200/70 bg-white p-6 text-center shadow-sm">
+    <div className="overflow-hidden rounded-3xl border border-black/[0.06] bg-white p-6 text-center shadow-sm">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-lg shadow-blue-600/30">
         <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
-      <p className="mt-4 text-base font-bold text-gray-900">Day wrapped</p>
-      <p className="mt-1 text-sm text-gray-500">
-        You logged <span className="font-semibold text-gray-900">{fmtHours(total)} hours</span> today. Nice work.
+      <p className="mt-4 text-base font-bold text-[#111]">Day wrapped</p>
+      <p className="mt-1 text-sm text-[#888]">
+        You logged <span className="font-semibold text-[#111]">{fmtHours(total)} hours</span> today. Nice work.
       </p>
     </div>
   );
@@ -344,9 +344,9 @@ function DoneCard({ total }) {
 
 function Stat({ label, value }) {
   return (
-    <div className="rounded-2xl bg-gray-50/80 px-4 py-3 ring-1 ring-gray-200/60">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</p>
-      <p className="mt-1 text-base font-bold tabular-nums text-gray-900">{value}</p>
+    <div className="rounded-2xl bg-[#fafaf8] px-4 py-3 ring-1 ring-black/[0.06]">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#aaa]">{label}</p>
+      <p className="mt-1 text-base font-bold tabular-nums text-[#111]">{value}</p>
     </div>
   );
 }
@@ -355,28 +355,28 @@ function Stat({ label, value }) {
 
 function ConfirmEnd({ ending, onCancel, onConfirm }) {
   return (
-    <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-gray-900/50 px-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-blue-900/50 px-6 backdrop-blur-sm">
       <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 px-6 py-5">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-rose-600">End session</p>
-          <h2 className="mt-1 text-lg font-bold tracking-tight text-gray-900">Wrap up for today?</h2>
+          <h2 className="mt-1 text-lg font-bold tracking-tight text-[#111]">Wrap up for today?</h2>
         </div>
         <div className="px-6 py-5">
-          <p className="text-sm leading-relaxed text-gray-600">
+          <p className="text-sm leading-relaxed text-[#5a5a55]">
             Your hours for today will be locked in. You can&apos;t add more time once you end.
           </p>
           <div className="mt-5 flex gap-3">
             <button
               onClick={onCancel}
               disabled={ending}
-              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="flex-1 rounded-xl border border-black/[0.06] bg-white px-4 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafaf8] disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
               disabled={ending}
-              className="flex-1 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-60"
+              className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"
             >
               {ending ? 'Ending…' : 'Yes, end day'}
             </button>
@@ -399,10 +399,10 @@ function Spinner() {
 function Skeleton() {
   return (
     <div className="animate-pulse">
-      <div className="mx-auto h-3 w-40 rounded-full bg-gray-200" />
-      <div className="mx-auto mt-3 h-7 w-48 rounded-full bg-gray-200" />
-      <div className="mt-10 h-[460px] rounded-[32px] bg-gray-100" />
-      <div className="mt-6 h-32 rounded-3xl bg-gray-100" />
+      <div className="mx-auto h-3 w-40 rounded-full bg-black/[0.06]" />
+      <div className="mx-auto mt-3 h-7 w-48 rounded-full bg-black/[0.06]" />
+      <div className="mt-10 h-[460px] rounded-[32px] bg-black/[0.04]" />
+      <div className="mt-6 h-32 rounded-3xl bg-black/[0.04]" />
     </div>
   );
 }

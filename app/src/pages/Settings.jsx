@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuth } from '../context/AuthContext';
@@ -90,17 +90,17 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-      <p className="text-sm text-gray-500 mt-1 mb-8">Manage your account information and payment preferences.</p>
+      <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Settings</h1>
+      <p className="text-sm text-[#888] mt-1 mb-8">Manage your account information and payment preferences.</p>
 
       {/* My Profile */}
       <section className="mb-6 px-5">
-        <h2 className="text-base font-semibold text-gray-800">My Profile</h2>
-        <p className="text-sm text-gray-500 mt-0.5 mb-3">Update your display name.</p>
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <h2 className="font-display text-xl font-bold text-[#111]">My Profile</h2>
+        <p className="text-sm text-[#888] mt-0.5 mb-3">Update your display name.</p>
+        <div className="rounded-2xl border border-black/[0.06] bg-white overflow-hidden">
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
             <div>
-              <label htmlFor="settings-name" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="settings-name" className="block text-sm font-medium text-[#5a5a55] mb-1.5">
                 Name
               </label>
               <input
@@ -108,39 +108,39 @@ export default function Settings() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                className="w-full rounded-xl border border-black/[0.09] px-3.5 py-2.5 text-sm text-[#111] placeholder-[#aaa] focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-black/[0.1]"
                 placeholder="Your name"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-[#5a5a55] mb-1.5">
                 Email
               </label>
               <input
                 type="email"
                 value={user?.email ?? ''}
                 readOnly
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-500 cursor-not-allowed select-all"
+                className="w-full rounded-xl border border-black/[0.06] bg-[#fafafa] px-3.5 py-2.5 text-sm text-[#888] cursor-not-allowed select-all"
               />
             </div>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {success && <p className="text-sm text-green-600">Profile updated successfully.</p>}
+            {error && <p className="text-sm text-[#111]">{error}</p>}
+            {success && <p className="text-sm text-[#111]">Profile updated successfully.</p>}
 
-            <div className="border-t border-gray-100 -mx-6 px-6 pt-4 flex items-center justify-end gap-3">
+            <div className="border-t border-black/[0.04] -mx-6 px-6 pt-4 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setName(user?.name ?? '')}
-                className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200 transition-colors"
+                className="rounded-full border border-black/[0.06] bg-white px-5 py-2.5 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafafa] focus:outline-none focus:ring-4 focus:ring-black/[0.08] transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || !name.trim()}
-                className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-black/[0.15] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {saving ? 'Saving…' : 'Save changes'}
               </button>
@@ -153,13 +153,13 @@ export default function Settings() {
       <section className="mt-16 px-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-base font-semibold text-gray-800">Payment Methods</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Manage cards used for wallet top-ups and subscriptions.</p>
+            <h2 className="font-display text-xl font-bold text-[#111]">Payment Methods</h2>
+            <p className="text-sm text-[#888] mt-0.5">Manage cards used for wallet top-ups and subscriptions.</p>
           </div>
           <button
             type="button"
             onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-black/[0.15] transition-colors"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -168,41 +168,41 @@ export default function Settings() {
           </button>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-black/[0.06] bg-white overflow-hidden">
           {pmError && (
-            <div className="border-b border-red-100 bg-red-50 px-6 py-3 text-sm text-red-700">{pmError}</div>
+            <div className="border-b border-rose-100 bg-[#fafafa] px-6 py-3 text-sm text-[#111]">{pmError}</div>
           )}
 
           {pmLoading ? (
-            <div className="px-6 py-10 text-center text-sm text-gray-500">Loading payment methods…</div>
+            <div className="px-6 py-10 text-center text-sm text-[#888]">Loading payment methods…</div>
           ) : methods.length === 0 ? (
             <div className="px-6 py-10 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-                <svg className="h-6 w-6 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/[0.04]">
+                <svg className="h-6 w-6 text-[#aaa]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <rect x="2" y="6" width="20" height="14" rx="2" />
                   <path strokeLinecap="round" d="M2 10h20" />
                 </svg>
               </div>
-              <p className="mt-3 text-sm font-medium text-gray-700">No saved cards yet</p>
-              <p className="text-xs text-gray-500 mt-1">Add a card to make wallet top-ups and subscription payments faster.</p>
+              <p className="mt-3 text-sm font-medium text-[#5a5a55]">No saved cards yet</p>
+              <p className="text-xs text-[#888] mt-1">Add a card to make wallet top-ups and subscription payments faster.</p>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-black/[0.04]">
               {methods.map((m) => (
                 <li key={m.id} className="flex flex-wrap items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6">
                   <CardBrandIcon brand={m.brand} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-800 capitalize">{m.brand}</span>
-                      <span className="text-sm text-gray-500">•••• {m.last4}</span>
+                      <span className="text-sm font-semibold text-[#111] capitalize">{m.brand}</span>
+                      <span className="text-sm text-[#888]">•••• {m.last4}</span>
                       {m.is_default && (
-                        <span className="ml-1 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 ring-1 ring-blue-200">
+                        <span className="ml-1 inline-flex items-center rounded-full bg-black/[0.05] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#5a5a55] ring-1 ring-black/[0.06]">
                           Default
                         </span>
                       )}
                     </div>
                     {m.exp_month && m.exp_year && (
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-[#888] mt-0.5">
                         Expires {String(m.exp_month).padStart(2, '0')}/{String(m.exp_year).slice(-2)}
                       </p>
                     )}
@@ -212,7 +212,7 @@ export default function Settings() {
                       <button
                         onClick={() => handleSetDefault(m.id)}
                         disabled={busyId === m.id}
-                        className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        className="rounded-full border border-black/[0.06] bg-white px-3 py-1.5 text-xs font-semibold text-[#5a5a55] hover:bg-[#fafafa] disabled:opacity-50 transition-colors"
                       >
                         Set default
                       </button>
@@ -220,7 +220,7 @@ export default function Settings() {
                     <button
                       onClick={() => handleDelete(m.id)}
                       disabled={busyId === m.id}
-                      className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 hover:border-red-200 disabled:opacity-50 transition-colors"
+                      className="rounded-full border border-black/[0.15] bg-white px-3 py-1.5 text-xs font-semibold text-[#111] hover:bg-[#fafafa] disabled:opacity-50 transition-colors"
                     >
                       Remove
                     </button>
@@ -252,7 +252,7 @@ function CardBrandIcon({ brand }) {
     mastercard: 'bg-[#eb001b]',
     amex:       'bg-[#2e77bb]',
     discover:   'bg-[#ff6000]',
-  }[brand] || 'bg-gray-700';
+  }[brand] || 'bg-blue-600';
   return (
     <div className={`flex h-9 w-14 shrink-0 items-center justify-center rounded-md ${bg} text-[10px] font-extrabold tracking-wider text-white shadow-sm`}>
       {label}
@@ -284,7 +284,7 @@ function AddCardModal({ onClose, onAdded }) {
       clientSecret,
       appearance: {
         theme: 'stripe',
-        variables: { colorPrimary: '#2563eb', borderRadius: '10px', fontSizeBase: '14px' },
+        variables: { colorPrimary: '#111111', borderRadius: '12px', fontSizeBase: '14px' },
       },
     } : null,
     [clientSecret],
@@ -292,13 +292,13 @@ function AddCardModal({ onClose, onAdded }) {
 
   return (
     <div className="fixed inset-0 z-[1400] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h3 className="text-base font-semibold text-gray-900">Add a new card</h3>
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-[0_18px_50px_-15px_rgba(17,17,17,0.25)]">
+        <div className="flex items-center justify-between border-b border-black/[0.04] px-6 py-4">
+          <h3 className="text-base font-semibold text-[#111]">Add a new card</h3>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#888] hover:bg-black/[0.04] transition-colors"
             aria-label="Close"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
@@ -307,14 +307,14 @@ function AddCardModal({ onClose, onAdded }) {
           </button>
         </div>
         <div className="p-6">
-          {err && <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{err}</div>}
+          {err && <div className="mb-4 rounded-xl bg-[#fafafa] px-4 py-3 text-sm text-[#111]">{err}</div>}
           {!stripePromise && (
-            <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="rounded-xl border border-black/[0.06] bg-white px-4 py-3 text-sm text-[#5a5a55]">
               Payments are not configured. Set <code>VITE_STRIPE_KEY</code> in the frontend env.
             </div>
           )}
           {stripePromise && !clientSecret && !err && (
-            <p className="text-sm text-gray-500">Preparing secure form…</p>
+            <p className="text-sm text-[#888]">Preparing secure form…</p>
           )}
           {stripePromise && options && (
             <Elements stripe={stripePromise} options={options}>
@@ -373,19 +373,19 @@ function AddCardForm({ onAdded, onCancel }) {
           terms: { card: 'never', usBankAccount: 'never', link: 'never' },
         }}
       />
-      {err && <p className="text-sm text-red-600">{err}</p>}
+      {err && <p className="text-sm text-[#111]">{err}</p>}
       <div className="flex items-center justify-end gap-3 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+          className="rounded-full border border-black/[0.06] bg-white px-4 py-2 text-sm font-semibold text-[#5a5a55] hover:bg-[#fafafa] transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!stripe || busy}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {busy ? 'Saving…' : 'Save card'}
         </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { SettingsSkeleton } from '../../components/Skeleton';
 import { getTeamSettings, updateTeamSettings } from '../../api/team';
 
@@ -36,31 +36,31 @@ export default function Settings() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Monitoring settings</h1>
-      <p className="mt-1 text-sm text-gray-500">Configure how work sessions, screenshots, and data retention behave for your team.</p>
+      <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Monitoring settings</h1>
+      <p className="mt-1 text-sm text-[#888]">Configure how work sessions, screenshots, and data retention behave for your team.</p>
 
       {notice && (
         <div className={`mt-4 rounded-md border px-3 py-2 text-sm ${
-          notice.type === 'success' ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800'
+          notice.type === 'success' ? 'border-black/[0.08] bg-white text-[#111]' : 'border-black/[0.1] bg-[#fafafa] text-[#111]'
         }`}>{notice.text}</div>
       )}
 
       <div className="mt-6 space-y-4">
         {/* Screenshots */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-semibold text-gray-900">Screenshots</h2>
-              <p className="mt-1 text-xs text-gray-500">Periodic screen captures during active work sessions.</p>
+              <h2 className="font-display text-xl font-bold text-[#111]">Screenshots</h2>
+              <p className="mt-1 text-xs text-[#888]">Periodic screen captures during active work sessions.</p>
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
                 checked={!!settings.screenshots_required}
                 onChange={(e) => change('screenshots_required', e.target.checked)}
-                className="h-4 w-4"
+                className="h-4 w-4 rounded border-black/[0.2] text-[#111] accent-blue-600 focus:ring-2 focus:ring-black/[0.15]"
               />
-              <span className="text-sm text-gray-700">Required</span>
+              <span className="text-sm text-[#5a5a55]">Required</span>
             </label>
           </div>
 
@@ -83,9 +83,9 @@ export default function Settings() {
         </div>
 
         {/* Idle */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="font-semibold text-gray-900">Idle detection</h2>
-          <p className="mt-1 text-xs text-gray-500">When no mouse/keyboard activity is detected for this long, the session is paused automatically.</p>
+        <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
+          <h2 className="font-display text-xl font-bold text-[#111]">Idle detection</h2>
+          <p className="mt-1 text-xs text-[#888]">When no mouse/keyboard activity is detected for this long, the session is paused automatically.</p>
           <div className="mt-4 max-w-xs">
             <Field
               label="Idle timeout (minutes)"
@@ -97,14 +97,14 @@ export default function Settings() {
         </div>
 
         {/* Consent */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="font-semibold text-gray-900">Consent notice</h2>
-          <p className="mt-1 text-xs text-gray-500">Shown to team members the first time they log in. They must accept before any monitoring takes place.</p>
+        <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
+          <h2 className="font-display text-xl font-bold text-[#111]">Consent notice</h2>
+          <p className="mt-1 text-xs text-[#888]">Shown to team members the first time they log in. They must accept before any monitoring takes place.</p>
           <textarea
             rows={9}
             value={settings.consent_text ?? ''}
             onChange={(e) => change('consent_text', e.target.value)}
-            className="mt-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+            className="mt-3 w-full rounded-xl border border-black/[0.09] bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-black/[0.06]"
           />
         </div>
 
@@ -112,7 +112,7 @@ export default function Settings() {
           <button
             onClick={save}
             disabled={saving}
-            className="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save settings'}
           </button>
@@ -125,14 +125,14 @@ export default function Settings() {
 function Field({ label, hint, value, onChange, min, max }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-gray-700">{label}</span>
+      <span className="text-xs font-medium text-[#5a5a55]">{label}</span>
       <input
         type="number" min={min} max={max}
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+        className="mt-1 block w-full rounded-xl border border-black/[0.09] bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-black/[0.06]"
       />
-      {hint && <span className="mt-1 block text-xs text-gray-400">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-[#aaa]">{hint}</span>}
     </label>
   );
 }

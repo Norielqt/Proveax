@@ -1,10 +1,10 @@
-import { NavLink, Outlet } from 'react-router-dom';
+﻿import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const nav =
-  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition';
-const idle = 'text-gray-600 hover:bg-gray-100 hover:text-gray-900';
-const active = 'bg-blue-600 text-white hover:bg-blue-600 hover:text-white';
+  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors';
+const idle = 'text-[#5a5a55] hover:bg-[#fafafa] hover:text-[#111]';
+const active = 'bg-black/[0.07] text-[#111] font-semibold';
 
 const Icon = ({ d }) => (
   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -31,9 +31,9 @@ export default function TeamLayout({ base = '/admin/team' }) {
     <div className="flex min-h-full">
 
       {/* Classic sidebar — desktop only */}
-      <aside className="sticky top-0 hidden h-[calc(100vh-4rem)] w-56 shrink-0 flex-col border-r border-gray-200 bg-white md:flex">
+      <aside className="sticky top-0 hidden h-[calc(100vh-4rem)] w-56 shrink-0 flex-col border-r border-black/[0.06] bg-white md:flex">
         <div className="px-5 py-5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">My Team</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#888]">My Team</p>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
           {items.map((it) => (
@@ -54,15 +54,15 @@ export default function TeamLayout({ base = '/admin/team' }) {
       <div className="flex min-w-0 flex-1 flex-col">
 
         {/* Mobile: horizontal scrollable tabs */}
-        <div className="flex gap-1 overflow-x-auto border-b border-gray-200 bg-white px-4 py-2 md:hidden">
+        <div className="flex gap-1 overflow-x-auto border-b border-black/[0.06] bg-white px-4 py-2 md:hidden">
           {items.map((it) => (
             <NavLink
               key={it.to}
               to={it.to}
               end={it.end}
               className={({ isActive }) =>
-                `shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium ${
-                  isActive ? 'bg-blue-600 text-white' : 'border border-gray-200 bg-white text-gray-600'
+                `shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  isActive ? 'bg-blue-600 text-white' : 'border border-black/[0.06] bg-white text-[#5a5a55] hover:bg-[#fafafa] hover:text-[#111]'
                 }`
               }
             >

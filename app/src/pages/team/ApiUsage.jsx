@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { StatCardsSkeleton, ChartSkeleton, TableSkeleton } from '../../components/Skeleton';
 import { getApiUsage } from '../../api/reports';
 
@@ -36,16 +36,16 @@ export default function ApiUsage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">API Usage</h1>
-          <p className="mt-1 text-sm text-gray-500">Rentcast API requests logged by your workspace.</p>
+          <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">API Usage</h1>
+          <p className="mt-1 text-sm text-[#888]">Rentcast API requests logged by your workspace.</p>
         </div>
         <div className="flex gap-2">
           <input type="date" value={range.from}
             onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+            className="rounded-xl border border-black/[0.09] bg-white px-2 py-1.5 text-sm" />
           <input type="date" value={range.to}
             onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+            className="rounded-xl border border-black/[0.09] bg-white px-2 py-1.5 text-sm" />
         </div>
       </div>
 
@@ -56,18 +56,18 @@ export default function ApiUsage() {
         <StatCard label="Avg latency" value={`${summary.avg_ms} ms`} />
       </div>
 
-      <div className="rounded-md border border-gray-200 bg-white p-4">
-        <h3 className="mb-3 text-sm font-semibold text-gray-700">Daily volume</h3>
+      <div className="rounded-2xl border border-black/[0.06] bg-white p-4">
+        <h3 className="mb-3 text-sm font-semibold text-[#5a5a55]">Daily volume</h3>
         {daily.length === 0 ? (
-          <p className="text-sm text-gray-500">No activity in this range.</p>
+          <p className="text-sm text-[#888]">No activity in this range.</p>
         ) : (
           <div className="flex h-40 items-end gap-1">
             {daily.map((d) => {
               const pct = (Number(d.total) / maxDaily) * 100;
               return (
                 <div key={d.day} className="group flex flex-1 flex-col items-center">
-                  <div className="relative w-full rounded-t bg-blue-500" style={{ height: `${pct}%` }}>
-                    <div className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-0.5 text-xs text-white group-hover:block">
+                  <div className="relative w-full rounded-t bg-blue-600" style={{ height: `${pct}%` }}>
+                    <div className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-blue-600 px-2 py-0.5 text-xs text-white group-hover:block">
                       {d.total} on {d.day}
                     </div>
                   </div>
@@ -79,23 +79,23 @@ export default function ApiUsage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-md border border-gray-200 bg-white">
-          <div className="border-b border-gray-100 px-4 py-2 text-sm font-semibold text-gray-700">By member</div>
-          <table className="min-w-full divide-y divide-gray-100 text-sm">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+        <div className="rounded-2xl border border-black/[0.06] bg-white">
+          <div className="border-b border-black/[0.04] px-4 py-2 text-sm font-semibold text-[#5a5a55]">By member</div>
+          <table className="min-w-full divide-y divide-black/[0.04] text-sm">
+            <thead className="bg-[#fafafa] text-xs uppercase text-[#888]">
               <tr>
                 <th className="px-4 py-2 text-left">Member</th>
                 <th className="px-4 py-2 text-right">Total</th>
                 <th className="px-4 py-2 text-right">Billable</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-black/[0.04]">
               {per_user.length === 0 && (
-                <tr><td colSpan={3} className="px-4 py-4 text-center text-gray-500">No data.</td></tr>
+                <tr><td colSpan={3} className="px-4 py-4 text-center text-[#888]">No data.</td></tr>
               )}
               {per_user.map((u) => (
                 <tr key={u.user_id ?? 'none'}>
-                  <td className="px-4 py-2">{u.name}<div className="text-xs text-gray-500">{u.email}</div></td>
+                  <td className="px-4 py-2">{u.name}<div className="text-xs text-[#888]">{u.email}</div></td>
                   <td className="px-4 py-2 text-right tabular-nums">{u.total}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{u.billable}</td>
                 </tr>
@@ -104,11 +104,11 @@ export default function ApiUsage() {
           </table>
         </div>
 
-        <div className="rounded-md border border-gray-200 bg-white">
-          <div className="border-b border-gray-100 px-4 py-2 text-sm font-semibold text-gray-700">Recent errors</div>
-          <ul className="divide-y divide-gray-100 text-sm">
+        <div className="rounded-2xl border border-black/[0.06] bg-white">
+          <div className="border-b border-black/[0.04] px-4 py-2 text-sm font-semibold text-[#5a5a55]">Recent errors</div>
+          <ul className="divide-y divide-black/[0.04] text-sm">
             {recent_errors.length === 0 && (
-              <li className="px-4 py-4 text-center text-gray-500">No errors. ✓</li>
+              <li className="px-4 py-4 text-center text-[#888]">No errors. ✓</li>
             )}
             {recent_errors.map((e) => (
               <li key={e.id} className="px-4 py-2">
@@ -116,8 +116,8 @@ export default function ApiUsage() {
                   <span className="font-mono text-xs">{e.endpoint}</span>
                   <span className="text-xs text-rose-600">HTTP {e.status_code}</span>
                 </div>
-                <div className="text-xs text-gray-500">{new Date(e.requested_at).toLocaleString()}</div>
-                {e.error && <div className="text-xs text-gray-700">{e.error}</div>}
+                <div className="text-xs text-[#888]">{new Date(e.requested_at).toLocaleString()}</div>
+                {e.error && <div className="text-xs text-[#5a5a55]">{e.error}</div>}
               </li>
             ))}
           </ul>
@@ -128,10 +128,10 @@ export default function ApiUsage() {
 }
 
 function StatCard({ label, value, tone = 'ok' }) {
-  const color = tone === 'warn' ? 'text-amber-700' : 'text-gray-900';
+  const color = tone === 'warn' ? 'text-amber-700' : 'text-[#111]';
   return (
-    <div className="rounded-md border border-gray-200 bg-white px-4 py-3">
-      <p className="text-xs text-gray-500">{label}</p>
+    <div className="rounded-2xl border border-black/[0.06] bg-white px-4 py-3">
+      <p className="text-xs text-[#888]">{label}</p>
       <p className={`mt-1 text-2xl font-semibold ${color}`}>{value}</p>
     </div>
   );
