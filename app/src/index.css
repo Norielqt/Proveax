@@ -22,9 +22,22 @@
   .font-medium {
     font-weight: 400;
   }
+
+  .font-display {
+    font-family: 'DM Sans Variable', 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  }
 }
 
 .maplibregl-ctrl-bottom-left { transform: scale(0.75); opacity: 0.6; }
+
+/* ── Mobile menu ── */
+@keyframes menu-slide-down {
+  from { transform: translateY(-10px); }
+  to   { transform: translateY(0); }
+}
+.menu-slide-down {
+  animation: menu-slide-down 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
 
 /* ── Landing page animations ── */
 @keyframes hero-fade-up {
@@ -36,8 +49,8 @@
   to   { opacity: 1; }
 }
 .anim-fade-up {
-  animation: hero-fade-up 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: hero-fade-up 1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .anim-fade-in {
-  animation: hero-fade-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: hero-fade-in 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

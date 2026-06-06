@@ -35,12 +35,12 @@ export default function Showcase() {
   return (
     <section className="relative border-t border-black/[0.06] bg-white px-6 py-28 md:px-10">
       <div className="mx-auto max-w-7xl">
-        <div ref={headRef} className={`mb-16 flex flex-col items-start justify-between gap-6 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-row md:items-end ${headVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+        <div ref={headRef} className={`mb-16 flex flex-col items-start justify-between gap-6 transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-row md:items-end ${headVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">
               · Live data
             </p>
-            <h2 className="font-display text-[44px] font-normal leading-[1] tracking-[-1px] text-[#111] md:text-[60px]">
+            <h2 className="font-display text-[32px] font-normal leading-[1] tracking-[-1px] text-[#111] md:text-[44px] lg:text-[60px]">
               The full picture, on
               <br />
               every property.
@@ -59,7 +59,7 @@ export default function Showcase() {
             <article
               ref={cardRef}
               key={p.address}
-              className={`group relative overflow-hidden rounded-3xl border border-black/[0.06] bg-white transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-black/20 hover:shadow-[0_24px_60px_-25px_rgba(17,17,17,0.25)] ${cardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+              className={`group relative overflow-hidden rounded-3xl border border-black/[0.06] bg-white transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-black/20 hover:shadow-[0_24px_60px_-25px_rgba(17,17,17,0.25)] ${cardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
               style={{ transitionDelay: `${i * 120}ms` }}
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-[#f4f1eb]">

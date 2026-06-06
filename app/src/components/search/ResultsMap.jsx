@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef } from 'react';
 import * as maptilersdk from '@maptiler/sdk';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
 
@@ -112,7 +112,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
           stretchY: [[r + 1, s - r - 1]],
         });
       } catch (_) {
-        // Fallback: plain white pixel � pills still work, just no border
+        // Fallback: plain white pixel &mdash; pills still work, just no border
         try {
           map.addImage('pill-bg', { width: 1, height: 1, data: new Uint8Array([255, 255, 255, 255]) });
         } catch (_2) { /* already exists */ }
@@ -321,7 +321,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
         });
       });
 
-      // Hover popup � single reusable instance so only one shows at a time
+      // Hover popup &mdash; single reusable instance so only one shows at a time
       const hoverPopup = new maptilersdk.Popup({
         offset: 14,
         maxWidth: '320px',
@@ -347,15 +347,15 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
               <div style="font-size:12px;color:#5a5a55;margin-bottom:12px">${fp.city}, ${fp.state} ${fp.zip}</div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
                 <div style="text-align:center">
-                  <div style="font-size:15px;font-weight:700;color:#111">${fp.price || '�'}</div>
+                  <div style="font-size:15px;font-weight:700;color:#111">${fp.price || '&mdash;'}</div>
                   <div style="font-size:10px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Last Sale Price</div>
                 </div>
                 <div style="text-align:center;border-left:1px solid rgba(0,0,0,0.06);border-right:1px solid rgba(0,0,0,0.06)">
-                  <div style="font-size:15px;font-weight:700;color:#111">${fp.sqft || '�'}</div>
+                  <div style="font-size:15px;font-weight:700;color:#111">${fp.sqft || '&mdash;'}</div>
                   <div style="font-size:10px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Sq Ft</div>
                 </div>
                 <div style="text-align:center">
-                  <div style="font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${fp.proptype || '�'}</div>
+                  <div style="font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${fp.proptype || '&mdash;'}</div>
                   <div style="font-size:10px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Type</div>
                 </div>
               </div>
@@ -433,7 +433,7 @@ export default function ResultsMap({ properties, onViewChange, manualKey = 0, pa
     if (isManualSearch) pendingFlyRef.current = true;
 
     const apply = () => {
-      // Just update GeoJSON � GL layers re-render automatically (no DOM churn)
+      // Just update GeoJSON &mdash; GL layers re-render automatically (no DOM churn)
       if (map.getSource('properties')) {
         map.getSource('properties').setData(toGeoJSON(properties));
       }

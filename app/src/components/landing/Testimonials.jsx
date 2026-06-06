@@ -44,11 +44,11 @@ export default function Testimonials() {
   return (
     <section className="border-t border-black/[0.06] bg-white px-6 py-28 md:px-10">
       <div className="mx-auto max-w-7xl">
-        <div ref={headRef} className={`mb-16 max-w-[640px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${headVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+        <div ref={headRef} className={`mb-16 max-w-[640px] transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${headVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">
             · From the field
           </p>
-          <h2 className="font-display text-[44px] font-normal leading-[1] tracking-[-1px] text-[#111] md:text-[60px]">
+          <h2 className="font-display text-[32px] font-normal leading-[1] tracking-[-1px] text-[#111] md:text-[44px] lg:text-[60px]">
             Trusted by teams that
             <br />
             move decisively.
@@ -57,7 +57,7 @@ export default function Testimonials() {
 
         <div className="grid gap-4 md:grid-cols-5">
           {/* Featured */}
-          <figure ref={featRef} className={`relative overflow-hidden rounded-3xl bg-[#111] p-10 text-white transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:col-span-3 ${featVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <figure ref={featRef} className={`relative overflow-hidden rounded-3xl bg-[#111] p-10 text-white transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:col-span-3 ${featVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div
               className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full opacity-20 blur-3xl"
               style={{ background: 'radial-gradient(circle, #ffffff, transparent 70%)' }}
@@ -84,7 +84,7 @@ export default function Testimonials() {
             {SECONDARY.map((t, i) => (
               <figure
                 key={t.name}
-                className={`group rounded-3xl border border-black/[0.06] bg-[#F7F7F5] p-7 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-black/20 hover:bg-white ${secVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                className={`group rounded-3xl border border-black/[0.06] bg-[#F7F7F5] p-7 transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-black/20 hover:bg-white ${secVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                 style={{ transitionDelay: `${i * 120}ms` }}
               >
                 <Stars />

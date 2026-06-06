@@ -61,8 +61,9 @@ export default function Timesheets() {
       <section>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Timesheets</h1>
-            <p className="mt-1 text-sm text-[#888]">Daily breakdown of your logged time.</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">My Team</p>
+            <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Timesheets</h1>
+            <p className="mt-2 text-sm text-[#5a5a55]">Daily breakdown of your logged time.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -104,9 +105,9 @@ export default function Timesheets() {
 
         {/* Monthly total pill */}
         {!dailyLoading && dailyRows.length > 0 && (
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-sm text-[#888]">Total this month:</span>
-            <span className="rounded-full bg-black/[0.05] px-3 py-0.5 text-sm font-semibold text-[#5a5a55]">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Month total</span>
+            <span className="rounded-full border border-black/[0.06] bg-[#f5f5f5] px-3 py-0.5 text-xs font-medium text-[#111]">
               {fmtHours(totalMonthSeconds)} hrs
             </span>
           </div>
@@ -120,12 +121,13 @@ export default function Timesheets() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white">
-            <table className="min-w-full divide-y divide-black/[0.04] text-sm">
-              <thead className="bg-[#fafafa] text-xs font-semibold uppercase tracking-wide text-[#888]">
+            <div className="overflow-x-auto">
+            <table className="min-w-max w-full divide-y divide-black/[0.04] text-sm">
+              <thead className="bg-[#f9f9f9] text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">
                 <tr>
-                  <th className="px-5 py-3 text-left">Date</th>
-                  <th className="px-5 py-3 text-right">Hours Logged</th>
-                  <th className="px-5 py-3 text-right">Sessions</th>
+                  <th className="px-5 py-3 text-left font-medium">Date</th>
+                  <th className="px-5 py-3 text-right font-medium">Hours Logged</th>
+                  <th className="px-5 py-3 text-right font-medium">Sessions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/[0.04]">
@@ -136,14 +138,14 @@ export default function Timesheets() {
                   const hrs = fmtHours(r.total_seconds);
                   const pct = Math.min((Number(r.total_seconds) / (8 * 3600)) * 100, 100);
                   return (
-                    <tr key={r.date} className="hover:bg-[#fafafa]">
+                    <tr key={r.date} className="transition-colors hover:bg-[#f9f9f9]">
                       <td className="px-5 py-3 font-medium text-[#111]">{dateLabel}</td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex items-center justify-end gap-3">
                           {/* Progress bar toward 8h */}
                           <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-black/[0.04]">
                             <div
-                              className={`h-full rounded-full ${pct >= 100 ? 'bg-blue-600' : 'bg-blue-600'}`}
+                              className="h-full rounded-full bg-[#111]"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -156,6 +158,7 @@ export default function Timesheets() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </section>

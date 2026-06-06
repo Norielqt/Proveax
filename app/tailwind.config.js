@@ -8,7 +8,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['DM Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['"Instrument Serif"', 'ui-serif', 'Georgia', 'serif'],
+        display: ['DM Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
     },
   },

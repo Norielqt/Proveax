@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleAuthButton from '../components/GoogleAuthButton';
@@ -77,7 +77,7 @@ export default function Login() {
 
           {/* Hero image with floating card */}
           <div className="anim-fade-in relative" style={{ animationDelay: '300ms' }}>
-            <div className="overflow-hidden rounded-[24px] bg-[#f4f1eb] shadow-[0_30px_70px_-30px_rgba(17,17,17,0.3)] ring-1 ring-black/5">
+            <div className="overflow-hidden rounded-[24px] bg-[#f5f5f5] shadow-[0_30px_70px_-30px_rgba(17,17,17,0.3)] ring-1 ring-black/5">
               <img
                 src="/landing-hero.png"
                 alt="Property"
@@ -93,6 +93,18 @@ export default function Login() {
 
       {/* ── Right 30% — form side ── */}
       <div className="flex w-full flex-col border-l border-black/[0.06] bg-white lg:w-[30%]">
+        {/* Mobile-only top bar (left hero is hidden on mobile) */}
+        <div className="flex items-center justify-between border-b border-black/[0.06] px-6 py-4 lg:hidden">
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logo} alt="Proveax" className="h-7 w-auto" />
+          </Link>
+          <Link to="/" className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#5a5a55] transition-colors hover:text-[#111]">
+            <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 8H3M7 4 3 8l4 4" />
+            </svg>
+            Back
+          </Link>
+        </div>
         <div className="flex flex-1 flex-col justify-center px-8 py-10">
           <div className="mb-8">
             <h2 className="font-display text-[34px] font-normal leading-[1.05] tracking-[-0.8px] text-[#111]">

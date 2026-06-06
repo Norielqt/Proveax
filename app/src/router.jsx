@@ -19,12 +19,10 @@ import LoadingScreen from './components/layout/LoadingScreen';
 import ConsentGate from './components/team/ConsentGate';
 
 import TeamLayout from './pages/team/TeamLayout';
-import TeamOverview from './pages/team/Overview';
 import TeamMembers from './pages/team/Members';
 import TeamTimesheets from './pages/team/Timesheets';
 import TeamActivity from './pages/team/Activity';
 import TeamScreenshots from './pages/team/Screenshots';
-import TeamApiUsage from './pages/team/ApiUsage';
 import TeamSettings from './pages/team/Settings';
 
 function RequireAuth() {
@@ -86,12 +84,11 @@ export default function Router() {
             {/* Admin team routes */}
             <Route element={<RequireAdmin />}>
               <Route path="/admin/team" element={<TeamLayout base="/admin/team" />}>
-                <Route index element={<TeamOverview />} />
+                <Route index element={<Navigate to="members" replace />} />
                 <Route path="members" element={<TeamMembers />} />
                 <Route path="timesheets" element={<TeamTimesheets />} />
                 <Route path="activity" element={<TeamActivity />} />
                 <Route path="screenshots" element={<TeamScreenshots />} />
-                <Route path="api-usage" element={<TeamApiUsage />} />
                 <Route path="settings" element={<TeamSettings />} />
               </Route>
               <Route path="/admin/activity" element={<Navigate to="/admin/team/activity" replace />} />

@@ -36,8 +36,9 @@ export default function Settings() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Monitoring settings</h1>
-      <p className="mt-1 text-sm text-[#888]">Configure how work sessions, screenshots, and data retention behave for your team.</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">My Team</p>
+      <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Settings</h1>
+      <p className="mt-2 text-sm text-[#5a5a55]">Configure how work sessions, screenshots, and data retention behave for your team.</p>
 
       {notice && (
         <div className={`mt-4 rounded-md border px-3 py-2 text-sm ${
@@ -45,13 +46,13 @@ export default function Settings() {
         }`}>{notice.text}</div>
       )}
 
-      <div className="mt-6 space-y-4">
+      <div className="mt-8 space-y-4">
         {/* Screenshots */}
-        <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
+        <div className="rounded-2xl border border-black/[0.06] bg-white p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-semibold text-[#111]">Screenshots</h2>
-              <p className="mt-1 text-xs text-[#888]">Periodic screen captures during active work sessions.</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Screenshots</p>
+              <p className="mt-2 text-sm text-[#5a5a55]">Periodic screen captures during active work sessions.</p>
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2">
               <input
@@ -83,9 +84,9 @@ export default function Settings() {
         </div>
 
         {/* Idle */}
-        <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
-          <h2 className="font-semibold text-[#111]">Idle detection</h2>
-          <p className="mt-1 text-xs text-[#888]">When no mouse/keyboard activity is detected for this long, the session is paused automatically.</p>
+        <div className="rounded-2xl border border-black/[0.06] bg-white p-6">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Idle detection</p>
+          <p className="mt-2 text-sm text-[#5a5a55]">When no mouse/keyboard activity is detected for this long, the session is paused automatically.</p>
           <div className="mt-4 max-w-xs">
             <Field
               label="Idle timeout (minutes)"
@@ -97,9 +98,9 @@ export default function Settings() {
         </div>
 
         {/* Consent */}
-        <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
-          <h2 className="font-semibold text-[#111]">Consent notice</h2>
-          <p className="mt-1 text-xs text-[#888]">Shown to team members the first time they log in. They must accept before any monitoring takes place.</p>
+        <div className="rounded-2xl border border-black/[0.06] bg-white p-6">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Consent notice</p>
+          <p className="mt-2 text-sm text-[#5a5a55]">Shown to team members the first time they log in. They must accept before any monitoring takes place.</p>
           <textarea
             rows={9}
             value={settings.consent_text ?? ''}

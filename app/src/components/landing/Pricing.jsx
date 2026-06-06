@@ -52,10 +52,10 @@ export default function Pricing() {
     <section id="pricing" className="border-t border-black/[0.06] bg-[#FAFAF9] py-28">
       <div className="mx-auto max-w-7xl px-6 md:px-10">
         {/* Header */}
-        <div ref={headRef} className={`mb-16 flex flex-col items-start justify-between gap-6 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-row md:items-end ${headVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+        <div ref={headRef} className={`mb-16 flex flex-col items-start justify-between gap-6 transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-row md:items-end ${headVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">. Pricing</p>
-            <h2 className="font-display text-[44px] font-normal leading-[1] tracking-[-1px] text-[#111] md:text-[60px]">
+            <h2 className="font-display text-[32px] font-normal leading-[1] tracking-[-1px] text-[#111] md:text-[44px] lg:text-[60px]">
               Simple pricing,<br />serious power.
             </h2>
           </div>
@@ -103,7 +103,7 @@ export default function Pricing() {
             return (
               <div
                 key={plan.id}
-                className={`relative flex flex-col rounded-3xl p-8 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`relative flex flex-col rounded-3xl p-8 transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   isPop
                     ? 'bg-[#111] text-white shadow-[0_40px_80px_-20px_rgba(17,17,17,0.45)] md:-translate-y-3'
                     : 'border border-black/[0.07] bg-white hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.1)]'

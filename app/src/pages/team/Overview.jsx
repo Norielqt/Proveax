@@ -41,8 +41,9 @@ export default function Overview() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold text-[#111] leading-tight">Overview</h1>
-        <p className="mt-1 text-sm text-[#888]">Live activity and 14-day rollups.</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#888]">My Team</p>
+        <h1 className="mt-1 font-display text-4xl leading-none tracking-tight text-[#111]">Overview</h1>
+        <p className="mt-2 text-sm text-[#5a5a55]">Live activity and 14-day rollups.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -52,8 +53,8 @@ export default function Overview() {
         <StatCard label="Today (hrs)" value={fmtHours(today_active_seconds)} />
       </div>
 
-      <div className="rounded-2xl border border-black/[0.06] bg-white p-4">
-        <h3 className="mb-3 text-sm font-semibold text-[#5a5a55]">Active hours — last 14 days</h3>
+      <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
+        <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Active hours · last 14 days</p>
         {series.length === 0 ? (
           <p className="text-sm text-[#888]">No aggregated data yet. Run <code className="rounded bg-black/[0.04] px-1">php artisan team:aggregate-daily</code> to backfill.</p>
         ) : (
@@ -62,9 +63,9 @@ export default function Overview() {
               const pct = (Number(s.active) / maxActive) * 100;
               return (
                 <div key={s.day} className="group flex flex-1 flex-col items-center">
-                  <div className="relative w-full rounded-t bg-blue-600" style={{ height: `${pct}%` }}>
-                    <div className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-blue-600 px-2 py-0.5 text-xs text-white group-hover:block">
-                      {fmtHours(s.active)} h — {s.day}
+                  <div className="relative w-full rounded-t bg-[#111] transition-opacity group-hover:opacity-90" style={{ height: `${pct}%` }}>
+                    <div className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[#111] px-2 py-0.5 text-xs text-white group-hover:block">
+                      {fmtHours(s.active)} h · {s.day}
                     </div>
                   </div>
                 </div>
@@ -76,19 +77,22 @@ export default function Overview() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-2xl border border-black/[0.06] bg-white">
-          <div className="border-b border-black/[0.04] px-4 py-2 text-sm font-semibold text-[#5a5a55]">Live now</div>
+          <div className="flex items-center justify-between border-b border-black/[0.04] px-5 py-3">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Live now</p>
+            {live.length > 0 && <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />{live.length} active</span>}
+          </div>
           <ul className="divide-y divide-black/[0.04] text-sm">
-            {live.length === 0 && <li className="px-4 py-4 text-center text-[#888]">Nobody is currently working.</li>}
+            {live.length === 0 && <li className="px-5 py-6 text-center text-[#aaa]">Nobody is currently working.</li>}
             {live.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 px-4 py-2">
-                <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+              <li key={s.id} className="flex items-center gap-3 px-5 py-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{s.name}</div>
-                  <div className="text-xs text-[#888]">{s.email}</div>
+                  <div className="truncate text-sm font-medium text-[#111]">{s.name}</div>
+                  <div className="truncate text-xs text-[#888]">{s.email}</div>
                 </div>
-                <div className="text-right text-xs text-[#888]">
-                  <div>{fmtHours(s.active_seconds)} h</div>
-                  <div>heartbeat {s.heartbeat ? liveAgo(s.heartbeat) : '—'}</div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold tabular-nums text-[#111]">{fmtHours(s.active_seconds)}h</div>
+                  <div className="text-[10px] text-[#aaa]">{s.heartbeat ? liveAgo(s.heartbeat) : '—'}</div>
                 </div>
               </li>
             ))}
@@ -96,16 +100,19 @@ export default function Overview() {
         </div>
 
         <div className="rounded-2xl border border-black/[0.06] bg-white">
-          <div className="border-b border-black/[0.04] px-4 py-2 text-sm font-semibold text-[#5a5a55]">Top 5 — last 14 days</div>
+          <div className="border-b border-black/[0.04] px-5 py-3">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">Top performers · last 14 days</p>
+          </div>
           <ul className="divide-y divide-black/[0.04] text-sm">
-            {top_users.length === 0 && <li className="px-4 py-4 text-center text-[#888]">No aggregated data.</li>}
-            {top_users.map((u) => (
-              <li key={u.user_id} className="flex items-center gap-3 px-4 py-2">
+            {top_users.length === 0 && <li className="px-5 py-6 text-center text-[#aaa]">No aggregated data.</li>}
+            {top_users.map((u, i) => (
+              <li key={u.user_id} className="flex items-center gap-3 px-5 py-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] text-[11px] font-medium text-[#5a5a55]">{i + 1}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{u.name}</div>
-                  <div className="text-xs text-[#888]">{u.email}</div>
+                  <div className="truncate text-sm font-medium text-[#111]">{u.name}</div>
+                  <div className="truncate text-xs text-[#888]">{u.email}</div>
                 </div>
-                <div className="text-right tabular-nums text-sm text-[#5a5a55]">{fmtHours(u.active_seconds)} h</div>
+                <div className="text-right text-sm font-semibold tabular-nums text-[#111]">{fmtHours(u.active_seconds)}h</div>
               </li>
             ))}
           </ul>
@@ -120,9 +127,9 @@ function StatCard({ label, value, tone = 'ok' }) {
     tone === 'live' ? 'text-emerald-600' :
     tone === 'warn' ? 'text-amber-700'   : 'text-[#111]';
   return (
-    <div className="rounded-2xl border border-black/[0.06] bg-white px-4 py-3">
-      <p className="text-xs text-[#888]">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${color}`}>{value}</p>
+    <div className="rounded-2xl border border-black/[0.06] bg-white px-5 py-4">
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888]">{label}</p>
+      <p className={`mt-2 font-display text-3xl leading-none tracking-tight ${color}`}>{value}</p>
     </div>
   );
 }
