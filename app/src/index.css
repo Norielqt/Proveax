@@ -22,6 +22,10 @@
   .font-medium {
     font-weight: 400;
   }
+
+  .font-display {
+    font-family: 'DM Sans Variable', 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  }
 }
 
 .maplibregl-ctrl-bottom-left { transform: scale(0.75); opacity: 0.6; }
